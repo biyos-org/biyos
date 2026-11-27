@@ -16,17 +16,12 @@ using biyos::test::nl::tiny_with;
 namespace
 {
 
-constexpr std::string_view kBinaryNlFile = R"(b3 1 1 0
-)";
+constexpr std::string_view kFormats = "hzBGHZ";
 
 constexpr std::string_view kFunctionsTail = R"(F0 1 -1 myfunc
 )";
 
-constexpr std::string_view kSosnoTail = R"(S0 1 sosno
-0 1
-)";
-
-constexpr std::string_view kRefTail = R"(S4 1 ref
+constexpr std::string_view kSosnoTail = R"(S4 1 sosno
 0 1.5
 )";
 
@@ -40,23 +35,15 @@ v0
 n2
 )";
 
-constexpr std::string_view kAtan2Tail = R"(C0
-o48
+constexpr std::string_view kCeilTail = R"(C0
+o14
 v0
-n2
 )";
 
-constexpr std::string_view kLtTail = R"(C0
-o22
-v0
-n2
-)";
-
-constexpr std::string_view kIfTail = R"(C0
-o35
+constexpr std::string_view kImpliesTail = R"(C0
+o72
 n1
-v0
-n2
+n1
 )";
 
 constexpr std::string_view kFloorTail = R"(C0
@@ -78,10 +65,6 @@ v0
 
 constexpr std::string_view kStringTail = R"(C0
 h3:abc
-)";
-
-constexpr std::string_view kComplementsTail = R"(r
-5 1 0
 )";
 
 constexpr std::string_view kSuffixesTail = R"(S0 1 zork
@@ -116,9 +99,13 @@ b
 
 }
 
-TEST(NlTest, Binary)
+TEST(NlTest, Formats)
 {
-    EXPECT_EQ(fault_of(kBinaryNlFile), refused(1, "binary NL"));
+    for (const char format : kFormats)
+    {
+        const std::string key(1, format);
+        EXPECT_EQ(fault_of(key + "3 1 1 0\n"), refused(1, "NL format '" + key + "'"));
+    }
 }
 
 TEST(NlTest, Functions)
@@ -128,8 +115,7 @@ TEST(NlTest, Functions)
 
 TEST(NlTest, Sets)
 {
-    EXPECT_EQ(tiny_fault(kSosnoTail), refused(11, "suffix 'sosno'"));
-    EXPECT_EQ(tiny_fault(kRefTail), refused(11, "suffix 'ref'"));
+    EXPECT_EQ(tiny_fault(kSosnoTail), refused(11, "real values of suffix 'sosno'"));
 }
 
 TEST(NlTest, Logical)
@@ -144,9 +130,8 @@ TEST(NlTest, Remainder)
 
 TEST(NlTest, Refused)
 {
-    EXPECT_EQ(tiny_fault(kAtan2Tail), refused(12, "operator atan2"));
-    EXPECT_EQ(tiny_fault(kLtTail), refused(12, "operator lt"));
-    EXPECT_EQ(tiny_fault(kIfTail), refused(12, "operator if"));
+    EXPECT_EQ(tiny_fault(kCeilTail), refused(12, "operator ceil"));
+    EXPECT_EQ(tiny_fault(kImpliesTail), refused(12, "operator implies"));
     EXPECT_EQ(tiny_fault(kFloorTail), refused(12, "operator floor"));
     EXPECT_EQ(tiny_fault(kAlldiffTail), refused(12, "operator alldiff"));
 }
@@ -159,11 +144,6 @@ TEST(NlTest, Call)
 TEST(NlTest, String)
 {
     EXPECT_EQ(tiny_fault(kStringTail), refused(12, "strings"));
-}
-
-TEST(NlTest, Complements)
-{
-    EXPECT_EQ(tiny_fault(kComplementsTail), refused(12, "complementarity constraints"));
 }
 
 TEST(NlTest, Skipped)

@@ -1,8 +1,7 @@
-#include "io/nl/pieces.hpp"
+#include "io/nl/reader/pieces.hpp"
 
 #include "core/numbers.hpp"
-#include "io/utils/lines.hpp"
-#include "io/utils/report.hpp"
+#include "io/nl/source/source.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -63,11 +62,11 @@ Real step_from(Real x) noexcept
 
 }
 
-Curve curve_of(const Lines &lines, std::span<const Real> slopes, std::span<const Real> breaks)
+Curve curve_of(const Source &source, std::span<const Real> slopes, std::span<const Real> breaks)
 {
     if (std::ranges::adjacent_find(breaks, std::ranges::greater_equal{}) != breaks.end())
     {
-        bad_file(lines, "the breakpoints of a plterm do not increase");
+        source.bad("the breakpoints of a plterm do not increase");
     }
     const std::vector<Real> knots = knots_of(breaks);
     const std::vector<Real> heights = heights_of(knots, slopes, breaks);

@@ -195,7 +195,7 @@ def test_views(env, model):
         model.addsos([ONE], [1], y)
     with pytest.raises(ValueError, match="is a set of another model"):
         model.getsos([t[0]])
-    with pytest.raises(ValueError, match="idx is a block of another model"):
+    with pytest.raises(ValueError, match="sos is a block of another model"):
         model.getnsosvar(t)
     with pytest.raises(TypeError, match="is a set, not a variable"):
         model.addsos([ONE], [1], [s[0]])
@@ -293,7 +293,7 @@ def test_numbers(model):
         model.addsos([ONE], [1], [0], ["1"])
     with pytest.raises(OverflowError, match="knd: 2147483648 does not"):
         model.addsos([2**31], [0], [])
-    with pytest.raises(OverflowError, match="idx: 4294967296 does not fit"):
+    with pytest.raises(OverflowError, match="sos: 4294967296 does not fit"):
         model.getsos(range(2**32, 2**32 + 1))
     assert model.getnsos() == 0
 

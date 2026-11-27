@@ -1,9 +1,9 @@
-#include "io/nl/bodies.hpp"
+#include "io/nl/reader/bodies.hpp"
 
 #include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"
-#include "io/nl/expressions.hpp"
-#include "io/utils/lines.hpp"
+#include "io/nl/reader/expressions.hpp"
+#include "io/nl/source/source.hpp"
 #include "io/utils/report.hpp"
 #include "model/model.hpp"
 
@@ -37,8 +37,9 @@ void Bodies::set_terms(Index function, std::vector<LinearTerm> terms)
     terms_[to_size(function)] = std::move(terms);
 }
 
-void Bodies::add_to(const Lines &lines, Model &model) const
+Index Bodies::add_to(const Source &source, Model &model) const
 {
+    const Index first = model.n_functions();
     std::vector<Real> constants;
     std::vector<Offset> starts{0};
     std::vector<LinearTerm> terms;
@@ -50,7 +51,7 @@ void Bodies::add_to(const Lines &lines, Model &model) const
         constants.push_back(body.value.value_or(0.0));
         if (!body.value)
         {
-            functions.push_back(to_index(k));
+            functions.push_back(first + to_index(k));
             nodes.push_back(body.node);
         }
         if (terms_[k])
@@ -59,8 +60,9 @@ void Bodies::add_to(const Lines &lines, Model &model) const
         }
         starts.push_back(to_offset(terms.size()));
     }
-    checked(lines, [&] { model.add_functions(constants, starts, std::move(terms)); });
-    checked(lines, [&] { model.attach_expressions(functions, nodes); });
+    checked(source, [&] { model.add_functions(constants, starts, std::move(terms)); });
+    checked(source, [&] { model.attach_expressions(functions, nodes); });
+    return first;
 }
 
 }

@@ -121,6 +121,23 @@ TEST(CApiTest, ReadNl)
     EXPECT_EQ(BIYOS_freemdl(made.model), BIYOS_OK);
 }
 
+TEST(CApiTest, WriteNl)
+{
+    const Env env;
+    const std::string source = written("biyos_lp.nl", kLinearNlFile);
+    const Read made = read(env, source.c_str(), BIYOS_FILEFMT_NL);
+    ASSERT_EQ(made.status, BIYOS_OK);
+    const std::string path = testing::TempDir() + "biyos_written.nl";
+    EXPECT_EQ(BIYOS_writemdl(made.model, path.c_str(), BIYOS_FILEFMT_NL), BIYOS_OK);
+    const Read back = read(env, path.c_str(), BIYOS_FILEFMT_NL);
+    ASSERT_EQ(back.status, BIYOS_OK);
+    BIYOS_int same = 0;
+    EXPECT_EQ(BIYOS_cmpmdl(made.model, back.model, &same), BIYOS_OK);
+    EXPECT_EQ(same, 1);
+    EXPECT_EQ(BIYOS_freemdl(back.model), BIYOS_OK);
+    EXPECT_EQ(BIYOS_freemdl(made.model), BIYOS_OK);
+}
+
 TEST(CApiTest, MissingFile)
 {
     const Env env;
@@ -223,8 +240,6 @@ TEST(CApiTest, WriteRefused)
     EXPECT_EQ(BIYOS_writemdl(model.get(), path.c_str(), 7), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: format 7: unknown");
     EXPECT_EQ(BIYOS_writemdl(nullptr, path.c_str(), BIYOS_FILEFMT_MPS), BIYOS_ERR_BADARG);
-    EXPECT_EQ(BIYOS_writemdl(model.get(), path.c_str(), BIYOS_FILEFMT_NL), BIYOS_ERR_UNSUPPORTED);
-    EXPECT_EQ(env.message(), "unsupported: file '" + path + "': NL files are read, never written");
 }
 
 TEST(CApiTest, WriteFixed)

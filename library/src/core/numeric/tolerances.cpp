@@ -39,6 +39,11 @@ bool Tolerances::approx_equal(Real a, Real b) const noexcept
     return within(std::abs(a - b), std::abs(a / scale - b / scale));
 }
 
+bool Tolerances::at_most(Real a, Real b) const noexcept
+{
+    return a <= b || approx_equal(a, b);
+}
+
 bool Tolerances::satisfies_lower(Real x, Real lower) const noexcept
 {
     if (std::isinf(lower) || std::isinf(x))

@@ -2,9 +2,11 @@
 
 #include "core/env/error.hpp"
 #include "core/numbers.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "core/text/text.hpp"
 #include "expr/analysis/intervals/elementary.hpp"
 #include "expr/analysis/intervals/interval.hpp"
+#include "expr/analysis/intervals/logic.hpp"
 #include "expr/analysis/intervals/periodic.hpp"
 #include "expr/analysis/intervals/piecewise.hpp"
 #include "expr/analysis/intervals/powers.hpp"
@@ -26,6 +28,7 @@ struct Pass
 {
     const Graph &graph;
     std::span<const Interval> box;
+    const Tolerances &tolerances;
     std::span<const Interval> nodes;
 };
 
@@ -123,6 +126,17 @@ Interval piecewise_of(const Pass &pass, Offset node) noexcept
                      first(pass, node));
 }
 
+Interval compared(const Pass &pass, Offset node, Comparison compare) noexcept
+{
+    return compare(pass.tolerances, first(pass, node), second(pass, node));
+}
+
+Interval branches_of(const Pass &pass, Offset node) noexcept
+{
+    const std::span<const Offset> children = pass.graph.children(node);
+    return taken(first(pass, node), second(pass, node), pass.nodes[to_size(children[2])]);
+}
+
 Interval enclosure(const Pass &pass, Offset node) noexcept
 {
     switch (pass.graph.op(node))
@@ -189,16 +203,39 @@ Interval enclosure(const Pass &pass, Offset node) noexcept
         return piecewise_of(pass, node);
     case Operator::Atan2:
         return atan2(first(pass, node), second(pass, node));
+    case Operator::LessEqual:
+        return compared(pass, node, less_equal);
+    case Operator::GreaterEqual:
+        return compared(pass, node, greater_equal);
+    case Operator::Equal:
+        return compared(pass, node, equal);
+    case Operator::Less:
+        return compared(pass, node, less);
+    case Operator::Greater:
+        return compared(pass, node, greater);
+    case Operator::NotEqual:
+        return compared(pass, node, not_equal);
+    case Operator::And:
+        return smallest(pass, node);
+    case Operator::Or:
+        return largest(pass, node);
+    case Operator::Not:
+        return complement(first(pass, node));
+    case Operator::If:
+        return branches_of(pass, node);
     }
     return Interval::entire();
 }
 
 }
 
-void enclose(const Graph &graph, std::span<const Interval> box, std::span<Interval> nodes)
+void enclose(const Graph &graph,
+             std::span<const Interval> box,
+             const Tolerances &tolerances,
+             std::span<Interval> nodes)
 {
     check_pass(graph, box, nodes);
-    const Pass pass{.graph = graph, .box = box, .nodes = nodes};
+    const Pass pass{.graph = graph, .box = box, .tolerances = tolerances, .nodes = nodes};
     for (Offset node = 0; node < graph.size(); ++node)
     {
         nodes[to_size(node)] = enclosure(pass, node);

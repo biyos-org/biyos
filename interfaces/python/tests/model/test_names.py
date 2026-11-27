@@ -50,7 +50,7 @@ def calls(model, family):
     return (
         getattr(model, f"set{family}name"),
         getattr(model, f"get{family}name"),
-        getattr(model, f"get{family}idx"),
+        getattr(model, f"find{family}"),
         getattr(model, f"del{family}name"),
     )
 
@@ -114,13 +114,13 @@ def test_views(env, model):
     assert names_of(model, "var")[3:] == ["a", "b"]
     other = biyos.Model(env)
     y = other.addvar(1)
-    with pytest.raises(ValueError, match="idx is a variable of another"):
+    with pytest.raises(ValueError, match="var is a variable of another"):
         model.getvarname([y[0]])
-    with pytest.raises(ValueError, match="idx is a block of another"):
+    with pytest.raises(ValueError, match="var is a block of another"):
         model.setvarname(y, ["a"])
     with pytest.raises(TypeError, match="is a variable, not a constraint"):
         model.setconname([x[0]], ["d"])
-    with pytest.raises(TypeError, match="idx is a constraint, not a"):
+    with pytest.raises(TypeError, match="var is a constraint, not a"):
         model.getvarname([c[0]])
     with pytest.raises(TypeError, match="of functions, not objectives"):
         model.setobjname(f, ["g"])
@@ -168,8 +168,8 @@ def test_rename(model):
     assert names_of(model, "var") == ["b", "c", "a"]
     model.setvarname([2, 2], ["d", "e"])
     assert names_of(model, "var") == ["b", "c", "e"]
-    assert model.getvaridx(["b"]).indices() == [0]
-    message = refusal(model.getvaridx, ["d"])
+    assert model.findvar(["b"]).indices() == [0]
+    message = refusal(model.findvar, ["d"])
     assert message == "invalid argument: variable 'd': unknown"
 
 
@@ -214,21 +214,21 @@ def test_types(model):
     with pytest.raises(TypeError, match="an entry of name must be a str"):
         model.setvarname([0], [b"x"])
     with pytest.raises(TypeError, match="name must be a sequence of str"):
-        model.getvaridx("x")
+        model.findvar("x")
     with pytest.raises(TypeError, match="sequence of str, not NoneType"):
-        model.getvaridx(None)
+        model.findvar(None)
     with pytest.raises(TypeError, match="name must be a sequence of str"):
         model.setvarname([0], "x")
     with pytest.raises(TypeError, match="an entry of name must be a str"):
-        model.getvaridx([None])
-    with pytest.raises(TypeError, match="idx must be an int, not str"):
+        model.findvar([None])
+    with pytest.raises(TypeError, match="var must be an int, not str"):
         model.getvarname("x")
     with pytest.raises(ValueError, match="embedded null character"):
         model.setname("a\0b")
     with pytest.raises(ValueError, match="embedded null character"):
         model.setconname([0], ["c\0"])
     with pytest.raises(ValueError, match="embedded null character"):
-        model.getfunidx(["x\0"])
+        model.findfun(["x\0"])
     with pytest.raises(UnicodeEncodeError):
         model.setobjname([0], ["\udc80"])
     with pytest.raises(ValueError, match="name has length 1, not 2"):

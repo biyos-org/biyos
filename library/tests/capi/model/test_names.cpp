@@ -23,6 +23,7 @@ using Texts = std::vector<const char *>;
 struct Calls
 {
     std::string noun;
+    std::string word;
     BIYOS_status (*set)(BIYOS_model *, BIYOS_index, const BIYOS_index *, const char *const *);
     BIYOS_status (*get)(const BIYOS_model *, BIYOS_index, const BIYOS_index *, const char **);
     BIYOS_status (*find)(const BIYOS_model *, BIYOS_index, const char *const *, BIYOS_index *);
@@ -32,58 +33,66 @@ struct Calls
 const std::array<Calls, 8> kFamilies{{
     {
         .noun = "variable",
+        .word = "var",
         .set = BIYOS_setvarnamesp,
         .get = BIYOS_getvarnamesp,
-        .find = BIYOS_getvaridx,
+        .find = BIYOS_findvar,
         .remove = BIYOS_delvarnamesp,
     },
     {
         .noun = "function",
+        .word = "fun",
         .set = BIYOS_setfunnamesp,
         .get = BIYOS_getfunnamesp,
-        .find = BIYOS_getfunidx,
+        .find = BIYOS_findfun,
         .remove = BIYOS_delfunnamesp,
     },
     {
         .noun = "constraint",
+        .word = "con",
         .set = BIYOS_setconnamesp,
         .get = BIYOS_getconnamesp,
-        .find = BIYOS_getconidx,
+        .find = BIYOS_findcon,
         .remove = BIYOS_delconnamesp,
     },
     {
         .noun = "objective",
+        .word = "obj",
         .set = BIYOS_setobjnamesp,
         .get = BIYOS_getobjnamesp,
-        .find = BIYOS_getobjidx,
+        .find = BIYOS_findobj,
         .remove = BIYOS_delobjnamesp,
     },
     {
         .noun = "indicator",
+        .word = "ind",
         .set = BIYOS_setindnamesp,
         .get = BIYOS_getindnamesp,
-        .find = BIYOS_getindidx,
+        .find = BIYOS_findind,
         .remove = BIYOS_delindnamesp,
     },
     {
         .noun = "set",
+        .word = "sos",
         .set = BIYOS_setsosnamesp,
         .get = BIYOS_getsosnamesp,
-        .find = BIYOS_getsosidx,
+        .find = BIYOS_findsos,
         .remove = BIYOS_delsosnamesp,
     },
     {
         .noun = "cone",
+        .word = "cone",
         .set = BIYOS_setconenamesp,
         .get = BIYOS_getconenamesp,
-        .find = BIYOS_getconeidx,
+        .find = BIYOS_findcone,
         .remove = BIYOS_delconenamesp,
     },
     {
         .noun = "complement",
+        .word = "ccon",
         .set = BIYOS_setcconnamesp,
         .get = BIYOS_getcconnamesp,
-        .find = BIYOS_getcconidx,
+        .find = BIYOS_findccon,
         .remove = BIYOS_delcconnamesp,
     },
 }};
@@ -197,6 +206,11 @@ std::string model_name(const Model &model)
 std::string refused(const Calls &family, BIYOS_index index, const std::string &reason)
 {
     return "invalid argument: " + family.noun + " " + std::to_string(index) + ": " + reason;
+}
+
+std::string null_refusal(const Calls &family)
+{
+    return "invalid argument: argument '" + family.word + "': is null";
 }
 
 void note(Attempt &attempt, BIYOS_status status)
@@ -377,7 +391,7 @@ TEST(CApiTest, CopiedName)
     ASSERT_EQ(BIYOS_freemdl(source), BIYOS_OK);
     EXPECT_STREQ(found, "x");
     BIYOS_index at = -1;
-    EXPECT_EQ(BIYOS_getvaridx(copy, 1, &name, &at), BIYOS_OK);
+    EXPECT_EQ(BIYOS_findvar(copy, 1, &name, &at), BIYOS_OK);
     EXPECT_EQ(at, 0);
     EXPECT_EQ(BIYOS_freemdl(copy), BIYOS_OK);
 }
@@ -434,7 +448,7 @@ TEST(CApiTest, NullNames)
         SCOPED_TRACE(family.noun);
         EXPECT_EQ(family.set(held, 0, nullptr, nullptr), BIYOS_OK);
         EXPECT_EQ(family.set(held, 2, nullptr, names), BIYOS_ERR_BADARG);
-        EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+        EXPECT_EQ(env.message(), null_refusal(family));
         EXPECT_EQ(family.set(held, 2, indices, nullptr), BIYOS_ERR_BADARG);
         EXPECT_EQ(env.message(), "invalid argument: argument 'name': is null");
         EXPECT_EQ(family.set(held, 2, indices, names), BIYOS_ERR_BADARG);
@@ -486,7 +500,7 @@ TEST(CApiTest, DeletedName)
         EXPECT_EQ(names_of(family, model, 3), std::vector<std::string>({"", "", "c"}));
         EXPECT_EQ(family.remove(model.get(), 0, nullptr), BIYOS_OK);
         EXPECT_EQ(family.remove(model.get(), 1, nullptr), BIYOS_ERR_BADARG);
-        EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+        EXPECT_EQ(env.message(), null_refusal(family));
         EXPECT_EQ(family.remove(model.get(), -1, nullptr), BIYOS_ERR_BADARG);
         EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
         const BIYOS_index outside[] = {2, 3};
@@ -525,7 +539,7 @@ TEST(CApiTest, NameList)
         EXPECT_EQ(env.message(), refused(family, 13, "unknown"));
         EXPECT_STREQ(kept[0], "kept");
         EXPECT_EQ(family.get(model.get(), 2, nullptr, kept.data()), BIYOS_ERR_BADARG);
-        EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+        EXPECT_EQ(env.message(), null_refusal(family));
         EXPECT_EQ(family.get(model.get(), -1, nullptr, nullptr), BIYOS_ERR_BADARG);
         EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     }

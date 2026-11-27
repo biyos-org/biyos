@@ -33,12 +33,14 @@ add_library(biyos_internal STATIC
     expr/analysis/curvature/bends.cpp
     expr/analysis/curvature/curvature.cpp
     expr/analysis/curvature/exponents.cpp
+    expr/analysis/curvature/logic.cpp
     expr/analysis/curvature/segments.cpp
     expr/analysis/curvature/shape.cpp
     expr/analysis/curvature/waves.cpp
     expr/analysis/intervals/elementary.cpp
     expr/analysis/intervals/enclosure.cpp
     expr/analysis/intervals/interval.cpp
+    expr/analysis/intervals/logic.cpp
     expr/analysis/intervals/periodic.cpp
     expr/analysis/intervals/piecewise.cpp
     expr/analysis/intervals/powers.cpp
@@ -47,8 +49,13 @@ add_library(biyos_internal STATIC
     expr/evaluation/derivatives/partials.cpp
     expr/evaluation/derivatives/reverse.cpp
     expr/evaluation/derivatives/value.cpp
+    expr/evaluation/hessian/coloring.cpp
     expr/evaluation/hessian/elements.cpp
     expr/evaluation/hessian/hessian.cpp
+    expr/evaluation/hessian/pattern.cpp
+    expr/evaluation/hessian/pushing/lists.cpp
+    expr/evaluation/hessian/pushing/push.cpp
+    expr/evaluation/hessian/pushing/walk.cpp
     expr/evaluation/hessian/sweep.cpp
     expr/evaluation/hessian/tangents.cpp
     expr/evaluation/threads/levels.cpp
@@ -64,6 +71,7 @@ add_library(biyos_internal STATIC
     expr/graph/points.cpp
     expr/graph/sharing.cpp
     expr/graph/uses.cpp
+    expr/sparsity/joiner.cpp
     expr/sparsity/memo.cpp
     expr/sparsity/radix.cpp
     expr/sparsity/reach.cpp
@@ -90,13 +98,28 @@ add_library(biyos_internal STATIC
     io/mps/readers/values.cpp
     io/mps/readers/vectors.cpp
     io/mps/sections.cpp
-    io/nl/bodies.cpp
-    io/nl/expressions.cpp
     io/nl/header.cpp
     io/nl/nl.cpp
     io/nl/operators.cpp
-    io/nl/pieces.cpp
+    io/nl/reader/bodies.cpp
+    io/nl/reader/complements.cpp
+    io/nl/reader/expressions.cpp
+    io/nl/reader/pieces.cpp
+    io/nl/reader/sets.cpp
+    io/nl/reader/suffixes.cpp
+    io/nl/source/binary.cpp
+    io/nl/source/bounds.cpp
+    io/nl/source/source.cpp
+    io/nl/source/text.cpp
     io/nl/tokens.cpp
+    io/nl/writer/defined.cpp
+    io/nl/writer/entries.cpp
+    io/nl/writer/layout.cpp
+    io/nl/writer/printer.cpp
+    io/nl/writer/refusals.cpp
+    io/nl/writer/sets.cpp
+    io/nl/writer/usage.cpp
+    io/nl/writer/writer.cpp
     io/native/native.cpp
     io/native/parts.cpp
     io/native/print.cpp
@@ -117,6 +140,7 @@ add_library(biyos_internal STATIC
     io/utils/leftovers.cpp
     io/utils/lines.cpp
     io/utils/records.cpp
+    io/utils/refuse.cpp
     io/utils/report.cpp
     model/compare/compare.cpp
     model/compare/fields.cpp

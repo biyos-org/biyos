@@ -88,13 +88,19 @@ from biyos._model.blocks import (
     Variable,
     Variables,
     View,
-    idx_of,
+    members_of,
     index_of,
 )
 from biyos._model.callbacks import Callbacks, checked, data_at
-from biyos._model.expression import Comparison, Expression, Operand
+from biyos._model.expression import (
+    Comparison,
+    Condition,
+    Expression,
+    Logical,
+    Operand,
+)
 from biyos._model.operators import Operator, node_values, postfix_values
-from biyos._model.postfix import attached, given
+from biyos._model.postfix import Made, attached, expression_of, given
 
 
 class VariableKind(IntEnum):
@@ -200,7 +206,7 @@ class FileFormat(IntEnum):
     FIXED_MPS
         Fixed MPS, for linear and mixed-integer models. Read only.
     NL
-        Text NL, for nonlinear models. Read only.
+        NL, text or binary, for nonlinear models. Written as text.
     BYS
         The biyos format, which holds every part of a model but its
         callbacks and its options.
@@ -217,16 +223,16 @@ _Block = TypeVar("_Block", bound=Block[View])
 _Argument = tuple[type[Block[View]], str, Any]
 _Column = type[c_integer | c_real] | type[Block[View]]
 
-_COUNTS: dict[type[Block[View]], str] = {
-    Variables: "getnvar",
-    Functions: "getnfun",
-    Constraints: "getncon",
-    Objectives: "getnobj",
-    Indicators: "getnind",
-    SpecialOrderedSets: "getnsos",
-    PiecewiseLinears: "getnpwl",
-    Cones: "getncone",
-    Complements: "getnccon",
+_WORDS: dict[type[Block[View]], str] = {
+    Variables: "var",
+    Functions: "fun",
+    Constraints: "con",
+    Objectives: "obj",
+    Indicators: "ind",
+    SpecialOrderedSets: "sos",
+    PiecewiseLinears: "pwl",
+    Cones: "cone",
+    Complements: "ccon",
 }
 
 
@@ -325,6 +331,14 @@ def _total(counts: Array[c_offset] | None) -> Offset:
     if counts is None:
         return 0
     return sum(counts)
+
+
+def _bounded(con: Logical, made: Made) -> tuple[Operand, Real, Real]:
+    if isinstance(con, Comparison):
+        con._refuse_open()
+        return con._body, con._lb, con._ub
+    assert isinstance(con, Condition)
+    return expression_of(con, made), 1.0, 1.0
 
 
 class Model:
@@ -958,7 +972,7 @@ class Model:
     @overload
     def setvarbnd(
         self,
-        idx: One[Variable],
+        var: One[Variable],
         lb: Real | None = None,
         ub: Real | None = None,
     ) -> None: ...
@@ -966,14 +980,14 @@ class Model:
     @overload
     def setvarbnd(
         self,
-        idx: Many[Variable, Variables],
+        var: Many[Variable, Variables],
         lb: Sequence[Real] | None = None,
         ub: Sequence[Real] | None = None,
     ) -> None: ...
 
     def setvarbnd(
         self,
-        idx: Selection[Variable, Variables],
+        var: Selection[Variable, Variables],
         lb: Real | Sequence[Real] | None = None,
         ub: Real | Sequence[Real] | None = None,
     ) -> None:
@@ -983,7 +997,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        var
             The variables.
             An index or a view stands for one variable, and each other argument
             is then a scalar.
@@ -995,7 +1009,7 @@ class Model:
         BIYOS_setvarbndsp
         BIYOS_setvarbndrg
         """
-        one, n, chosen = self._selected("BIYOS_setvarbnd", Variables, idx)
+        one, n, chosen = self._selected("BIYOS_setvarbnd", Variables, var)
         arrays = (
             doubles("lb", lb, n, one),
             doubles("ub", ub, n, one),
@@ -1003,21 +1017,21 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getvarbnd(self, idx: One[Variable]) -> tuple[Real, Real]: ...
+    def getvarbnd(self, var: One[Variable]) -> tuple[Real, Real]: ...
 
     @overload
     def getvarbnd(
-        self, idx: Many[Variable, Variables]
+        self, var: Many[Variable, Variables]
     ) -> tuple[list[Real], list[Real]]: ...
 
     def getvarbnd(
-        self, idx: Selection[Variable, Variables]
+        self, var: Selection[Variable, Variables]
     ) -> tuple[Real, Real] | tuple[list[Real], list[Real]]:
         """Read the bounds of variables.
 
         Parameters
         ----------
-        idx
+        var
             The variables, in any order, any of them more than once.
             An index or a view stands for one variable, and each result is then
             a scalar.
@@ -1035,31 +1049,31 @@ class Model:
         BIYOS_getvarbndrg
         """
         bounds = (c_real, c_real)
-        lb, ub = self._getlist("BIYOS_getvarbnd", Variables, idx, *bounds)
+        lb, ub = self._getlist("BIYOS_getvarbnd", Variables, var, *bounds)
         return lb, ub
 
     @overload
     def setvarknd(
-        self, idx: One[Variable], knd: VariableKind | None
+        self, var: One[Variable], knd: VariableKind | None
     ) -> None: ...
 
     @overload
     def setvarknd(
         self,
-        idx: Many[Variable, Variables],
+        var: Many[Variable, Variables],
         knd: Sequence[VariableKind] | None,
     ) -> None: ...
 
     def setvarknd(
         self,
-        idx: Selection[Variable, Variables],
+        var: Selection[Variable, Variables],
         knd: VariableKind | Sequence[VariableKind] | None,
     ) -> None:
         """Set the kinds of variables.
 
         Parameters
         ----------
-        idx
+        var
             The variables.
             An index or a view stands for one variable, and each other argument
             is then a scalar.
@@ -1071,26 +1085,26 @@ class Model:
         BIYOS_setvarkndsp
         BIYOS_setvarkndrg
         """
-        one, n, chosen = self._selected("BIYOS_setvarknd", Variables, idx)
+        one, n, chosen = self._selected("BIYOS_setvarknd", Variables, var)
         arrays = (ints("knd", knd, n, one),)
         self._call(*chosen, *arrays)
 
     @overload
-    def getvarknd(self, idx: One[Variable]) -> VariableKind: ...
+    def getvarknd(self, var: One[Variable]) -> VariableKind: ...
 
     @overload
     def getvarknd(
-        self, idx: Many[Variable, Variables]
+        self, var: Many[Variable, Variables]
     ) -> list[VariableKind]: ...
 
     def getvarknd(
-        self, idx: Selection[Variable, Variables]
+        self, var: Selection[Variable, Variables]
     ) -> VariableKind | list[VariableKind]:
         """Read the kinds of variables.
 
         Parameters
         ----------
-        idx
+        var
             The variables, in any order, any of them more than once.
             An index or a view stands for one variable, and the result is then a
             scalar.
@@ -1105,14 +1119,14 @@ class Model:
         BIYOS_getvarkndsp
         BIYOS_getvarkndrg
         """
-        (found,) = self._getlist("BIYOS_getvarknd", Variables, idx, c_integer)
+        (found,) = self._getlist("BIYOS_getvarknd", Variables, var, c_integer)
         knd: VariableKind | list[VariableKind] = _each(VariableKind, found)
         return knd
 
     @overload
     def setvartol(
         self,
-        idx: One[Variable],
+        var: One[Variable],
         atol: Real | None = None,
         rtol: Real | None = None,
     ) -> None: ...
@@ -1120,14 +1134,14 @@ class Model:
     @overload
     def setvartol(
         self,
-        idx: Many[Variable, Variables],
+        var: Many[Variable, Variables],
         atol: Sequence[Real] | None = None,
         rtol: Sequence[Real] | None = None,
     ) -> None: ...
 
     def setvartol(
         self,
-        idx: Selection[Variable, Variables],
+        var: Selection[Variable, Variables],
         atol: Real | Sequence[Real] | None = None,
         rtol: Real | Sequence[Real] | None = None,
     ) -> None:
@@ -1140,7 +1154,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        var
             The variables.
             An index or a view stands for one variable, and each other argument
             is then a scalar.
@@ -1153,7 +1167,7 @@ class Model:
         BIYOS_setvartolsp
         BIYOS_setvartolrg
         """
-        one, n, chosen = self._selected("BIYOS_setvartol", Variables, idx)
+        one, n, chosen = self._selected("BIYOS_setvartol", Variables, var)
         arrays = (
             doubles("atol", atol, n, one),
             doubles("rtol", rtol, n, one),
@@ -1162,16 +1176,16 @@ class Model:
 
     @overload
     def getvartol(
-        self, idx: One[Variable]
+        self, var: One[Variable]
     ) -> tuple[Real | None, Real | None]: ...
 
     @overload
     def getvartol(
-        self, idx: Many[Variable, Variables]
+        self, var: Many[Variable, Variables]
     ) -> tuple[list[Real | None], list[Real | None]]: ...
 
     def getvartol(
-        self, idx: Selection[Variable, Variables]
+        self, var: Selection[Variable, Variables]
     ) -> (
         tuple[Real | None, Real | None]
         | tuple[list[Real | None], list[Real | None]]
@@ -1180,7 +1194,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        var
             The variables, in any order, any of them more than once.
             An index or a view stands for one variable, and each result is then
             a scalar.
@@ -1198,15 +1212,15 @@ class Model:
         BIYOS_getvartolrg
         """
         pair = (c_real, c_real)
-        atol, rtol = self._getlist("BIYOS_getvartol", Variables, idx, *pair)
+        atol, rtol = self._getlist("BIYOS_getvartol", Variables, var, *pair)
         return _each(_or_none, atol), _each(_or_none, rtol)
 
-    def delvartol(self, idx: Selection[Variable, Variables]) -> None:
+    def delvartol(self, var: Selection[Variable, Variables]) -> None:
         """Return variables to ``feastol_abs`` and ``feastol_rel``.
 
         Parameters
         ----------
-        idx
+        var
             The variables that lose their tolerances.
             An index or a view stands for one variable.
 
@@ -1215,7 +1229,7 @@ class Model:
         BIYOS_delvartolsp
         BIYOS_delvartolrg
         """
-        rows = picked(self, Variables, idx)
+        rows = picked(self, Variables, "var", var)
         self._call(*self._chosen("BIYOS_delvartol", Variables, rows))
 
     def getnvar(self) -> Index:
@@ -1236,16 +1250,16 @@ class Model:
 
     @overload
     def getvar(
-        self, idx: One[Variable]
+        self, var: One[Variable]
     ) -> tuple[VariableKind, Real, Real]: ...
 
     @overload
     def getvar(
-        self, idx: Many[Variable, Variables] | None = None
+        self, var: Many[Variable, Variables] | None = None
     ) -> tuple[list[VariableKind], list[Real], list[Real]]: ...
 
     def getvar(
-        self, idx: Selection[Variable, Variables] | None = None
+        self, var: Selection[Variable, Variables] | None = None
     ) -> (
         tuple[VariableKind, Real, Real]
         | tuple[list[VariableKind], list[Real], list[Real]]
@@ -1254,7 +1268,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        var
             The variables, in any order, any of them more than once; every
             variable by default.
             An index or a view stands for one variable, and each result is then
@@ -1274,39 +1288,39 @@ class Model:
         BIYOS_getvarsp
         BIYOS_getvarrg
         """
-        every = range(self.getnvar()) if idx is None else idx
+        every = range(self.getnvar()) if var is None else var
         types = (c_integer, c_real, c_real)
         found = self._getlist("BIYOS_getvar", Variables, every, *types)
         kinds, lower, upper = found
         return _each(VariableKind, kinds), lower, upper
 
     @overload
-    def setvarname(self, idx: One[Variable], name: str) -> None: ...
+    def setvarname(self, var: One[Variable], name: str) -> None: ...
 
     @overload
     def setvarname(
-        self, idx: Many[Variable, Variables], name: Sequence[str]
+        self, var: Many[Variable, Variables], name: Sequence[str]
     ) -> None: ...
 
     def setvarname(
-        self, idx: Selection[Variable, Variables], name: str | Sequence[str]
+        self, var: Selection[Variable, Variables], name: str | Sequence[str]
     ) -> None:
         """Name variables of the model.
 
-        Variable ``idx[j]`` takes the name ``name[j]``, under the rules of
+        Variable ``var[j]`` takes the name ``name[j]``, under the rules of
         ``setname``. A variable listed more than once takes the last of
         its names. Names may repeat: several variables may hold one name,
-        and ``getvaridx`` then refuses to choose among them. Every other
+        and ``findvar`` then refuses to choose among them. Every other
         family is named the same way, each apart.
 
         Parameters
         ----------
-        idx
+        var
             The variables to name.
             An index or a view stands for one variable, and each other argument
             is then a scalar.
         name
-            The new name of each, as many as ``idx``.
+            The new name of each, as many as ``var``.
 
         Raises
         ------
@@ -1315,7 +1329,7 @@ class Model:
             name is not a str.
         ValueError
             When a name holds a null character or cannot be encoded as
-            UTF-8, or when ``name`` and ``idx`` differ in length.
+            UTF-8, or when ``name`` and ``var`` differ in length.
         Error
             When an index is not that of a variable or a name is empty.
 
@@ -1324,24 +1338,24 @@ class Model:
         BIYOS_setvarnamesp
         BIYOS_setvarnamerg
         """
-        self._setname("BIYOS_setvarname", Variables, idx, name)
+        self._setname("BIYOS_setvarname", Variables, var, name)
 
     @overload
-    def getvarname(self, idx: One[Variable]) -> str | None: ...
+    def getvarname(self, var: One[Variable]) -> str | None: ...
 
     @overload
     def getvarname(
-        self, idx: Many[Variable, Variables]
+        self, var: Many[Variable, Variables]
     ) -> list[str | None]: ...
 
     def getvarname(
-        self, idx: Selection[Variable, Variables]
+        self, var: Selection[Variable, Variables]
     ) -> str | None | list[str | None]:
         """Return the names of variables.
 
         Parameters
         ----------
-        idx
+        var
             The variables to read, in any order, any of them more than once.
             An index or a view stands for one variable, and the result is then a
             scalar.
@@ -1356,9 +1370,9 @@ class Model:
         BIYOS_getvarnamesp
         BIYOS_getvarnamerg
         """
-        return self._getname("BIYOS_getvarname", Variables, idx)
+        return self._getname("BIYOS_getvarname", Variables, var)
 
-    def getvaridx(self, name: Sequence[str]) -> Variables:
+    def findvar(self, name: Sequence[str]) -> Variables:
         """Return the variables with names.
 
         Parameters
@@ -1368,7 +1382,7 @@ class Model:
 
         Returns
         -------
-        idx
+        var
             The variable that alone holds each name, as a ``Variables``
             block, which raises ``ValueError`` once the model has had a
             deletion. ``indices`` gives the indices as a list.
@@ -1386,16 +1400,16 @@ class Model:
 
         See Also
         --------
-        BIYOS_getvaridx
+        BIYOS_findvar
         """
-        return self._getidx(lib.BIYOS_getvaridx, Variables, name)
+        return self._find(lib.BIYOS_findvar, Variables, name)
 
-    def delvarname(self, idx: Selection[Variable, Variables]) -> None:
+    def delvarname(self, var: Selection[Variable, Variables]) -> None:
         """Remove the names of variables, which then have none.
 
         Parameters
         ----------
-        idx
+        var
             The variables that lose their names. One without a name, or
             listed more than once, is left without one.
             An index or a view stands for one variable.
@@ -1411,9 +1425,9 @@ class Model:
         BIYOS_delvarnamesp
         BIYOS_delvarnamerg
         """
-        self._delname("BIYOS_delvarname", Variables, idx)
+        self._delname("BIYOS_delvarname", Variables, var)
 
-    def delvar(self, idx: Selection[Variable, Variables]) -> list[Index]:
+    def delvar(self, var: Selection[Variable, Variables]) -> list[Index]:
         """Delete variables, with their terms in every function.
 
         The variables left keep their order and are numbered from 0 again, and
@@ -1425,7 +1439,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        var
             The variables to delete, in any order, none of them twice.
             An index or a view stands for one variable.
 
@@ -1448,7 +1462,7 @@ class Model:
         BIYOS_delvarsp
         BIYOS_delvarrg
         """
-        return self._delete("BIYOS_delvar", Variables, idx)
+        return self._delete("BIYOS_delvar", Variables, var)
 
     def addfun(self, n: Index) -> Functions:
         """Add functions after the last one, each with the constant 0 and
@@ -1488,16 +1502,16 @@ class Model:
         return count.value
 
     @overload
-    def addcst(self, idx: One[Function], cst: Real | None) -> None: ...
+    def addcst(self, fun: One[Function], cst: Real | None) -> None: ...
 
     @overload
     def addcst(
-        self, idx: Many[Function, Functions], cst: Sequence[Real] | None
+        self, fun: Many[Function, Functions], cst: Sequence[Real] | None
     ) -> None: ...
 
     def addcst(
         self,
-        idx: Selection[Function, Functions],
+        fun: Selection[Function, Functions],
         cst: Real | Sequence[Real] | None,
     ) -> None:
         """Add to the constants of functions.
@@ -1506,7 +1520,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        fun
             The functions.
             An index or a view stands for one function, and each other argument
             is then a scalar.
@@ -1520,20 +1534,20 @@ class Model:
         BIYOS_addcstsp
         BIYOS_addcstrg
         """
-        one, n, chosen = self._selected("BIYOS_addcst", Functions, idx)
+        one, n, chosen = self._selected("BIYOS_addcst", Functions, fun)
         self._call(*chosen, doubles("cst", cst, n, one))
 
     @overload
-    def setcst(self, idx: One[Function], cst: Real | None) -> None: ...
+    def setcst(self, fun: One[Function], cst: Real | None) -> None: ...
 
     @overload
     def setcst(
-        self, idx: Many[Function, Functions], cst: Sequence[Real] | None
+        self, fun: Many[Function, Functions], cst: Sequence[Real] | None
     ) -> None: ...
 
     def setcst(
         self,
-        idx: Selection[Function, Functions],
+        fun: Selection[Function, Functions],
         cst: Real | Sequence[Real] | None,
     ) -> None:
         """Set the constants of functions.
@@ -1542,7 +1556,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        fun
             The functions.
             An index or a view stands for one function, and each other argument
             is then a scalar.
@@ -1554,21 +1568,21 @@ class Model:
         BIYOS_setcstsp
         BIYOS_setcstrg
         """
-        one, n, chosen = self._selected("BIYOS_setcst", Functions, idx)
+        one, n, chosen = self._selected("BIYOS_setcst", Functions, fun)
         self._call(*chosen, doubles("cst", cst, n, one))
 
     @overload
-    def getcst(self, idx: One[Function]) -> Real: ...
+    def getcst(self, fun: One[Function]) -> Real: ...
 
     @overload
-    def getcst(self, idx: Many[Function, Functions]) -> list[Real]: ...
+    def getcst(self, fun: Many[Function, Functions]) -> list[Real]: ...
 
-    def getcst(self, idx: Selection[Function, Functions]) -> Real | list[Real]:
+    def getcst(self, fun: Selection[Function, Functions]) -> Real | list[Real]:
         """Read the constants of functions.
 
         Parameters
         ----------
-        idx
+        fun
             The functions, in any order, any of them more than once.
             An index or a view stands for one function, and the result is then a
             scalar.
@@ -1584,54 +1598,54 @@ class Model:
         BIYOS_getcstrg
         """
         cst: Real | list[Real]
-        (cst,) = self._getlist("BIYOS_getcst", Functions, idx, c_real)
+        (cst,) = self._getlist("BIYOS_getcst", Functions, fun, c_real)
         return cst
 
     @overload
-    def setfunname(self, idx: One[Function], name: str) -> None: ...
+    def setfunname(self, fun: One[Function], name: str) -> None: ...
 
     @overload
     def setfunname(
-        self, idx: Many[Function, Functions], name: Sequence[str]
+        self, fun: Many[Function, Functions], name: Sequence[str]
     ) -> None: ...
 
     def setfunname(
-        self, idx: Selection[Function, Functions], name: str | Sequence[str]
+        self, fun: Selection[Function, Functions], name: str | Sequence[str]
     ) -> None:
         """Name functions of the model, as ``setvarname`` names variables.
 
         Parameters
         ----------
-        idx
+        fun
             The functions to name.
             An index or a view stands for one function, and each other argument
             is then a scalar.
         name
-            The new name of each, as many as ``idx``.
+            The new name of each, as many as ``fun``.
 
         See Also
         --------
         BIYOS_setfunnamesp
         BIYOS_setfunnamerg
         """
-        self._setname("BIYOS_setfunname", Functions, idx, name)
+        self._setname("BIYOS_setfunname", Functions, fun, name)
 
     @overload
-    def getfunname(self, idx: One[Function]) -> str | None: ...
+    def getfunname(self, fun: One[Function]) -> str | None: ...
 
     @overload
     def getfunname(
-        self, idx: Many[Function, Functions]
+        self, fun: Many[Function, Functions]
     ) -> list[str | None]: ...
 
     def getfunname(
-        self, idx: Selection[Function, Functions]
+        self, fun: Selection[Function, Functions]
     ) -> str | None | list[str | None]:
         """Return the names of functions, as ``getvarname`` does.
 
         Parameters
         ----------
-        idx
+        fun
             The functions to read.
             An index or a view stands for one function, and the result is then a
             scalar.
@@ -1646,10 +1660,10 @@ class Model:
         BIYOS_getfunnamesp
         BIYOS_getfunnamerg
         """
-        return self._getname("BIYOS_getfunname", Functions, idx)
+        return self._getname("BIYOS_getfunname", Functions, fun)
 
-    def getfunidx(self, name: Sequence[str]) -> Functions:
-        """Return the named functions, as ``getvaridx`` does.
+    def findfun(self, name: Sequence[str]) -> Functions:
+        """Return the named functions, as ``findvar`` does.
 
         Parameters
         ----------
@@ -1658,21 +1672,21 @@ class Model:
 
         Returns
         -------
-        idx
+        fun
             The function that alone holds each name, as a ``Functions`` block.
 
         See Also
         --------
-        BIYOS_getfunidx
+        BIYOS_findfun
         """
-        return self._getidx(lib.BIYOS_getfunidx, Functions, name)
+        return self._find(lib.BIYOS_findfun, Functions, name)
 
-    def delfunname(self, idx: Selection[Function, Functions]) -> None:
+    def delfunname(self, fun: Selection[Function, Functions]) -> None:
         """Remove the names of functions, as ``delvarname`` does.
 
         Parameters
         ----------
-        idx
+        fun
             The functions that lose their names.
             An index or a view stands for one function.
 
@@ -1681,9 +1695,9 @@ class Model:
         BIYOS_delfunnamesp
         BIYOS_delfunnamerg
         """
-        self._delname("BIYOS_delfunname", Functions, idx)
+        self._delname("BIYOS_delfunname", Functions, fun)
 
-    def delfun(self, idx: Selection[Function, Functions]) -> list[Index]:
+    def delfun(self, fun: Selection[Function, Functions]) -> list[Index]:
         """Delete functions that nothing uses.
 
         The functions left keep their order and are numbered from 0 again, and
@@ -1694,7 +1708,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        fun
             The functions to delete, in any order, none of them twice.
             An index or a view stands for one function.
 
@@ -1716,9 +1730,9 @@ class Model:
         BIYOS_delfunsp
         BIYOS_delfunrg
         """
-        return self._delete("BIYOS_delfun", Functions, idx)
+        return self._delete("BIYOS_delfun", Functions, fun)
 
-    def clrfun(self, idx: Selection[Function, Functions]) -> None:
+    def clrfun(self, fun: Selection[Function, Functions]) -> None:
         """Empty functions of the model, so they can be built again.
 
         Each function given has the constant 0, no term and no expression
@@ -1726,7 +1740,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        fun
             The functions, any of them more than once.
             An index or a view stands for one function.
 
@@ -1735,7 +1749,7 @@ class Model:
         BIYOS_clrfunsp
         BIYOS_clrfunrg
         """
-        rows = picked(self, Functions, idx)
+        rows = picked(self, Functions, "fun", fun)
         self._call(*self._chosen("BIYOS_clrfun", Functions, rows))
 
     @overload
@@ -1824,13 +1838,13 @@ class Model:
         )
 
     def getnrlinterm(
-        self, idx: Sequence[Index | Function] | Functions | None = None
+        self, fun: Sequence[Index | Function] | Functions | None = None
     ) -> Offset:
         """Count the linear terms of functions.
 
         Parameters
         ----------
-        idx
+        fun
             The functions, in any order, any of them more than once; every
             function by default.
 
@@ -1845,11 +1859,11 @@ class Model:
         BIYOS_getnrlintermsp
         BIYOS_getnrlintermrg
         """
-        every = range(self.getnfun()) if idx is None else idx
+        every = range(self.getnfun()) if fun is None else fun
         return self._count("BIYOS_getnrlinterm", Functions, every)
 
     def getrlinterm(
-        self, idx: Sequence[Index | Function] | Functions | None = None
+        self, fun: Sequence[Index | Function] | Functions | None = None
     ) -> tuple[Functions, Variables, list[Real]]:
         """Read the linear terms of functions, by function.
 
@@ -1859,14 +1873,14 @@ class Model:
 
         Parameters
         ----------
-        idx
+        fun
             The functions, in any order, any of them more than once; every
             function by default.
 
         Returns
         -------
         fun
-            The function of each term, the terms of ``idx[0]`` first, as a
+            The function of each term, the terms of ``fun[0]`` first, as a
             ``Functions`` block.
         var
             The variable of each term, each function's sorted by variable,
@@ -1879,7 +1893,7 @@ class Model:
         BIYOS_getrlintermsp
         BIYOS_getrlintermrg
         """
-        every = range(self.getnfun()) if idx is None else idx
+        every = range(self.getnfun()) if fun is None else fun
         types = (Functions, Variables)
         found, values = self._terms("rlinterm", types, every, 0)
         return found[0], found[1], values
@@ -1953,13 +1967,13 @@ class Model:
         self._addlists("BIYOS_addclinterm", lead, others, coef)
 
     def getnclinterm(
-        self, idx: Sequence[Index | Variable] | Variables | None = None
+        self, var: Sequence[Index | Variable] | Variables | None = None
     ) -> Offset:
         """Count the linear terms of variables.
 
         Parameters
         ----------
-        idx
+        var
             The variables, in any order, any of them more than once; every
             variable by default.
 
@@ -1974,11 +1988,11 @@ class Model:
         BIYOS_getnclintermsp
         BIYOS_getnclintermrg
         """
-        every = range(self.getnvar()) if idx is None else idx
+        every = range(self.getnvar()) if var is None else var
         return self._count("BIYOS_getnclinterm", Variables, every)
 
     def getclinterm(
-        self, idx: Sequence[Index | Variable] | Variables | None = None
+        self, var: Sequence[Index | Variable] | Variables | None = None
     ) -> tuple[Functions, Variables, list[Real]]:
         """Read the linear terms of variables, by variable.
 
@@ -1988,7 +2002,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        var
             The variables, in any order, any of them more than once; every
             variable by default.
 
@@ -1998,7 +2012,7 @@ class Model:
             The function of each term, each variable's sorted by function,
             as a ``Functions`` block.
         var
-            The variable of each term, the terms of ``idx[0]`` first, as a
+            The variable of each term, the terms of ``var[0]`` first, as a
             ``Variables`` block.
         coef
             The coefficient of each term.
@@ -2008,7 +2022,7 @@ class Model:
         BIYOS_getclintermsp
         BIYOS_getclintermrg
         """
-        every = range(self.getnvar()) if idx is None else idx
+        every = range(self.getnvar()) if var is None else var
         types = (Functions, Variables)
         found, values = self._terms("clinterm", types, every, 1)
         return found[0], found[1], values
@@ -2115,13 +2129,13 @@ class Model:
         )
 
     def getnquadterm(
-        self, idx: Sequence[Index | Function] | Functions | None = None
+        self, fun: Sequence[Index | Function] | Functions | None = None
     ) -> Offset:
         """Count the quadratic terms of functions.
 
         Parameters
         ----------
-        idx
+        fun
             The functions, in any order, any of them more than once; every
             function by default.
 
@@ -2136,11 +2150,11 @@ class Model:
         BIYOS_getnquadtermsp
         BIYOS_getnquadtermrg
         """
-        every = range(self.getnfun()) if idx is None else idx
+        every = range(self.getnfun()) if fun is None else fun
         return self._count("BIYOS_getnquadterm", Functions, every)
 
     def getquadterm(
-        self, idx: Sequence[Index | Function] | Functions | None = None
+        self, fun: Sequence[Index | Function] | Functions | None = None
     ) -> tuple[Functions, Variables, Variables, list[Real]]:
         """Read the quadratic terms of functions.
 
@@ -2150,14 +2164,14 @@ class Model:
 
         Parameters
         ----------
-        idx
+        fun
             The functions, in any order, any of them more than once; every
             function by default.
 
         Returns
         -------
         fun
-            The function of each term, the terms of ``idx[0]`` first, as a
+            The function of each term, the terms of ``fun[0]`` first, as a
             ``Functions`` block.
         var1
             The first variable of each term, never above the second, each
@@ -2172,7 +2186,7 @@ class Model:
         BIYOS_getquadtermsp
         BIYOS_getquadtermrg
         """
-        every = range(self.getnfun()) if idx is None else idx
+        every = range(self.getnfun()) if fun is None else fun
         types = (Functions, Variables, Variables)
         found, values = self._terms("quadterm", types, every, 0)
         functions, firsts, seconds = found
@@ -2298,28 +2312,28 @@ class Model:
         return list(nodes)
 
     @overload
-    def attachexpr(self, idx: One[Function], node: Offset) -> None: ...
+    def attachexpr(self, fun: One[Function], node: Offset) -> None: ...
 
     @overload
     def attachexpr(
-        self, idx: Many[Function, Functions], node: Sequence[Offset]
+        self, fun: Many[Function, Functions], node: Sequence[Offset]
     ) -> None: ...
 
     def attachexpr(
         self,
-        idx: Selection[Function, Functions],
+        fun: Selection[Function, Functions],
         node: Offset | Sequence[Offset],
     ) -> None:
         """Add expressions to functions of the model.
 
-        Function ``idx[k]`` becomes ``f + e``, where ``e`` is node
+        Function ``fun[k]`` becomes ``f + e``, where ``e`` is node
         ``node[k]``. The constant, linear and quadratic terms of the
         expression's top sum join the function's, and the rest becomes its
         expression, or is summed with the expression it has.
 
         Parameters
         ----------
-        idx
+        fun
             The functions that gain an expression, each listed once.
             An index or a view stands for one function, and each other argument
             is then a scalar.
@@ -2331,17 +2345,17 @@ class Model:
         BIYOS_attachexprsp
         BIYOS_attachexprrg
         """
-        one, n, chosen = self._selected("BIYOS_attachexpr", Functions, idx)
+        one, n, chosen = self._selected("BIYOS_attachexpr", Functions, fun)
         self._call(*chosen, int64s("node", node, n, one))
 
     def getnexpr(
-        self, idx: Sequence[Index | Function] | Functions | None = None
+        self, fun: Sequence[Index | Function] | Functions | None = None
     ) -> tuple[Offset, Offset]:
         """Count the postfix entries and values of expressions of functions.
 
         Parameters
         ----------
-        idx
+        fun
             The functions, in any order, any of them more than once; every
             function by default.
 
@@ -2357,7 +2371,7 @@ class Model:
         BIYOS_getnexprsp
         BIYOS_getnexprrg
         """
-        every = range(self.getnfun()) if idx is None else idx
+        every = range(self.getnfun()) if fun is None else fun
         nnz = c_offset()
         nval = c_offset()
         chosen = self._chosen("BIYOS_getnexpr", Functions, every)
@@ -2365,7 +2379,7 @@ class Model:
         return nnz.value, nval.value
 
     def getexpr(
-        self, idx: Sequence[Index | Function] | Functions | None = None
+        self, fun: Sequence[Index | Function] | Functions | None = None
     ) -> tuple[list[Offset], list[Operator], list[Offset], list[Real]]:
         """Read the expressions of functions, in the postfix of ``addexpr``.
 
@@ -2379,7 +2393,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        fun
             The functions, in any order, any of them more than once; every
             function by default.
 
@@ -2399,7 +2413,7 @@ class Model:
         BIYOS_getexprsp
         BIYOS_getexprrg
         """
-        every = range(self.getnfun()) if idx is None else idx
+        every = range(self.getnfun()) if fun is None else fun
         nnz, nval = self.getnexpr(every)
         chosen = self._chosen("BIYOS_getexpr", Functions, every)
         counts = (c_offset * len(every))()
@@ -2743,7 +2757,7 @@ class Model:
         self._call(lib.BIYOS_getcbvar, integer("cb", cb), n, index_array(found))
         return Variables(self, found, self._gen)
 
-    def delcb(self, idx: Index | Sequence[Index]) -> list[Index]:
+    def delcb(self, cb: Index | Sequence[Index]) -> list[Index]:
         """Delete callbacks.
 
         The callbacks left keep their order, their functions and their
@@ -2754,7 +2768,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        cb
             The callbacks to delete, in any order, none of them twice.
             An index stands for one callback.
 
@@ -2769,9 +2783,9 @@ class Model:
         BIYOS_delcbsp
         BIYOS_delcbrg
         """
-        one, n = counted(idx)
+        one, n = counted(cb)
         found = (c_index * self._callbacks.total())()
-        self._call(lib.BIYOS_delcbsp, n, ints("idx", idx, n, one), found)
+        self._call(lib.BIYOS_delcbsp, n, ints("cb", cb, n, one), found)
         renumbered = list(found)
         self._callbacks.deleted(renumbered)
         return renumbered
@@ -2780,27 +2794,38 @@ class Model:
         self,
         fun: Sequence[Index | Function]
         | Functions
+        | Expression
+        | Variable
+        | Sequence[Expression | Variable]
         | Comparison
-        | Sequence[Comparison],
+        | Condition
+        | Sequence[Comparison | Condition],
         lb: Sequence[Real] | None = None,
         ub: Sequence[Real] | None = None,
     ) -> Constraints:
         """Add constraints after the last one, one for each function given.
 
-        A comparison, or a list of them, adds a function for each, holding
-        the expression its constraint bounds, and takes its bounds from the
-        comparison. Every expression goes to the model in one ``addexpr``
-        call, then ``attachexpr`` splits off its constant, linear and
-        quadratic terms. When the model refuses a later step, the nodes and
-        functions already added stay in it.
+        An expression or a variable, or a list of them, adds a function for
+        each, holding the expression its constraint bounds, and ``lb`` and
+        ``ub`` bound it: ``addcon(x[0] * x[1], [0], [3])`` keeps the product
+        between 0 and 3, which no single comparison can say. A comparison,
+        or a list of them, adds a function the same way and takes its bounds
+        from the comparison. A condition is a logical constraint: its
+        function holds the condition, valued 0 or 1, with bounds 1 and 1.
+        Every expression goes to the model in one ``addexpr`` call, then
+        ``attachexpr`` splits off its constant, linear and quadratic terms.
+        When the model refuses a later step, the nodes and functions already
+        added stay in it.
 
         Parameters
         ----------
         fun
-            The function each new constraint bounds, or comparisons such as
-            ``x[0] * x[1] <= 3``.
+            The function each new constraint bounds, expressions such as
+            ``x[0] * x[1]``, or comparisons and conditions such as
+            ``x[0] * x[1] <= 3`` and ``(x[0] <= 1) | (x[1] >= 2)``.
         lb, ub
-            The bounds of each, unbounded by default. None with comparisons.
+            The bounds of each, unbounded by default. None with comparisons
+            and conditions.
 
         Returns
         -------
@@ -2811,31 +2836,33 @@ class Model:
         ------
         TypeError
             When ``lb`` or ``ub`` comes with comparisons, or a list mixes
-            comparisons with other values.
+            comparisons, conditions or expressions with other values.
         ValueError
             When an expression holds a variable of another model, or one
-            made before a deletion from the model.
+            made before a deletion from the model, a comparison alone is
+            ``<``, ``>`` or ``!=``, or a comparison in a condition has an
+            infinite bound.
 
         See Also
         --------
         BIYOS_addcon
         """
-        cons = given(fun, Comparison, "a comparison")
+        cons = given(fun, Logical, "a comparison or a condition")
         if cons is not None:
             return self._compared(cons, lb, ub)
+        trees = given(fun, Operand, "an expression")
         funs = cast("Sequence[Index | Function] | Functions", fun)
-        n = len(funs)
-        arrays = (
-            indices_of(self, Functions, "fun", funs, n),
-            doubles("lb", lb, n),
-            doubles("ub", ub, n),
-        )
-        return self._added(Constraints, lib.BIYOS_addcon, n, *arrays)
+        n = len(funs) if trees is None else len(trees)
+        bounds = (doubles("lb", lb, n), doubles("ub", ub, n))
+        if trees is not None:
+            funs = attached(self, trees, {})
+        idx = indices_of(self, Functions, "fun", funs, n)
+        return self._added(Constraints, lib.BIYOS_addcon, n, idx, *bounds)
 
     @overload
     def setconbnd(
         self,
-        idx: One[Constraint],
+        con: One[Constraint],
         lb: Real | None = None,
         ub: Real | None = None,
     ) -> None: ...
@@ -2843,14 +2870,14 @@ class Model:
     @overload
     def setconbnd(
         self,
-        idx: Many[Constraint, Constraints],
+        con: Many[Constraint, Constraints],
         lb: Sequence[Real] | None = None,
         ub: Sequence[Real] | None = None,
     ) -> None: ...
 
     def setconbnd(
         self,
-        idx: Selection[Constraint, Constraints],
+        con: Selection[Constraint, Constraints],
         lb: Real | Sequence[Real] | None = None,
         ub: Real | Sequence[Real] | None = None,
     ) -> None:
@@ -2858,7 +2885,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        con
             The constraints.
             An index or a view stands for one constraint, and each other
             argument is then a scalar.
@@ -2870,7 +2897,7 @@ class Model:
         BIYOS_setconbndsp
         BIYOS_setconbndrg
         """
-        one, n, chosen = self._selected("BIYOS_setconbnd", Constraints, idx)
+        one, n, chosen = self._selected("BIYOS_setconbnd", Constraints, con)
         arrays = (
             doubles("lb", lb, n, one),
             doubles("ub", ub, n, one),
@@ -2878,21 +2905,21 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getconbnd(self, idx: One[Constraint]) -> tuple[Real, Real]: ...
+    def getconbnd(self, con: One[Constraint]) -> tuple[Real, Real]: ...
 
     @overload
     def getconbnd(
-        self, idx: Many[Constraint, Constraints]
+        self, con: Many[Constraint, Constraints]
     ) -> tuple[list[Real], list[Real]]: ...
 
     def getconbnd(
-        self, idx: Selection[Constraint, Constraints]
+        self, con: Selection[Constraint, Constraints]
     ) -> tuple[Real, Real] | tuple[list[Real], list[Real]]:
         """Read the bounds of constraints.
 
         Parameters
         ----------
-        idx
+        con
             The constraints, in any order, any of them more than once.
             An index or a view stands for one constraint, and each result is
             then a scalar.
@@ -2910,13 +2937,13 @@ class Model:
         BIYOS_getconbndrg
         """
         bounds = (c_real, c_real)
-        lb, ub = self._getlist("BIYOS_getconbnd", Constraints, idx, *bounds)
+        lb, ub = self._getlist("BIYOS_getconbnd", Constraints, con, *bounds)
         return lb, ub
 
     @overload
     def setcontol(
         self,
-        idx: One[Constraint],
+        con: One[Constraint],
         atol: Real | None = None,
         rtol: Real | None = None,
     ) -> None: ...
@@ -2924,14 +2951,14 @@ class Model:
     @overload
     def setcontol(
         self,
-        idx: Many[Constraint, Constraints],
+        con: Many[Constraint, Constraints],
         atol: Sequence[Real] | None = None,
         rtol: Sequence[Real] | None = None,
     ) -> None: ...
 
     def setcontol(
         self,
-        idx: Selection[Constraint, Constraints],
+        con: Selection[Constraint, Constraints],
         atol: Real | Sequence[Real] | None = None,
         rtol: Real | Sequence[Real] | None = None,
     ) -> None:
@@ -2944,7 +2971,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        con
             The constraints.
             An index or a view stands for one constraint, and each other
             argument is then a scalar.
@@ -2957,7 +2984,7 @@ class Model:
         BIYOS_setcontolsp
         BIYOS_setcontolrg
         """
-        one, n, chosen = self._selected("BIYOS_setcontol", Constraints, idx)
+        one, n, chosen = self._selected("BIYOS_setcontol", Constraints, con)
         arrays = (
             doubles("atol", atol, n, one),
             doubles("rtol", rtol, n, one),
@@ -2966,16 +2993,16 @@ class Model:
 
     @overload
     def getcontol(
-        self, idx: One[Constraint]
+        self, con: One[Constraint]
     ) -> tuple[Real | None, Real | None]: ...
 
     @overload
     def getcontol(
-        self, idx: Many[Constraint, Constraints]
+        self, con: Many[Constraint, Constraints]
     ) -> tuple[list[Real | None], list[Real | None]]: ...
 
     def getcontol(
-        self, idx: Selection[Constraint, Constraints]
+        self, con: Selection[Constraint, Constraints]
     ) -> (
         tuple[Real | None, Real | None]
         | tuple[list[Real | None], list[Real | None]]
@@ -2984,7 +3011,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        con
             The constraints, in any order, any of them more than once.
             An index or a view stands for one constraint, and each result is
             then a scalar.
@@ -3002,15 +3029,15 @@ class Model:
         BIYOS_getcontolrg
         """
         pair = (c_real, c_real)
-        atol, rtol = self._getlist("BIYOS_getcontol", Constraints, idx, *pair)
+        atol, rtol = self._getlist("BIYOS_getcontol", Constraints, con, *pair)
         return _each(_or_none, atol), _each(_or_none, rtol)
 
-    def delcontol(self, idx: Selection[Constraint, Constraints]) -> None:
+    def delcontol(self, con: Selection[Constraint, Constraints]) -> None:
         """Return constraints to ``feastol_abs`` and ``feastol_rel``.
 
         Parameters
         ----------
-        idx
+        con
             The constraints that lose their tolerances.
             An index or a view stands for one constraint.
 
@@ -3019,7 +3046,7 @@ class Model:
         BIYOS_delcontolsp
         BIYOS_delcontolrg
         """
-        rows = picked(self, Constraints, idx)
+        rows = picked(self, Constraints, "con", con)
         self._call(*self._chosen("BIYOS_delcontol", Constraints, rows))
 
     def getncon(self) -> Index:
@@ -3039,15 +3066,15 @@ class Model:
         return count.value
 
     @overload
-    def getcon(self, idx: One[Constraint]) -> tuple[Function, Real, Real]: ...
+    def getcon(self, con: One[Constraint]) -> tuple[Function, Real, Real]: ...
 
     @overload
     def getcon(
-        self, idx: Many[Constraint, Constraints] | None = None
+        self, con: Many[Constraint, Constraints] | None = None
     ) -> tuple[Functions, list[Real], list[Real]]: ...
 
     def getcon(
-        self, idx: Selection[Constraint, Constraints] | None = None
+        self, con: Selection[Constraint, Constraints] | None = None
     ) -> tuple[Function, Real, Real] | tuple[Functions, list[Real], list[Real]]:
         """Read the functions and bounds of constraints.
 
@@ -3056,7 +3083,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        con
             The constraints, in any order, any of them more than once; every
             constraint by default.
             An index or a view stands for one constraint, and each result is
@@ -3077,57 +3104,57 @@ class Model:
         BIYOS_getconsp
         BIYOS_getconrg
         """
-        every = range(self.getncon()) if idx is None else idx
+        every = range(self.getncon()) if con is None else con
         types = (Functions, c_real, c_real)
         found = self._getlist("BIYOS_getcon", Constraints, every, *types)
         functions, lower, upper = found
         return functions, lower, upper
 
     @overload
-    def setconname(self, idx: One[Constraint], name: str) -> None: ...
+    def setconname(self, con: One[Constraint], name: str) -> None: ...
 
     @overload
     def setconname(
-        self, idx: Many[Constraint, Constraints], name: Sequence[str]
+        self, con: Many[Constraint, Constraints], name: Sequence[str]
     ) -> None: ...
 
     def setconname(
-        self, idx: Selection[Constraint, Constraints], name: str | Sequence[str]
+        self, con: Selection[Constraint, Constraints], name: str | Sequence[str]
     ) -> None:
         """Name constraints of the model, as ``setvarname`` names variables.
 
         Parameters
         ----------
-        idx
+        con
             The constraints to name.
             An index or a view stands for one constraint, and each other
             argument is then a scalar.
         name
-            The new name of each, as many as ``idx``.
+            The new name of each, as many as ``con``.
 
         See Also
         --------
         BIYOS_setconnamesp
         BIYOS_setconnamerg
         """
-        self._setname("BIYOS_setconname", Constraints, idx, name)
+        self._setname("BIYOS_setconname", Constraints, con, name)
 
     @overload
-    def getconname(self, idx: One[Constraint]) -> str | None: ...
+    def getconname(self, con: One[Constraint]) -> str | None: ...
 
     @overload
     def getconname(
-        self, idx: Many[Constraint, Constraints]
+        self, con: Many[Constraint, Constraints]
     ) -> list[str | None]: ...
 
     def getconname(
-        self, idx: Selection[Constraint, Constraints]
+        self, con: Selection[Constraint, Constraints]
     ) -> str | None | list[str | None]:
         """Return the names of constraints, as ``getvarname`` does.
 
         Parameters
         ----------
-        idx
+        con
             The constraints to read.
             An index or a view stands for one constraint, and the result is then
             a scalar.
@@ -3142,10 +3169,10 @@ class Model:
         BIYOS_getconnamesp
         BIYOS_getconnamerg
         """
-        return self._getname("BIYOS_getconname", Constraints, idx)
+        return self._getname("BIYOS_getconname", Constraints, con)
 
-    def getconidx(self, name: Sequence[str]) -> Constraints:
-        """Return the named constraints, as ``getvaridx`` does.
+    def findcon(self, name: Sequence[str]) -> Constraints:
+        """Return the named constraints, as ``findvar`` does.
 
         Parameters
         ----------
@@ -3154,22 +3181,22 @@ class Model:
 
         Returns
         -------
-        idx
+        con
             The constraint that alone holds each name, as a ``Constraints``
             block.
 
         See Also
         --------
-        BIYOS_getconidx
+        BIYOS_findcon
         """
-        return self._getidx(lib.BIYOS_getconidx, Constraints, name)
+        return self._find(lib.BIYOS_findcon, Constraints, name)
 
-    def delconname(self, idx: Selection[Constraint, Constraints]) -> None:
+    def delconname(self, con: Selection[Constraint, Constraints]) -> None:
         """Remove the names of constraints, as ``delvarname`` does.
 
         Parameters
         ----------
-        idx
+        con
             The constraints that lose their names.
             An index or a view stands for one constraint.
 
@@ -3178,9 +3205,9 @@ class Model:
         BIYOS_delconnamesp
         BIYOS_delconnamerg
         """
-        self._delname("BIYOS_delconname", Constraints, idx)
+        self._delname("BIYOS_delconname", Constraints, con)
 
-    def delcon(self, idx: Selection[Constraint, Constraints]) -> list[Index]:
+    def delcon(self, con: Selection[Constraint, Constraints]) -> list[Index]:
         """Delete constraints.
 
         The constraints left keep their order and are numbered from 0 again. A
@@ -3190,7 +3217,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        con
             The constraints to delete, in any order, none of them twice.
             An index or a view stands for one constraint.
 
@@ -3205,7 +3232,7 @@ class Model:
         BIYOS_delconsp
         BIYOS_delconrg
         """
-        return self._delete("BIYOS_delcon", Constraints, idx)
+        return self._delete("BIYOS_delcon", Constraints, con)
 
     def addobj(
         self,
@@ -3272,25 +3299,25 @@ class Model:
             doubles("coef", coef, n),
         )
         if trees is not None:
-            funs = attached(self, trees)
+            funs = attached(self, trees, {})
         idx = indices_of(self, Functions, "fun", funs, n)
         return self._added(Objectives, lib.BIYOS_addobj, n, idx, *arrays)
 
     @overload
     def setobjsense(
-        self, idx: One[Objective], sense: ObjectiveSense | None
+        self, obj: One[Objective], sense: ObjectiveSense | None
     ) -> None: ...
 
     @overload
     def setobjsense(
         self,
-        idx: Many[Objective, Objectives],
+        obj: Many[Objective, Objectives],
         sense: Sequence[ObjectiveSense] | None,
     ) -> None: ...
 
     def setobjsense(
         self,
-        idx: Selection[Objective, Objectives],
+        obj: Selection[Objective, Objectives],
         sense: ObjectiveSense | Sequence[ObjectiveSense] | None,
     ) -> None:
         """Set the senses of objectives.
@@ -3299,7 +3326,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        obj
             The objectives.
             An index or a view stands for one objective, and each other argument
             is then a scalar.
@@ -3311,26 +3338,26 @@ class Model:
         BIYOS_setobjsensesp
         BIYOS_setobjsenserg
         """
-        one, n, chosen = self._selected("BIYOS_setobjsense", Objectives, idx)
+        one, n, chosen = self._selected("BIYOS_setobjsense", Objectives, obj)
         arrays = (ints("sense", sense, n, one),)
         self._call(*chosen, *arrays)
 
     @overload
-    def getobjsense(self, idx: One[Objective]) -> ObjectiveSense: ...
+    def getobjsense(self, obj: One[Objective]) -> ObjectiveSense: ...
 
     @overload
     def getobjsense(
-        self, idx: Many[Objective, Objectives]
+        self, obj: Many[Objective, Objectives]
     ) -> list[ObjectiveSense]: ...
 
     def getobjsense(
-        self, idx: Selection[Objective, Objectives]
+        self, obj: Selection[Objective, Objectives]
     ) -> ObjectiveSense | list[ObjectiveSense]:
         """Read the senses of objectives.
 
         Parameters
         ----------
-        idx
+        obj
             The objectives, in any order, any of them more than once.
             An index or a view stands for one objective, and the result is then
             a scalar.
@@ -3346,23 +3373,23 @@ class Model:
         BIYOS_getobjsenserg
         """
         (found,) = self._getlist(
-            "BIYOS_getobjsense", Objectives, idx, c_integer
+            "BIYOS_getobjsense", Objectives, obj, c_integer
         )
         sense: ObjectiveSense | list[ObjectiveSense]
         sense = _each(ObjectiveSense, found)
         return sense
 
     @overload
-    def setobjprio(self, idx: One[Objective], prio: int | None) -> None: ...
+    def setobjprio(self, obj: One[Objective], prio: int | None) -> None: ...
 
     @overload
     def setobjprio(
-        self, idx: Many[Objective, Objectives], prio: Sequence[int] | None
+        self, obj: Many[Objective, Objectives], prio: Sequence[int] | None
     ) -> None: ...
 
     def setobjprio(
         self,
-        idx: Selection[Objective, Objectives],
+        obj: Selection[Objective, Objectives],
         prio: int | Sequence[int] | None,
     ) -> None:
         """Set the priorities of objectives.
@@ -3371,7 +3398,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        obj
             The objectives.
             An index or a view stands for one objective, and each other argument
             is then a scalar.
@@ -3383,24 +3410,24 @@ class Model:
         BIYOS_setobjpriosp
         BIYOS_setobjpriorg
         """
-        one, n, chosen = self._selected("BIYOS_setobjprio", Objectives, idx)
+        one, n, chosen = self._selected("BIYOS_setobjprio", Objectives, obj)
         arrays = (ints("prio", prio, n, one),)
         self._call(*chosen, *arrays)
 
     @overload
-    def getobjprio(self, idx: One[Objective]) -> int: ...
+    def getobjprio(self, obj: One[Objective]) -> int: ...
 
     @overload
-    def getobjprio(self, idx: Many[Objective, Objectives]) -> list[int]: ...
+    def getobjprio(self, obj: Many[Objective, Objectives]) -> list[int]: ...
 
     def getobjprio(
-        self, idx: Selection[Objective, Objectives]
+        self, obj: Selection[Objective, Objectives]
     ) -> int | list[int]:
         """Read the priorities of objectives.
 
         Parameters
         ----------
-        idx
+        obj
             The objectives, in any order, any of them more than once.
             An index or a view stands for one objective, and the result is then
             a scalar.
@@ -3416,20 +3443,20 @@ class Model:
         BIYOS_getobjpriorg
         """
         prio: int | list[int]
-        (prio,) = self._getlist("BIYOS_getobjprio", Objectives, idx, c_integer)
+        (prio,) = self._getlist("BIYOS_getobjprio", Objectives, obj, c_integer)
         return prio
 
     @overload
-    def setobjcoef(self, idx: One[Objective], coef: Real | None) -> None: ...
+    def setobjcoef(self, obj: One[Objective], coef: Real | None) -> None: ...
 
     @overload
     def setobjcoef(
-        self, idx: Many[Objective, Objectives], coef: Sequence[Real] | None
+        self, obj: Many[Objective, Objectives], coef: Sequence[Real] | None
     ) -> None: ...
 
     def setobjcoef(
         self,
-        idx: Selection[Objective, Objectives],
+        obj: Selection[Objective, Objectives],
         coef: Real | Sequence[Real] | None,
     ) -> None:
         """Set the weights of objectives.
@@ -3438,7 +3465,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        obj
             The objectives.
             An index or a view stands for one objective, and each other argument
             is then a scalar.
@@ -3451,24 +3478,24 @@ class Model:
         BIYOS_setobjcoefsp
         BIYOS_setobjcoefrg
         """
-        one, n, chosen = self._selected("BIYOS_setobjcoef", Objectives, idx)
+        one, n, chosen = self._selected("BIYOS_setobjcoef", Objectives, obj)
         arrays = (doubles("coef", coef, n, one),)
         self._call(*chosen, *arrays)
 
     @overload
-    def getobjcoef(self, idx: One[Objective]) -> Real: ...
+    def getobjcoef(self, obj: One[Objective]) -> Real: ...
 
     @overload
-    def getobjcoef(self, idx: Many[Objective, Objectives]) -> list[Real]: ...
+    def getobjcoef(self, obj: Many[Objective, Objectives]) -> list[Real]: ...
 
     def getobjcoef(
-        self, idx: Selection[Objective, Objectives]
+        self, obj: Selection[Objective, Objectives]
     ) -> Real | list[Real]:
         """Read the weights of objectives.
 
         Parameters
         ----------
-        idx
+        obj
             The objectives, in any order, any of them more than once.
             An index or a view stands for one objective, and the result is then
             a scalar.
@@ -3484,13 +3511,13 @@ class Model:
         BIYOS_getobjcoefrg
         """
         coef: Real | list[Real]
-        (coef,) = self._getlist("BIYOS_getobjcoef", Objectives, idx, c_real)
+        (coef,) = self._getlist("BIYOS_getobjcoef", Objectives, obj, c_real)
         return coef
 
     @overload
     def setobjtol(
         self,
-        idx: One[Objective],
+        obj: One[Objective],
         atol: Real | None = None,
         rtol: Real | None = None,
     ) -> None: ...
@@ -3498,14 +3525,14 @@ class Model:
     @overload
     def setobjtol(
         self,
-        idx: Many[Objective, Objectives],
+        obj: Many[Objective, Objectives],
         atol: Sequence[Real] | None = None,
         rtol: Sequence[Real] | None = None,
     ) -> None: ...
 
     def setobjtol(
         self,
-        idx: Selection[Objective, Objectives],
+        obj: Selection[Objective, Objectives],
         atol: Real | Sequence[Real] | None = None,
         rtol: Real | Sequence[Real] | None = None,
     ) -> None:
@@ -3518,7 +3545,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        obj
             The objectives.
             An index or a view stands for one objective, and each other argument
             is then a scalar.
@@ -3531,7 +3558,7 @@ class Model:
         BIYOS_setobjtolsp
         BIYOS_setobjtolrg
         """
-        one, n, chosen = self._selected("BIYOS_setobjtol", Objectives, idx)
+        one, n, chosen = self._selected("BIYOS_setobjtol", Objectives, obj)
         arrays = (
             doubles("atol", atol, n, one),
             doubles("rtol", rtol, n, one),
@@ -3539,21 +3566,21 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getobjtol(self, idx: One[Objective]) -> tuple[Real, Real]: ...
+    def getobjtol(self, obj: One[Objective]) -> tuple[Real, Real]: ...
 
     @overload
     def getobjtol(
-        self, idx: Many[Objective, Objectives]
+        self, obj: Many[Objective, Objectives]
     ) -> tuple[list[Real], list[Real]]: ...
 
     def getobjtol(
-        self, idx: Selection[Objective, Objectives]
+        self, obj: Selection[Objective, Objectives]
     ) -> tuple[Real, Real] | tuple[list[Real], list[Real]]:
         """Read the tolerances of objectives.
 
         Parameters
         ----------
-        idx
+        obj
             The objectives, in any order, any of them more than once.
             An index or a view stands for one objective, and each result is then
             a scalar.
@@ -3571,7 +3598,7 @@ class Model:
         BIYOS_getobjtolrg
         """
         pair = (c_real, c_real)
-        atol, rtol = self._getlist("BIYOS_getobjtol", Objectives, idx, *pair)
+        atol, rtol = self._getlist("BIYOS_getobjtol", Objectives, obj, *pair)
         return atol, rtol
 
     def getnobj(self) -> Index:
@@ -3592,16 +3619,16 @@ class Model:
 
     @overload
     def getobj(
-        self, idx: One[Objective]
+        self, obj: One[Objective]
     ) -> tuple[Function, ObjectiveSense, int, Real]: ...
 
     @overload
     def getobj(
-        self, idx: Many[Objective, Objectives] | None = None
+        self, obj: Many[Objective, Objectives] | None = None
     ) -> tuple[Functions, list[ObjectiveSense], list[int], list[Real]]: ...
 
     def getobj(
-        self, idx: Selection[Objective, Objectives] | None = None
+        self, obj: Selection[Objective, Objectives] | None = None
     ) -> (
         tuple[Function, ObjectiveSense, int, Real]
         | tuple[Functions, list[ObjectiveSense], list[int], list[Real]]
@@ -3613,7 +3640,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        obj
             The objectives, in any order, any of them more than once; every
             objective by default.
             An index or a view stands for one objective, and each result is then
@@ -3636,7 +3663,7 @@ class Model:
         BIYOS_getobjsp
         BIYOS_getobjrg
         """
-        every = range(self.getnobj()) if idx is None else idx
+        every = range(self.getnobj()) if obj is None else obj
         types = (Functions, c_integer, c_integer, c_real)
         found = self._getlist("BIYOS_getobj", Objectives, every, *types)
         functions, codes, priorities, weights = found
@@ -3644,50 +3671,50 @@ class Model:
         return functions, senses, priorities, weights
 
     @overload
-    def setobjname(self, idx: One[Objective], name: str) -> None: ...
+    def setobjname(self, obj: One[Objective], name: str) -> None: ...
 
     @overload
     def setobjname(
-        self, idx: Many[Objective, Objectives], name: Sequence[str]
+        self, obj: Many[Objective, Objectives], name: Sequence[str]
     ) -> None: ...
 
     def setobjname(
-        self, idx: Selection[Objective, Objectives], name: str | Sequence[str]
+        self, obj: Selection[Objective, Objectives], name: str | Sequence[str]
     ) -> None:
         """Name objectives of the model, as ``setvarname`` names variables.
 
         Parameters
         ----------
-        idx
+        obj
             The objectives to name.
             An index or a view stands for one objective, and each other argument
             is then a scalar.
         name
-            The new name of each, as many as ``idx``.
+            The new name of each, as many as ``obj``.
 
         See Also
         --------
         BIYOS_setobjnamesp
         BIYOS_setobjnamerg
         """
-        self._setname("BIYOS_setobjname", Objectives, idx, name)
+        self._setname("BIYOS_setobjname", Objectives, obj, name)
 
     @overload
-    def getobjname(self, idx: One[Objective]) -> str | None: ...
+    def getobjname(self, obj: One[Objective]) -> str | None: ...
 
     @overload
     def getobjname(
-        self, idx: Many[Objective, Objectives]
+        self, obj: Many[Objective, Objectives]
     ) -> list[str | None]: ...
 
     def getobjname(
-        self, idx: Selection[Objective, Objectives]
+        self, obj: Selection[Objective, Objectives]
     ) -> str | None | list[str | None]:
         """Return the names of objectives, as ``getvarname`` does.
 
         Parameters
         ----------
-        idx
+        obj
             The objectives to read.
             An index or a view stands for one objective, and the result is then
             a scalar.
@@ -3702,10 +3729,10 @@ class Model:
         BIYOS_getobjnamesp
         BIYOS_getobjnamerg
         """
-        return self._getname("BIYOS_getobjname", Objectives, idx)
+        return self._getname("BIYOS_getobjname", Objectives, obj)
 
-    def getobjidx(self, name: Sequence[str]) -> Objectives:
-        """Return the named objectives, as ``getvaridx`` does.
+    def findobj(self, name: Sequence[str]) -> Objectives:
+        """Return the named objectives, as ``findvar`` does.
 
         Parameters
         ----------
@@ -3714,21 +3741,21 @@ class Model:
 
         Returns
         -------
-        idx
+        obj
             The objective that alone holds each name, as a ``Objectives`` block.
 
         See Also
         --------
-        BIYOS_getobjidx
+        BIYOS_findobj
         """
-        return self._getidx(lib.BIYOS_getobjidx, Objectives, name)
+        return self._find(lib.BIYOS_findobj, Objectives, name)
 
-    def delobjname(self, idx: Selection[Objective, Objectives]) -> None:
+    def delobjname(self, obj: Selection[Objective, Objectives]) -> None:
         """Remove the names of objectives, as ``delvarname`` does.
 
         Parameters
         ----------
-        idx
+        obj
             The objectives that lose their names.
             An index or a view stands for one objective.
 
@@ -3737,9 +3764,9 @@ class Model:
         BIYOS_delobjnamesp
         BIYOS_delobjnamerg
         """
-        self._delname("BIYOS_delobjname", Objectives, idx)
+        self._delname("BIYOS_delobjname", Objectives, obj)
 
-    def delobj(self, idx: Selection[Objective, Objectives]) -> list[Index]:
+    def delobj(self, obj: Selection[Objective, Objectives]) -> list[Index]:
         """Delete objectives.
 
         The objectives left keep their order and are numbered from 0 again. A
@@ -3749,7 +3776,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        obj
             The objectives to delete, in any order, none of them twice.
             An index or a view stands for one objective.
 
@@ -3764,7 +3791,7 @@ class Model:
         BIYOS_delobjsp
         BIYOS_delobjrg
         """
-        return self._delete("BIYOS_delobj", Objectives, idx)
+        return self._delete("BIYOS_delobj", Objectives, obj)
 
     def addind(
         self,
@@ -3815,7 +3842,7 @@ class Model:
     @overload
     def setindbnd(
         self,
-        idx: One[Indicator],
+        ind: One[Indicator],
         lb: Real | None = None,
         ub: Real | None = None,
     ) -> None: ...
@@ -3823,14 +3850,14 @@ class Model:
     @overload
     def setindbnd(
         self,
-        idx: Many[Indicator, Indicators],
+        ind: Many[Indicator, Indicators],
         lb: Sequence[Real] | None = None,
         ub: Sequence[Real] | None = None,
     ) -> None: ...
 
     def setindbnd(
         self,
-        idx: Selection[Indicator, Indicators],
+        ind: Selection[Indicator, Indicators],
         lb: Real | Sequence[Real] | None = None,
         ub: Real | Sequence[Real] | None = None,
     ) -> None:
@@ -3838,7 +3865,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        ind
             The indicators.
             An index or a view stands for one indicator, and each other argument
             is then a scalar.
@@ -3850,7 +3877,7 @@ class Model:
         BIYOS_setindbndsp
         BIYOS_setindbndrg
         """
-        one, n, chosen = self._selected("BIYOS_setindbnd", Indicators, idx)
+        one, n, chosen = self._selected("BIYOS_setindbnd", Indicators, ind)
         arrays = (
             doubles("lb", lb, n, one),
             doubles("ub", ub, n, one),
@@ -3858,21 +3885,21 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getindbnd(self, idx: One[Indicator]) -> tuple[Real, Real]: ...
+    def getindbnd(self, ind: One[Indicator]) -> tuple[Real, Real]: ...
 
     @overload
     def getindbnd(
-        self, idx: Many[Indicator, Indicators]
+        self, ind: Many[Indicator, Indicators]
     ) -> tuple[list[Real], list[Real]]: ...
 
     def getindbnd(
-        self, idx: Selection[Indicator, Indicators]
+        self, ind: Selection[Indicator, Indicators]
     ) -> tuple[Real, Real] | tuple[list[Real], list[Real]]:
         """Read the bounds of indicators.
 
         Parameters
         ----------
-        idx
+        ind
             The indicators, in any order, any of them more than once.
             An index or a view stands for one indicator, and each result is then
             a scalar.
@@ -3890,13 +3917,13 @@ class Model:
         BIYOS_getindbndrg
         """
         bounds = (c_real, c_real)
-        lb, ub = self._getlist("BIYOS_getindbnd", Indicators, idx, *bounds)
+        lb, ub = self._getlist("BIYOS_getindbnd", Indicators, ind, *bounds)
         return lb, ub
 
     @overload
     def setindvar(
         self,
-        idx: One[Indicator],
+        ind: One[Indicator],
         var: One[Variable] | None = None,
         val: int | None = None,
     ) -> None: ...
@@ -3904,14 +3931,14 @@ class Model:
     @overload
     def setindvar(
         self,
-        idx: Many[Indicator, Indicators],
+        ind: Many[Indicator, Indicators],
         var: Many[Variable, Variables] | None = None,
         val: Sequence[int] | None = None,
     ) -> None: ...
 
     def setindvar(
         self,
-        idx: Selection[Indicator, Indicators],
+        ind: Selection[Indicator, Indicators],
         var: Selection[Variable, Variables] | None = None,
         val: int | Sequence[int] | None = None,
     ) -> None:
@@ -3919,7 +3946,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        ind
             The indicators.
             An index or a view stands for one indicator, and each other argument
             is then a scalar.
@@ -3935,7 +3962,7 @@ class Model:
         BIYOS_setindvarsp
         BIYOS_setindvarrg
         """
-        one, n, chosen = self._selected("BIYOS_setindvar", Indicators, idx)
+        one, n, chosen = self._selected("BIYOS_setindvar", Indicators, ind)
         arrays = (
             indices_of(self, Variables, "var", var, n, one),
             ints("val", val, n, one),
@@ -3943,15 +3970,15 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getindvar(self, idx: One[Indicator]) -> tuple[Variable, int]: ...
+    def getindvar(self, ind: One[Indicator]) -> tuple[Variable, int]: ...
 
     @overload
     def getindvar(
-        self, idx: Many[Indicator, Indicators]
+        self, ind: Many[Indicator, Indicators]
     ) -> tuple[Variables, list[int]]: ...
 
     def getindvar(
-        self, idx: Selection[Indicator, Indicators]
+        self, ind: Selection[Indicator, Indicators]
     ) -> tuple[Variable, int] | tuple[Variables, list[int]]:
         """Read the variables that switch indicators on, and their values.
 
@@ -3960,7 +3987,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        ind
             The indicators, in any order, any of them more than once.
             An index or a view stands for one indicator, and each result is then
             a scalar.
@@ -3979,7 +4006,7 @@ class Model:
         BIYOS_getindvarrg
         """
         pair = (Variables, c_integer)
-        found = self._getlist("BIYOS_getindvar", Indicators, idx, *pair)
+        found = self._getlist("BIYOS_getindvar", Indicators, ind, *pair)
         variables, values = found
         return variables, values
 
@@ -4001,16 +4028,16 @@ class Model:
 
     @overload
     def getind(
-        self, idx: One[Indicator]
+        self, ind: One[Indicator]
     ) -> tuple[Variable, int, Function, Real, Real]: ...
 
     @overload
     def getind(
-        self, idx: Many[Indicator, Indicators] | None = None
+        self, ind: Many[Indicator, Indicators] | None = None
     ) -> tuple[Variables, list[int], Functions, list[Real], list[Real]]: ...
 
     def getind(
-        self, idx: Selection[Indicator, Indicators] | None = None
+        self, ind: Selection[Indicator, Indicators] | None = None
     ) -> (
         tuple[Variable, int, Function, Real, Real]
         | tuple[Variables, list[int], Functions, list[Real], list[Real]]
@@ -4023,7 +4050,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        ind
             The indicators, in any order, any of them more than once; every
             indicator by default.
             An index or a view stands for one indicator, and each result is then
@@ -4049,57 +4076,57 @@ class Model:
         BIYOS_getindsp
         BIYOS_getindrg
         """
-        every = range(self.getnind()) if idx is None else idx
+        every = range(self.getnind()) if ind is None else ind
         types = (Variables, c_integer, Functions, c_real, c_real)
         found = self._getlist("BIYOS_getind", Indicators, every, *types)
         variables, values, functions, lower, upper = found
         return variables, values, functions, lower, upper
 
     @overload
-    def setindname(self, idx: One[Indicator], name: str) -> None: ...
+    def setindname(self, ind: One[Indicator], name: str) -> None: ...
 
     @overload
     def setindname(
-        self, idx: Many[Indicator, Indicators], name: Sequence[str]
+        self, ind: Many[Indicator, Indicators], name: Sequence[str]
     ) -> None: ...
 
     def setindname(
-        self, idx: Selection[Indicator, Indicators], name: str | Sequence[str]
+        self, ind: Selection[Indicator, Indicators], name: str | Sequence[str]
     ) -> None:
         """Name indicators of the model, as ``setvarname`` names variables.
 
         Parameters
         ----------
-        idx
+        ind
             The indicators to name.
             An index or a view stands for one indicator, and each other argument
             is then a scalar.
         name
-            The new name of each, as many as ``idx``.
+            The new name of each, as many as ``ind``.
 
         See Also
         --------
         BIYOS_setindnamesp
         BIYOS_setindnamerg
         """
-        self._setname("BIYOS_setindname", Indicators, idx, name)
+        self._setname("BIYOS_setindname", Indicators, ind, name)
 
     @overload
-    def getindname(self, idx: One[Indicator]) -> str | None: ...
+    def getindname(self, ind: One[Indicator]) -> str | None: ...
 
     @overload
     def getindname(
-        self, idx: Many[Indicator, Indicators]
+        self, ind: Many[Indicator, Indicators]
     ) -> list[str | None]: ...
 
     def getindname(
-        self, idx: Selection[Indicator, Indicators]
+        self, ind: Selection[Indicator, Indicators]
     ) -> str | None | list[str | None]:
         """Return the names of indicators, as ``getvarname`` does.
 
         Parameters
         ----------
-        idx
+        ind
             The indicators to read.
             An index or a view stands for one indicator, and the result is then
             a scalar.
@@ -4114,10 +4141,10 @@ class Model:
         BIYOS_getindnamesp
         BIYOS_getindnamerg
         """
-        return self._getname("BIYOS_getindname", Indicators, idx)
+        return self._getname("BIYOS_getindname", Indicators, ind)
 
-    def getindidx(self, name: Sequence[str]) -> Indicators:
-        """Return the named indicators, as ``getvaridx`` does.
+    def findind(self, name: Sequence[str]) -> Indicators:
+        """Return the named indicators, as ``findvar`` does.
 
         Parameters
         ----------
@@ -4126,21 +4153,21 @@ class Model:
 
         Returns
         -------
-        idx
+        ind
             The indicator that alone holds each name, as a ``Indicators`` block.
 
         See Also
         --------
-        BIYOS_getindidx
+        BIYOS_findind
         """
-        return self._getidx(lib.BIYOS_getindidx, Indicators, name)
+        return self._find(lib.BIYOS_findind, Indicators, name)
 
-    def delindname(self, idx: Selection[Indicator, Indicators]) -> None:
+    def delindname(self, ind: Selection[Indicator, Indicators]) -> None:
         """Remove the names of indicators, as ``delvarname`` does.
 
         Parameters
         ----------
-        idx
+        ind
             The indicators that lose their names.
             An index or a view stands for one indicator.
 
@@ -4149,9 +4176,9 @@ class Model:
         BIYOS_delindnamesp
         BIYOS_delindnamerg
         """
-        self._delname("BIYOS_delindname", Indicators, idx)
+        self._delname("BIYOS_delindname", Indicators, ind)
 
-    def delind(self, idx: Selection[Indicator, Indicators]) -> list[Index]:
+    def delind(self, ind: Selection[Indicator, Indicators]) -> list[Index]:
         """Delete indicators.
 
         The indicators left keep their order and are numbered from 0 again. A
@@ -4161,7 +4188,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        ind
             The indicators to delete, in any order, none of them twice.
             An index or a view stands for one indicator.
 
@@ -4176,7 +4203,7 @@ class Model:
         BIYOS_delindsp
         BIYOS_delindrg
         """
-        return self._delete("BIYOS_delind", Indicators, idx)
+        return self._delete("BIYOS_delind", Indicators, ind)
 
     def addsos(
         self,
@@ -4246,7 +4273,7 @@ class Model:
 
     def getnsosvar(
         self,
-        idx: Sequence[Index | SpecialOrderedSet]
+        sos: Sequence[Index | SpecialOrderedSet]
         | SpecialOrderedSets
         | None = None,
     ) -> Offset:
@@ -4254,7 +4281,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        sos
             The sets, in any order, any of them more than once; every set by
             default.
 
@@ -4269,12 +4296,12 @@ class Model:
         BIYOS_getnsosvarsp
         BIYOS_getnsosvarrg
         """
-        every = range(self.getnsos()) if idx is None else idx
+        every = range(self.getnsos()) if sos is None else sos
         return self._count("BIYOS_getnsosvar", SpecialOrderedSets, every)
 
     def getsos(
         self,
-        idx: Sequence[Index | SpecialOrderedSet]
+        sos: Sequence[Index | SpecialOrderedSet]
         | SpecialOrderedSets
         | None = None,
     ) -> tuple[
@@ -4287,7 +4314,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        sos
             The sets, in any order, any of them more than once; every set by
             default.
 
@@ -4308,7 +4335,7 @@ class Model:
         BIYOS_getsossp
         BIYOS_getsosrg
         """
-        every = range(self.getnsos()) if idx is None else idx
+        every = range(self.getnsos()) if sos is None else sos
         size = self.getnsosvar(every)
         n = len(every)
         kinds = (c_integer * n)()
@@ -4322,54 +4349,54 @@ class Model:
         return found, list(counts), var, list(weights)
 
     @overload
-    def setsosname(self, idx: One[SpecialOrderedSet], name: str) -> None: ...
+    def setsosname(self, sos: One[SpecialOrderedSet], name: str) -> None: ...
 
     @overload
     def setsosname(
         self,
-        idx: Many[SpecialOrderedSet, SpecialOrderedSets],
+        sos: Many[SpecialOrderedSet, SpecialOrderedSets],
         name: Sequence[str],
     ) -> None: ...
 
     def setsosname(
         self,
-        idx: Selection[SpecialOrderedSet, SpecialOrderedSets],
+        sos: Selection[SpecialOrderedSet, SpecialOrderedSets],
         name: str | Sequence[str],
     ) -> None:
         """Name special ordered sets, as ``setvarname`` names variables.
 
         Parameters
         ----------
-        idx
+        sos
             The sets to name.
             An index or a view stands for one set, and each other argument is
             then a scalar.
         name
-            The new name of each, as many as ``idx``.
+            The new name of each, as many as ``sos``.
 
         See Also
         --------
         BIYOS_setsosnamesp
         BIYOS_setsosnamerg
         """
-        self._setname("BIYOS_setsosname", SpecialOrderedSets, idx, name)
+        self._setname("BIYOS_setsosname", SpecialOrderedSets, sos, name)
 
     @overload
-    def getsosname(self, idx: One[SpecialOrderedSet]) -> str | None: ...
+    def getsosname(self, sos: One[SpecialOrderedSet]) -> str | None: ...
 
     @overload
     def getsosname(
-        self, idx: Many[SpecialOrderedSet, SpecialOrderedSets]
+        self, sos: Many[SpecialOrderedSet, SpecialOrderedSets]
     ) -> list[str | None]: ...
 
     def getsosname(
-        self, idx: Selection[SpecialOrderedSet, SpecialOrderedSets]
+        self, sos: Selection[SpecialOrderedSet, SpecialOrderedSets]
     ) -> str | None | list[str | None]:
         """Return the names of special ordered sets, as ``getvarname`` does.
 
         Parameters
         ----------
-        idx
+        sos
             The sets to read.
             An index or a view stands for one set, and the result is then a
             scalar.
@@ -4384,10 +4411,10 @@ class Model:
         BIYOS_getsosnamesp
         BIYOS_getsosnamerg
         """
-        return self._getname("BIYOS_getsosname", SpecialOrderedSets, idx)
+        return self._getname("BIYOS_getsosname", SpecialOrderedSets, sos)
 
-    def getsosidx(self, name: Sequence[str]) -> SpecialOrderedSets:
-        """Return the named special ordered sets, as ``getvaridx`` does.
+    def findsos(self, name: Sequence[str]) -> SpecialOrderedSets:
+        """Return the named special ordered sets, as ``findvar`` does.
 
         Parameters
         ----------
@@ -4396,25 +4423,25 @@ class Model:
 
         Returns
         -------
-        idx
+        sos
             The set that alone holds each name, as a ``SpecialOrderedSets``
             block.
 
         See Also
         --------
-        BIYOS_getsosidx
+        BIYOS_findsos
         """
-        return self._getidx(lib.BIYOS_getsosidx, SpecialOrderedSets, name)
+        return self._find(lib.BIYOS_findsos, SpecialOrderedSets, name)
 
     def delsosname(
-        self, idx: Selection[SpecialOrderedSet, SpecialOrderedSets]
+        self, sos: Selection[SpecialOrderedSet, SpecialOrderedSets]
     ) -> None:
         """Remove the names of special ordered sets, as ``delvarname``
         does.
 
         Parameters
         ----------
-        idx
+        sos
             The sets that lose their names.
             An index or a view stands for one set.
 
@@ -4423,10 +4450,10 @@ class Model:
         BIYOS_delsosnamesp
         BIYOS_delsosnamerg
         """
-        self._delname("BIYOS_delsosname", SpecialOrderedSets, idx)
+        self._delname("BIYOS_delsosname", SpecialOrderedSets, sos)
 
     def delsos(
-        self, idx: Selection[SpecialOrderedSet, SpecialOrderedSets]
+        self, sos: Selection[SpecialOrderedSet, SpecialOrderedSets]
     ) -> list[Index]:
         """Delete special ordered sets.
 
@@ -4436,7 +4463,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        sos
             The sets to delete, in any order, none of them twice.
             An index or a view stands for one set.
 
@@ -4451,7 +4478,7 @@ class Model:
         BIYOS_delsossp
         BIYOS_delsosrg
         """
-        return self._delete("BIYOS_delsos", SpecialOrderedSets, idx)
+        return self._delete("BIYOS_delsos", SpecialOrderedSets, sos)
 
     def addpwl(
         self,
@@ -4514,13 +4541,13 @@ class Model:
 
     def getnpwlpt(
         self,
-        idx: Sequence[Index | PiecewiseLinear] | PiecewiseLinears | None = None,
+        pwl: Sequence[Index | PiecewiseLinear] | PiecewiseLinears | None = None,
     ) -> Offset:
         """Count the points of piecewise linear functions.
 
         Parameters
         ----------
-        idx
+        pwl
             The pwls, in any order, any of them more than once; every pwl by
             default.
 
@@ -4535,18 +4562,18 @@ class Model:
         BIYOS_getnpwlptsp
         BIYOS_getnpwlptrg
         """
-        every = range(self.getnpwl()) if idx is None else idx
+        every = range(self.getnpwl()) if pwl is None else pwl
         return self._count("BIYOS_getnpwlpt", PiecewiseLinears, every)
 
     def getpwl(
         self,
-        idx: Sequence[Index | PiecewiseLinear] | PiecewiseLinears | None = None,
+        pwl: Sequence[Index | PiecewiseLinear] | PiecewiseLinears | None = None,
     ) -> tuple[list[Offset], list[Real], list[Real]]:
         """Read piecewise linear functions, as ``addpwl`` takes them.
 
         Parameters
         ----------
-        idx
+        pwl
             The pwls, in any order, any of them more than once; every pwl by
             default.
 
@@ -4564,7 +4591,7 @@ class Model:
         BIYOS_getpwlsp
         BIYOS_getpwlrg
         """
-        every = range(self.getnpwl()) if idx is None else idx
+        every = range(self.getnpwl()) if pwl is None else pwl
         size = self.getnpwlpt(every)
         sizes = (c_offset * len(every))()
         xs = (c_real * size)()
@@ -4655,7 +4682,7 @@ class Model:
     @overload
     def setconetol(
         self,
-        idx: One[Cone],
+        cone: One[Cone],
         atol: Real | None = None,
         rtol: Real | None = None,
     ) -> None: ...
@@ -4663,14 +4690,14 @@ class Model:
     @overload
     def setconetol(
         self,
-        idx: Many[Cone, Cones],
+        cone: Many[Cone, Cones],
         atol: Sequence[Real] | None = None,
         rtol: Sequence[Real] | None = None,
     ) -> None: ...
 
     def setconetol(
         self,
-        idx: Selection[Cone, Cones],
+        cone: Selection[Cone, Cones],
         atol: Real | Sequence[Real] | None = None,
         rtol: Real | Sequence[Real] | None = None,
     ) -> None:
@@ -4683,7 +4710,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        cone
             The cones.
             An index or a view stands for one cone, and each other argument is
             then a scalar.
@@ -4696,7 +4723,7 @@ class Model:
         BIYOS_setconetolsp
         BIYOS_setconetolrg
         """
-        one, n, chosen = self._selected("BIYOS_setconetol", Cones, idx)
+        one, n, chosen = self._selected("BIYOS_setconetol", Cones, cone)
         arrays = (
             doubles("atol", atol, n, one),
             doubles("rtol", rtol, n, one),
@@ -4705,16 +4732,16 @@ class Model:
 
     @overload
     def getconetol(
-        self, idx: One[Cone]
+        self, cone: One[Cone]
     ) -> tuple[Real | None, Real | None]: ...
 
     @overload
     def getconetol(
-        self, idx: Many[Cone, Cones]
+        self, cone: Many[Cone, Cones]
     ) -> tuple[list[Real | None], list[Real | None]]: ...
 
     def getconetol(
-        self, idx: Selection[Cone, Cones]
+        self, cone: Selection[Cone, Cones]
     ) -> (
         tuple[Real | None, Real | None]
         | tuple[list[Real | None], list[Real | None]]
@@ -4723,7 +4750,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        cone
             The cones, in any order, any of them more than once.
             An index or a view stands for one cone, and each result is then a
             scalar.
@@ -4741,15 +4768,15 @@ class Model:
         BIYOS_getconetolrg
         """
         pair = (c_real, c_real)
-        atol, rtol = self._getlist("BIYOS_getconetol", Cones, idx, *pair)
+        atol, rtol = self._getlist("BIYOS_getconetol", Cones, cone, *pair)
         return _each(_or_none, atol), _each(_or_none, rtol)
 
-    def delconetol(self, idx: Selection[Cone, Cones]) -> None:
+    def delconetol(self, cone: Selection[Cone, Cones]) -> None:
         """Return cones to ``feastol_abs`` and ``feastol_rel``.
 
         Parameters
         ----------
-        idx
+        cone
             The cones that lose their tolerances.
             An index or a view stands for one cone.
 
@@ -4758,7 +4785,7 @@ class Model:
         BIYOS_delconetolsp
         BIYOS_delconetolrg
         """
-        rows = picked(self, Cones, idx)
+        rows = picked(self, Cones, "cone", cone)
         self._call(*self._chosen("BIYOS_delconetol", Cones, rows))
 
     def getncone(self) -> Index:
@@ -4778,13 +4805,13 @@ class Model:
         return count.value
 
     def getnconefun(
-        self, idx: Sequence[Index | Cone] | Cones | None = None
+        self, cone: Sequence[Index | Cone] | Cones | None = None
     ) -> Offset:
         """Count the members of cones.
 
         Parameters
         ----------
-        idx
+        cone
             The cones, in any order, any of them more than once; every cone
             by default.
 
@@ -4799,11 +4826,11 @@ class Model:
         BIYOS_getnconefunsp
         BIYOS_getnconefunrg
         """
-        every = range(self.getncone()) if idx is None else idx
+        every = range(self.getncone()) if cone is None else cone
         return self._count("BIYOS_getnconefun", Cones, every)
 
     def getcone(
-        self, idx: Sequence[Index | Cone] | Cones | None = None
+        self, cone: Sequence[Index | Cone] | Cones | None = None
     ) -> tuple[list[ConeKind], list[Offset], Functions]:
         """Read the kinds and members of cones.
 
@@ -4812,7 +4839,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        cone
             The cones, in any order, any of them more than once; every cone
             by default.
 
@@ -4831,7 +4858,7 @@ class Model:
         BIYOS_getconesp
         BIYOS_getconerg
         """
-        every = range(self.getncone()) if idx is None else idx
+        every = range(self.getncone()) if cone is None else cone
         size = self._count("BIYOS_getnconefun", Cones, every)
         chosen = self._chosen("BIYOS_getcone", Cones, every)
         kinds = (c_integer * len(every))()
@@ -4842,13 +4869,13 @@ class Model:
         return found, list(counts), Functions(self, members, self._gen)
 
     def getnconeprm(
-        self, idx: Sequence[Index | Cone] | Cones | None = None
+        self, cone: Sequence[Index | Cone] | Cones | None = None
     ) -> Offset:
         """Count the parameters of cones.
 
         Parameters
         ----------
-        idx
+        cone
             The cones, in any order, any of them more than once; every cone
             by default.
 
@@ -4863,17 +4890,17 @@ class Model:
         BIYOS_getnconeprmsp
         BIYOS_getnconeprmrg
         """
-        every = range(self.getncone()) if idx is None else idx
+        every = range(self.getncone()) if cone is None else cone
         return self._count("BIYOS_getnconeprm", Cones, every)
 
     def getconeprm(
-        self, idx: Sequence[Index | Cone] | Cones | None = None
+        self, cone: Sequence[Index | Cone] | Cones | None = None
     ) -> tuple[list[Offset], list[Real]]:
         """Read the parameters of cones.
 
         Parameters
         ----------
-        idx
+        cone
             The cones, in any order, any of them more than once; every cone
             by default.
 
@@ -4890,7 +4917,7 @@ class Model:
         BIYOS_getconeprmsp
         BIYOS_getconeprmrg
         """
-        every = range(self.getncone()) if idx is None else idx
+        every = range(self.getncone()) if cone is None else cone
         size = self._count("BIYOS_getnconeprm", Cones, every)
         chosen = self._chosen("BIYOS_getconeprm", Cones, every)
         counts = (c_offset * len(every))()
@@ -4899,48 +4926,48 @@ class Model:
         return list(counts), list(values)
 
     @overload
-    def setconename(self, idx: One[Cone], name: str) -> None: ...
+    def setconename(self, cone: One[Cone], name: str) -> None: ...
 
     @overload
     def setconename(
-        self, idx: Many[Cone, Cones], name: Sequence[str]
+        self, cone: Many[Cone, Cones], name: Sequence[str]
     ) -> None: ...
 
     def setconename(
-        self, idx: Selection[Cone, Cones], name: str | Sequence[str]
+        self, cone: Selection[Cone, Cones], name: str | Sequence[str]
     ) -> None:
         """Name cones of the model, as ``setvarname`` names variables.
 
         Parameters
         ----------
-        idx
+        cone
             The cones to name.
             An index or a view stands for one cone, and each other argument is
             then a scalar.
         name
-            The new name of each, as many as ``idx``.
+            The new name of each, as many as ``cone``.
 
         See Also
         --------
         BIYOS_setconenamesp
         BIYOS_setconenamerg
         """
-        self._setname("BIYOS_setconename", Cones, idx, name)
+        self._setname("BIYOS_setconename", Cones, cone, name)
 
     @overload
-    def getconename(self, idx: One[Cone]) -> str | None: ...
+    def getconename(self, cone: One[Cone]) -> str | None: ...
 
     @overload
-    def getconename(self, idx: Many[Cone, Cones]) -> list[str | None]: ...
+    def getconename(self, cone: Many[Cone, Cones]) -> list[str | None]: ...
 
     def getconename(
-        self, idx: Selection[Cone, Cones]
+        self, cone: Selection[Cone, Cones]
     ) -> str | None | list[str | None]:
         """Return the names of cones, as ``getvarname`` does.
 
         Parameters
         ----------
-        idx
+        cone
             The cones to read.
             An index or a view stands for one cone, and the result is then a
             scalar.
@@ -4955,10 +4982,10 @@ class Model:
         BIYOS_getconenamesp
         BIYOS_getconenamerg
         """
-        return self._getname("BIYOS_getconename", Cones, idx)
+        return self._getname("BIYOS_getconename", Cones, cone)
 
-    def getconeidx(self, name: Sequence[str]) -> Cones:
-        """Return the named cones, as ``getvaridx`` does.
+    def findcone(self, name: Sequence[str]) -> Cones:
+        """Return the named cones, as ``findvar`` does.
 
         Parameters
         ----------
@@ -4967,21 +4994,21 @@ class Model:
 
         Returns
         -------
-        idx
+        cone
             The cone that alone holds each name, as a ``Cones`` block.
 
         See Also
         --------
-        BIYOS_getconeidx
+        BIYOS_findcone
         """
-        return self._getidx(lib.BIYOS_getconeidx, Cones, name)
+        return self._find(lib.BIYOS_findcone, Cones, name)
 
-    def delconename(self, idx: Selection[Cone, Cones]) -> None:
+    def delconename(self, cone: Selection[Cone, Cones]) -> None:
         """Remove the names of cones, as ``delvarname`` does.
 
         Parameters
         ----------
-        idx
+        cone
             The cones that lose their names.
             An index or a view stands for one cone.
 
@@ -4990,9 +5017,9 @@ class Model:
         BIYOS_delconenamesp
         BIYOS_delconenamerg
         """
-        self._delname("BIYOS_delconename", Cones, idx)
+        self._delname("BIYOS_delconename", Cones, cone)
 
-    def delcone(self, idx: Selection[Cone, Cones]) -> list[Index]:
+    def delcone(self, cone: Selection[Cone, Cones]) -> list[Index]:
         """Delete cones.
 
         The cones left keep their order and are numbered from 0 again. A
@@ -5002,7 +5029,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        cone
             The cones to delete, in any order, none of them twice.
             An index or a view stands for one cone.
 
@@ -5017,7 +5044,7 @@ class Model:
         BIYOS_delconesp
         BIYOS_delconerg
         """
-        return self._delete("BIYOS_delcone", Cones, idx)
+        return self._delete("BIYOS_delcone", Cones, cone)
 
     def addccon(
         self,
@@ -5066,7 +5093,7 @@ class Model:
     @overload
     def setcconbnd(
         self,
-        idx: One[Complement],
+        ccon: One[Complement],
         lb: Real | None = None,
         ub: Real | None = None,
     ) -> None: ...
@@ -5074,14 +5101,14 @@ class Model:
     @overload
     def setcconbnd(
         self,
-        idx: Many[Complement, Complements],
+        ccon: Many[Complement, Complements],
         lb: Sequence[Real] | None = None,
         ub: Sequence[Real] | None = None,
     ) -> None: ...
 
     def setcconbnd(
         self,
-        idx: Selection[Complement, Complements],
+        ccon: Selection[Complement, Complements],
         lb: Real | Sequence[Real] | None = None,
         ub: Real | Sequence[Real] | None = None,
     ) -> None:
@@ -5089,7 +5116,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        ccon
             The complements.
             An index or a view stands for one complement, and each other
             argument is then a scalar.
@@ -5101,7 +5128,7 @@ class Model:
         BIYOS_setcconbndsp
         BIYOS_setcconbndrg
         """
-        one, n, chosen = self._selected("BIYOS_setcconbnd", Complements, idx)
+        one, n, chosen = self._selected("BIYOS_setcconbnd", Complements, ccon)
         arrays = (
             doubles("lb", lb, n, one),
             doubles("ub", ub, n, one),
@@ -5109,21 +5136,21 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getcconbnd(self, idx: One[Complement]) -> tuple[Real, Real]: ...
+    def getcconbnd(self, ccon: One[Complement]) -> tuple[Real, Real]: ...
 
     @overload
     def getcconbnd(
-        self, idx: Many[Complement, Complements]
+        self, ccon: Many[Complement, Complements]
     ) -> tuple[list[Real], list[Real]]: ...
 
     def getcconbnd(
-        self, idx: Selection[Complement, Complements]
+        self, ccon: Selection[Complement, Complements]
     ) -> tuple[Real, Real] | tuple[list[Real], list[Real]]:
         """Read the bounds of complements.
 
         Parameters
         ----------
-        idx
+        ccon
             The complements, in any order, any of them more than once.
             An index or a view stands for one complement, and each result is
             then a scalar.
@@ -5141,13 +5168,13 @@ class Model:
         BIYOS_getcconbndrg
         """
         bounds = (c_real, c_real)
-        lb, ub = self._getlist("BIYOS_getcconbnd", Complements, idx, *bounds)
+        lb, ub = self._getlist("BIYOS_getcconbnd", Complements, ccon, *bounds)
         return lb, ub
 
     @overload
     def setccontol(
         self,
-        idx: One[Complement],
+        ccon: One[Complement],
         atol: Real | None = None,
         rtol: Real | None = None,
     ) -> None: ...
@@ -5155,14 +5182,14 @@ class Model:
     @overload
     def setccontol(
         self,
-        idx: Many[Complement, Complements],
+        ccon: Many[Complement, Complements],
         atol: Sequence[Real] | None = None,
         rtol: Sequence[Real] | None = None,
     ) -> None: ...
 
     def setccontol(
         self,
-        idx: Selection[Complement, Complements],
+        ccon: Selection[Complement, Complements],
         atol: Real | Sequence[Real] | None = None,
         rtol: Real | Sequence[Real] | None = None,
     ) -> None:
@@ -5176,7 +5203,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        ccon
             The complements.
             An index or a view stands for one complement, and each other
             argument is then a scalar.
@@ -5189,7 +5216,7 @@ class Model:
         BIYOS_setccontolsp
         BIYOS_setccontolrg
         """
-        one, n, chosen = self._selected("BIYOS_setccontol", Complements, idx)
+        one, n, chosen = self._selected("BIYOS_setccontol", Complements, ccon)
         arrays = (
             doubles("atol", atol, n, one),
             doubles("rtol", rtol, n, one),
@@ -5198,16 +5225,16 @@ class Model:
 
     @overload
     def getccontol(
-        self, idx: One[Complement]
+        self, ccon: One[Complement]
     ) -> tuple[Real | None, Real | None]: ...
 
     @overload
     def getccontol(
-        self, idx: Many[Complement, Complements]
+        self, ccon: Many[Complement, Complements]
     ) -> tuple[list[Real | None], list[Real | None]]: ...
 
     def getccontol(
-        self, idx: Selection[Complement, Complements]
+        self, ccon: Selection[Complement, Complements]
     ) -> (
         tuple[Real | None, Real | None]
         | tuple[list[Real | None], list[Real | None]]
@@ -5216,7 +5243,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        ccon
             The complements, in any order, any of them more than once.
             An index or a view stands for one complement, and each result is
             then a scalar.
@@ -5234,15 +5261,15 @@ class Model:
         BIYOS_getccontolrg
         """
         pair = (c_real, c_real)
-        atol, rtol = self._getlist("BIYOS_getccontol", Complements, idx, *pair)
+        atol, rtol = self._getlist("BIYOS_getccontol", Complements, ccon, *pair)
         return _each(_or_none, atol), _each(_or_none, rtol)
 
-    def delccontol(self, idx: Selection[Complement, Complements]) -> None:
+    def delccontol(self, ccon: Selection[Complement, Complements]) -> None:
         """Return complements to ``feastol_abs`` and ``feastol_rel``.
 
         Parameters
         ----------
-        idx
+        ccon
             The complements that lose their tolerances.
             An index or a view stands for one complement.
 
@@ -5251,7 +5278,7 @@ class Model:
         BIYOS_delccontolsp
         BIYOS_delccontolrg
         """
-        rows = picked(self, Complements, idx)
+        rows = picked(self, Complements, "ccon", ccon)
         self._call(*self._chosen("BIYOS_delccontol", Complements, rows))
 
     def getnccon(self) -> Index:
@@ -5272,16 +5299,16 @@ class Model:
 
     @overload
     def getccon(
-        self, idx: One[Complement]
+        self, ccon: One[Complement]
     ) -> tuple[Function, Function, Real, Real]: ...
 
     @overload
     def getccon(
-        self, idx: Many[Complement, Complements] | None = None
+        self, ccon: Many[Complement, Complements] | None = None
     ) -> tuple[Functions, Functions, list[Real], list[Real]]: ...
 
     def getccon(
-        self, idx: Selection[Complement, Complements] | None = None
+        self, ccon: Selection[Complement, Complements] | None = None
     ) -> (
         tuple[Function, Function, Real, Real]
         | tuple[Functions, Functions, list[Real], list[Real]]
@@ -5293,7 +5320,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        ccon
             The complements, in any order, any of them more than once; every
             complement by default.
             An index or a view stands for one complement, and each result is
@@ -5316,57 +5343,59 @@ class Model:
         BIYOS_getcconsp
         BIYOS_getcconrg
         """
-        every = range(self.getnccon()) if idx is None else idx
+        every = range(self.getnccon()) if ccon is None else ccon
         types = (Functions, Functions, c_real, c_real)
         found = self._getlist("BIYOS_getccon", Complements, every, *types)
         bounded, partners, lower, upper = found
         return bounded, partners, lower, upper
 
     @overload
-    def setcconname(self, idx: One[Complement], name: str) -> None: ...
+    def setcconname(self, ccon: One[Complement], name: str) -> None: ...
 
     @overload
     def setcconname(
-        self, idx: Many[Complement, Complements], name: Sequence[str]
+        self, ccon: Many[Complement, Complements], name: Sequence[str]
     ) -> None: ...
 
     def setcconname(
-        self, idx: Selection[Complement, Complements], name: str | Sequence[str]
+        self,
+        ccon: Selection[Complement, Complements],
+        name: str | Sequence[str],
     ) -> None:
         """Name complements of the model, as ``setvarname`` names variables.
 
         Parameters
         ----------
-        idx
+        ccon
             The complements to name.
             An index or a view stands for one complement, and each other
             argument is then a scalar.
         name
-            The new name of each, as many as ``idx``.
+            The new name of each, as many as ``ccon``.
 
         See Also
         --------
         BIYOS_setcconnamesp
         BIYOS_setcconnamerg
         """
-        self._setname("BIYOS_setcconname", Complements, idx, name)
+        self._setname("BIYOS_setcconname", Complements, ccon, name)
 
     @overload
-    def getcconname(self, idx: One[Complement]) -> str | None: ...
+    def getcconname(self, ccon: One[Complement]) -> str | None: ...
 
     @overload
     def getcconname(
-        self, idx: Many[Complement, Complements]
+        self, ccon: Many[Complement, Complements]
     ) -> list[str | None]: ...
 
     def getcconname(
-        self, idx: Selection[Complement, Complements]
+        self, ccon: Selection[Complement, Complements]
     ) -> str | None | list[str | None]:
         """Return the names of complements, as ``getvarname`` does.
 
         Parameters
         ----------
-        idx
+        ccon
             The complements to read.
             An index or a view stands for one complement, and the result is then
             a scalar.
@@ -5381,10 +5410,10 @@ class Model:
         BIYOS_getcconnamesp
         BIYOS_getcconnamerg
         """
-        return self._getname("BIYOS_getcconname", Complements, idx)
+        return self._getname("BIYOS_getcconname", Complements, ccon)
 
-    def getcconidx(self, name: Sequence[str]) -> Complements:
-        """Return the named complements, as ``getvaridx`` does.
+    def findccon(self, name: Sequence[str]) -> Complements:
+        """Return the named complements, as ``findvar`` does.
 
         Parameters
         ----------
@@ -5393,22 +5422,22 @@ class Model:
 
         Returns
         -------
-        idx
+        ccon
             The complement that alone holds each name, as a ``Complements``
             block.
 
         See Also
         --------
-        BIYOS_getcconidx
+        BIYOS_findccon
         """
-        return self._getidx(lib.BIYOS_getcconidx, Complements, name)
+        return self._find(lib.BIYOS_findccon, Complements, name)
 
-    def delcconname(self, idx: Selection[Complement, Complements]) -> None:
+    def delcconname(self, ccon: Selection[Complement, Complements]) -> None:
         """Remove the names of complements, as ``delvarname`` does.
 
         Parameters
         ----------
-        idx
+        ccon
             The complements that lose their names.
             An index or a view stands for one complement.
 
@@ -5417,9 +5446,9 @@ class Model:
         BIYOS_delcconnamesp
         BIYOS_delcconnamerg
         """
-        self._delname("BIYOS_delcconname", Complements, idx)
+        self._delname("BIYOS_delcconname", Complements, ccon)
 
-    def delccon(self, idx: Selection[Complement, Complements]) -> list[Index]:
+    def delccon(self, ccon: Selection[Complement, Complements]) -> list[Index]:
         """Delete complements.
 
         The complements left keep their order and are numbered from 0 again. A
@@ -5429,7 +5458,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        ccon
             The complements to delete, in any order, none of them twice.
             An index or a view stands for one complement.
 
@@ -5444,7 +5473,7 @@ class Model:
         BIYOS_delcconsp
         BIYOS_delcconrg
         """
-        return self._delete("BIYOS_delccon", Complements, idx)
+        return self._delete("BIYOS_delccon", Complements, ccon)
 
     def evalf(self, x: Sequence[Real]) -> list[Real]:
         """Evaluate the functions at a point.
@@ -5590,13 +5619,13 @@ class Model:
         return list(hv)
 
     def getngpat(
-        self, idx: Sequence[Index | Function] | Functions | None = None
+        self, fun: Sequence[Index | Function] | Functions | None = None
     ) -> Offset:
         """Count the entries of the Jacobian pattern of functions.
 
         Parameters
         ----------
-        idx
+        fun
             The functions, in any order, any of them more than once; every
             function by default.
 
@@ -5611,11 +5640,11 @@ class Model:
         BIYOS_getngpatsp
         BIYOS_getngpatrg
         """
-        every = range(self.getnfun()) if idx is None else idx
+        every = range(self.getnfun()) if fun is None else fun
         return self._count("BIYOS_getngpat", Functions, every)
 
     def getgpat(
-        self, idx: Sequence[Index | Function] | Functions | None = None
+        self, fun: Sequence[Index | Function] | Functions | None = None
     ) -> tuple[list[Offset], Variables]:
         """Read the Jacobian pattern of functions.
 
@@ -5624,7 +5653,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        fun
             The functions, in any order, any of them more than once; every
             function by default.
 
@@ -5634,25 +5663,25 @@ class Model:
             The number of variables in the pattern of each function.
         var
             The variables of each function's pattern, sorted, those of
-            ``idx[0]`` first, as a ``Variables`` block.
+            ``fun[0]`` first, as a ``Variables`` block.
 
         See Also
         --------
         BIYOS_getgpatsp
         BIYOS_getgpatrg
         """
-        every = range(self.getnfun()) if idx is None else idx
+        every = range(self.getnfun()) if fun is None else fun
         return self._pattern("gpat", Functions, every)
 
     def getnhpat(
-        self, idx: Sequence[Index | Variable] | Variables | None = None
+        self, var: Sequence[Index | Variable] | Variables | None = None
     ) -> Offset:
         """Count the entries of the Hessian pattern in columns of its lower
         triangle.
 
         Parameters
         ----------
-        idx
+        var
             The variables whose columns to count, in any order, any of them
             more than once; every variable by default.
 
@@ -5667,11 +5696,11 @@ class Model:
         BIYOS_getnhpatsp
         BIYOS_getnhpatrg
         """
-        every = range(self.getnvar()) if idx is None else idx
+        every = range(self.getnvar()) if var is None else var
         return self._count("BIYOS_getnhpat", Variables, every)
 
     def gethpat(
-        self, idx: Sequence[Index | Variable] | Variables | None = None
+        self, var: Sequence[Index | Variable] | Variables | None = None
     ) -> tuple[list[Offset], Variables]:
         """Read the Hessian pattern in columns of its lower triangle.
 
@@ -5680,7 +5709,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        var
             The variables whose columns to read, in any order, any of them
             more than once; every variable by default.
 
@@ -5690,27 +5719,28 @@ class Model:
             The number of rows in each column.
         var
             The rows of each column, sorted, each at least the column's
-            variable, those of ``idx[0]`` first, as a ``Variables`` block.
+            variable, those of ``var[0]`` first, as a ``Variables`` block.
 
         See Also
         --------
         BIYOS_gethpatsp
         BIYOS_gethpatrg
         """
-        every = range(self.getnvar()) if idx is None else idx
+        every = range(self.getnvar()) if var is None else var
         return self._pattern("hpat", Variables, every)
 
     def _compared(
         self,
-        cons: list[Comparison],
+        cons: list[Logical],
         lb: Sequence[Real] | None,
         ub: Sequence[Real] | None,
     ) -> Constraints:
         if lb is not None or ub is not None:
             raise TypeError("lb and ub come from the comparisons")
-        funs = attached(self, [con._body for con in cons])
-        lower = [con._lb for con in cons]
-        upper = [con._ub for con in cons]
+        made: Made = {}
+        rows = [_bounded(con, made) for con in cons]
+        bodies, lower, upper = zip(*rows)
+        funs = attached(self, bodies, made)
         return self.addcon(funs, lower, upper)
 
     def _peer(self, name: str, value: object) -> "Model":
@@ -5791,8 +5821,8 @@ class Model:
         family: type[Block[View]],
         idx: Sequence[SupportsIndex] | Block[View],
         outputs: int = 0,
-        name: str = "idx",
     ) -> tuple[Callable[..., int], Index, object]:
+        name = _WORDS[family]
         span = span_of(self, family, name, sequence(name, idx))
         if span is None:
             n = len(idx)
@@ -5813,13 +5843,13 @@ class Model:
         outputs: int = 0,
     ) -> tuple[bool, Index, tuple[Callable[..., int], Index, object]]:
         one, n = counted(idx)
-        rows = picked(self, family, idx)
+        rows = picked(self, family, _WORDS[family], idx)
         return one, n, self._chosen(call, family, rows, outputs)
 
     def _inside(
         self, family: type[Block[View]], start: Index, stop: Index
     ) -> bool:
-        total: Index = getattr(self, _COUNTS[family])()
+        total: Index = getattr(self, f"getn{_WORDS[family]}")()
         return 0 <= start <= stop <= total
 
     def _setname(
@@ -5838,7 +5868,7 @@ class Model:
         family: type[Block[View]],
         idx: SupportsIndex | Sequence[SupportsIndex] | Block[View],
     ) -> None:
-        idx = picked(self, family, idx)
+        idx = picked(self, family, _WORDS[family], idx)
         self._call(*self._chosen(call, family, idx))
 
     def _delete(
@@ -5847,10 +5877,10 @@ class Model:
         family: type[Block[View]],
         idx: SupportsIndex | Sequence[SupportsIndex] | Block[View],
     ) -> list[Index]:
-        idx = picked(self, family, idx)
+        idx = picked(self, family, _WORDS[family], idx)
         chosen = self._chosen(call, family, idx)
         gone = self._gone(family, idx)
-        total: Index = getattr(self, _COUNTS[family])()
+        total: Index = getattr(self, f"getn{_WORDS[family]}")()
         self._call(*chosen, None)
         if len(idx) > 0:
             self._gen += 1
@@ -5861,12 +5891,13 @@ class Model:
         family: type[Block[View]],
         idx: Sequence[SupportsIndex] | Block[View],
     ) -> set[Index]:
+        name = _WORDS[family]
         if isinstance(idx, Block):
-            return set(idx_of(self, family, "idx", idx))
-        span = span_of(self, family, "idx", idx)
+            return set(members_of(self, family, name, idx))
+        span = span_of(self, family, name, idx)
         if span is not None:
             return set(span)
-        return {index_of(self, family, "idx", value) for value in idx}
+        return {index_of(self, family, name, value) for value in idx}
 
     def _getname(
         self,
@@ -5949,7 +5980,7 @@ class Model:
         if not isinstance(entries, Sized):
             entries = [index_of(self, family, name, entries)]
             others, coef = _single(others, coef)
-        chosen = self._chosen(call, family, entries, name=name)
+        chosen = self._chosen(call, family, entries)
         cnt, arrays, coefs = self._lists(others, coef, len(entries))
         self._call(*chosen, cnt, *arrays, coefs)
 
@@ -5976,7 +6007,7 @@ class Model:
     ) -> tuple[list[Any], list[Real]]:
         family = types[place]
         size = self._count(f"BIYOS_getn{name}", family, idx)
-        span = span_of(self, family, "idx", idx)
+        span = span_of(self, family, _WORDS[family], idx)
         chosen = self._chosen(f"BIYOS_get{name}", family, idx)
         records = cast("Array[c_index]", chosen[2]) if span is None else span
         found = [index_view(size) for _ in types[1:]]
@@ -6018,7 +6049,7 @@ class Model:
                 raise cause
             raise error from cause
 
-    def _getidx(
+    def _find(
         self,
         function: Callable[..., int],
         family: type[_Block],

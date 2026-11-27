@@ -3,6 +3,7 @@
 #include "biyos/biyos.h"
 #include "core/numbers.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -45,6 +46,16 @@ enum class Operator : std::uint8_t
     Erf = BIYOS_OP_ERF,
     PiecewiseLinear = BIYOS_OP_PWL,
     Atan2 = BIYOS_OP_ATAN2,
+    LessEqual = BIYOS_OP_LE,
+    GreaterEqual = BIYOS_OP_GE,
+    Equal = BIYOS_OP_EQ,
+    Less = BIYOS_OP_LT,
+    Greater = BIYOS_OP_GT,
+    NotEqual = BIYOS_OP_NE,
+    And = BIYOS_OP_AND,
+    Or = BIYOS_OP_OR,
+    Not = BIYOS_OP_NOT,
+    If = BIYOS_OP_IF,
 };
 
 enum class Payload
@@ -61,6 +72,7 @@ std::optional<Operator> operator_of(int code) noexcept;
 Payload payload_of(Operator op);
 void check_shape(Operator op, Payload payload, Offset children);
 void check_child(Offset child, Offset size);
+void check_operand(Operator op, std::size_t k, Offset child, Operator found);
 void check_variable(Index variable);
 void check_constant(Real value);
 void check_constant(Operator op, Real value);

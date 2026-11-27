@@ -1,3 +1,4 @@
+#include "building.hpp"
 #include "files.hpp"
 #include "loading.hpp"
 
@@ -15,7 +16,6 @@
 
 #include <cmath>
 #include <cstddef>
-#include <initializer_list>
 #include <limits>
 #include <numbers>
 #include <span>
@@ -24,7 +24,6 @@
 #include <vector>
 
 using biyos::Constraint;
-using biyos::default_objective;
 using biyos::difference;
 using biyos::Env;
 using biyos::Evaluation;
@@ -33,27 +32,38 @@ using biyos::kNoRoot;
 using biyos::LinearTerm;
 using biyos::Lookup;
 using biyos::Model;
-using biyos::Objective;
 using biyos::ObjectiveSense;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::Real;
 using biyos::Variable;
 using biyos::VariableKind;
+using biyos::test::nl::add_goal;
+using biyos::test::nl::continuous;
+using biyos::test::nl::count_of;
 using biyos::test::nl::kDefinedHeader;
+using biyos::test::nl::kDepth;
+using biyos::test::nl::kInfinity;
 using biyos::test::nl::kKindsNlFile;
 using biyos::test::nl::kLinearNlFile;
 using biyos::test::nl::kNonlinearNlFile;
 using biyos::test::nl::kObjectivesNlFile;
 using biyos::test::nl::kOrderNlFile;
+using biyos::test::nl::less_of;
+using biyos::test::nl::log10_of;
+using biyos::test::nl::node;
+using biyos::test::nl::outside_of;
+using biyos::test::nl::pieces_of;
 using biyos::test::nl::read_sample;
+using biyos::test::nl::square_of;
+using biyos::test::nl::sum_of;
+using biyos::test::nl::tiny_wanted;
 using biyos::test::nl::tiny_with;
+using biyos::test::nl::window_of;
 
 namespace
 {
 
-constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
-constexpr Index kDepth = 100000;
 constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
 
 constexpr std::string_view kBareTail = R"(V1 0 0
@@ -104,6 +114,65 @@ b
 3
 )";
 
+constexpr std::string_view kAtan2Tail = R"(C0
+n0
+O0 0
+o48
+n1
+v0
+r
+3
+b
+3
+)";
+
+constexpr std::string_view kWindowTail = R"(C0
+n0
+O0 0
+o35
+o21
+o23
+v0
+n1
+o28
+v0
+n-1
+v0
+n0
+r
+3
+b
+3
+)";
+
+constexpr std::string_view kOutsideTail = R"(C0
+n0
+O0 0
+o35
+o71
+3
+o22
+v0
+n-1
+o29
+v0
+n2
+o20
+o24
+v0
+n0.5
+o34
+o30
+v0
+n3
+n1
+n0
+r
+3
+b
+3
+)";
+
 constexpr std::string_view kPiecesTail = R"(C0
 n0
 O0 0
@@ -148,11 +217,6 @@ b
 3
 )";
 
-Variable continuous(Real lower, Real upper)
-{
-    return Variable{.kind = VariableKind::Continuous, .lower = lower, .upper = upper};
-}
-
 std::vector<VariableKind> kinds_of(const Model &model)
 {
     std::vector<VariableKind> kinds;
@@ -161,54 +225,6 @@ std::vector<VariableKind> kinds_of(const Model &model)
         kinds.push_back(variable.kind);
     }
     return kinds;
-}
-
-Offset node(Model &model,
-            Operator op,
-            std::initializer_list<Offset> children,
-            std::initializer_list<Real> values)
-{
-    return model.add_node(static_cast<int>(op), children, values);
-}
-
-void add_goal(Model &model, Index function, ObjectiveSense sense)
-{
-    Objective objective = default_objective(function, 0);
-    objective.sense = sense;
-    model.add_objectives(std::span(&objective, 1));
-}
-
-Model tiny_wanted(Offset (*build)(Model &, Offset))
-{
-    Model model;
-    model.add_variables(std::vector{continuous(-kInfinity, kInfinity)});
-    model.add_functions(std::vector{0.0, 0.0}, std::vector<Offset>{0, 0, 0}, {});
-    const Offset root = build(model, model.add_variable_node(0));
-    const Index function = 1;
-    model.attach_expressions(std::span(&function, 1), std::span(&root, 1));
-    const Constraint free{.function = 0, .lower = -kInfinity, .upper = kInfinity};
-    model.add_constraints(std::span(&free, 1));
-    add_goal(model, 1, ObjectiveSense::Minimize);
-    return model;
-}
-
-Offset square_of(Model &model, Offset x)
-{
-    return node(model, Operator::ConstantPower, {x}, {2.0});
-}
-
-Offset log10_of(Model &model, Offset x)
-{
-    const Offset log = node(model, Operator::Log, {x}, {});
-    return node(model, Operator::Product, {log}, {std::numbers::log10e});
-}
-
-Offset less_of(Model &model, Offset x)
-{
-    const Offset one = node(model, Operator::Constant, {}, {1.0});
-    const Offset sum = node(model, Operator::Sum, {x, one}, {0.0, 1.0, -1.0});
-    const Offset zero = node(model, Operator::Constant, {}, {0.0});
-    return node(model, Operator::Max, {sum, zero}, {});
 }
 
 Real objective_at(const Model &model, Real x)
@@ -220,18 +236,10 @@ Real objective_at(const Model &model, Real x)
     return f[1];
 }
 
-Offset pieces_of(Model &model, Offset x)
-{
-    const std::vector<Real> xs{-1.0, 0.0, 1.0, 2.0, 4.0};
-    const std::vector<Real> ys{-3.0, 0.0, 3.0, 7.0, 17.0};
-    return model.add_piecewise(model.add_piecewise_linear(xs, ys), x);
-}
-
-Offset sum_of(Model &model, Offset x)
+Offset atan2_of(Model &model, Offset x)
 {
     const Offset one = node(model, Operator::Constant, {}, {1.0});
-    const Offset minus = node(model, Operator::Negation, {x}, {});
-    return node(model, Operator::Sum, {x, one, minus}, {0.0, 1.0, 1.0, 1.0});
+    return node(model, Operator::Atan2, {one, x}, {});
 }
 
 Model curved()
@@ -257,16 +265,6 @@ Model curved()
     model.add_constraints(std::span(&cap, 1));
     add_goal(model, 1, ObjectiveSense::Maximize);
     return model;
-}
-
-Index count_of(const Model &model, Operator op)
-{
-    Index count = 0;
-    for (Offset k = 0; k < model.graph().size(); ++k)
-    {
-        count += model.graph().op(k) == op ? 1 : 0;
-    }
-    return count;
 }
 
 }
@@ -334,6 +332,32 @@ TEST(NlTest, Less)
     EXPECT_DOUBLE_EQ(objective_at(model, 3.5), 2.5);
     EXPECT_DOUBLE_EQ(objective_at(model, -2.0), 0.0);
     EXPECT_TRUE(std::isnan(objective_at(model, kNan)));
+}
+
+TEST(NlTest, Atan2)
+{
+    const Model model = read_sample(tiny_with(kAtan2Tail));
+    EXPECT_EQ(difference(model, tiny_wanted(atan2_of)), "");
+    EXPECT_DOUBLE_EQ(objective_at(model, 1.0), std::numbers::pi / 4.0);
+    EXPECT_DOUBLE_EQ(objective_at(model, -1.0), 3.0 * std::numbers::pi / 4.0);
+}
+
+TEST(NlTest, Window)
+{
+    const Model model = read_sample(tiny_with(kWindowTail));
+    EXPECT_EQ(difference(model, tiny_wanted(window_of)), "");
+    EXPECT_DOUBLE_EQ(objective_at(model, 0.5), 0.5);
+    EXPECT_DOUBLE_EQ(objective_at(model, -1.5), 0.0);
+}
+
+TEST(NlTest, Outside)
+{
+    const Model model = read_sample(tiny_with(kOutsideTail));
+    EXPECT_EQ(difference(model, tiny_wanted(outside_of)), "");
+    EXPECT_DOUBLE_EQ(objective_at(model, -1.5), 1.0);
+    EXPECT_DOUBLE_EQ(objective_at(model, 0.5), 1.0);
+    EXPECT_DOUBLE_EQ(objective_at(model, 1.0), 0.0);
+    EXPECT_DOUBLE_EQ(objective_at(model, 3.0), 1.0);
 }
 
 TEST(NlTest, Pieces)

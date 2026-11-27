@@ -2,6 +2,9 @@
 
 #include "core/env/error.hpp"
 #include "core/numbers.hpp"
+#include "core/numeric/angle.hpp"
+#include "core/numeric/tolerances.hpp"
+#include "core/numeric/zero.hpp"
 #include "core/text/text.hpp"
 #include "expr/evaluation/derivatives/partials.hpp"
 #include "expr/graph/node.hpp"
@@ -38,9 +41,43 @@ Real sign_power(Real value, Real exponent) noexcept
     return std::copysign(std::pow(std::fabs(value), exponent), value);
 }
 
-Real angle(Real y, Real x) noexcept
+Real truth(bool holds, Real a, Real b) noexcept
 {
-    return std::atan2(y + 0.0, x + 0.0);
+    if (std::isnan(a) || std::isnan(b))
+    {
+        return (std::numeric_limits<Real>::quiet_NaN)();
+    }
+    return holds ? 1.0 : 0.0;
+}
+
+bool less_equal(const Tolerances &tolerances, Real a, Real b) noexcept
+{
+    return tolerances.at_most(a, b);
+}
+
+bool greater_equal(const Tolerances &tolerances, Real a, Real b) noexcept
+{
+    return tolerances.at_most(b, a);
+}
+
+bool equal(const Tolerances &tolerances, Real a, Real b) noexcept
+{
+    return tolerances.approx_equal(a, b);
+}
+
+bool less(const Tolerances &tolerances, Real a, Real b) noexcept
+{
+    return !greater_equal(tolerances, a, b);
+}
+
+bool greater(const Tolerances &tolerances, Real a, Real b) noexcept
+{
+    return !less_equal(tolerances, a, b);
+}
+
+bool not_equal(const Tolerances &tolerances, Real a, Real b) noexcept
+{
+    return !equal(tolerances, a, b);
 }
 
 template <typename F> void map(const Instruction &instruction, const Frame &frame, F f) noexcept
@@ -59,6 +96,17 @@ template <typename F> void combine(const Instruction &instruction, const Frame &
     for (std::size_t l = 0; l < frame.lanes; ++l)
     {
         frame.result[l] = f(x[l], y[l]);
+    }
+}
+
+template <typename F>
+void compare(const Instruction &instruction, const Frame &frame, F holds) noexcept
+{
+    const std::span<const Real> x = row(frame, instruction.first);
+    const std::span<const Real> y = row(frame, instruction.second);
+    for (std::size_t l = 0; l < frame.lanes; ++l)
+    {
+        frame.result[l] = truth(holds(frame.tolerances, x[l], y[l]), x[l], y[l]);
     }
 }
 
@@ -122,6 +170,19 @@ void extreme(const Instruction &instruction, const Frame &frame, F pick) noexcep
     }
 }
 
+void select(const Instruction &instruction, const Frame &frame) noexcept
+{
+    const std::span<const std::uint32_t> operands = listed(instruction, frame.operands);
+    const std::span<const Real> condition = row(frame, operands[0]);
+    const std::span<const Real> then = row(frame, operands[1]);
+    const std::span<const Real> otherwise = row(frame, operands[2]);
+    for (std::size_t l = 0; l < frame.lanes; ++l)
+    {
+        const Real taken = is_zero(condition[l]) ? otherwise[l] : then[l];
+        frame.result[l] = std::isnan(condition[l]) ? condition[l] : taken;
+    }
+}
+
 void fixed_power(const Instruction &instruction, const Frame &frame) noexcept
 {
     const Real exponent = constant_of(instruction);
@@ -143,6 +204,7 @@ void piecewise(const Instruction &instruction, const Frame &frame) noexcept
 Frame enter(const Block &block,
             std::span<const Real> point,
             std::span<const Real> shared,
+            const Tolerances &tolerances,
             Workspace &workspace) noexcept
 {
     const std::span<Real> slots(workspace.slots);
@@ -160,6 +222,7 @@ Frame enter(const Block &block,
         .result = workspace.result,
         .spare = workspace.spare,
         .lanes = lanes,
+        .tolerances = tolerances,
     };
 }
 
@@ -199,6 +262,14 @@ void check_seeds(std::span<const Index> variables, std::size_t lanes, std::size_
         {
             refuse("variables", "variable " + text_of(variable) + " outside the directions");
         }
+    }
+}
+
+void repeat(std::span<const Real> point, std::size_t lanes, std::span<Real> points) noexcept
+{
+    for (std::size_t k = 0; k < point.size(); ++k)
+    {
+        std::ranges::fill(row(points, k, lanes), point[k]);
     }
 }
 
@@ -301,6 +372,36 @@ void evaluate(const Instruction &instruction, const Frame &frame) noexcept
     case Operator::Atan2:
         combine(instruction, frame, angle);
         return;
+    case Operator::LessEqual:
+        compare(instruction, frame, less_equal);
+        return;
+    case Operator::GreaterEqual:
+        compare(instruction, frame, greater_equal);
+        return;
+    case Operator::Equal:
+        compare(instruction, frame, equal);
+        return;
+    case Operator::Less:
+        compare(instruction, frame, less);
+        return;
+    case Operator::Greater:
+        compare(instruction, frame, greater);
+        return;
+    case Operator::NotEqual:
+        compare(instruction, frame, not_equal);
+        return;
+    case Operator::And:
+        extreme(instruction, frame, smaller);
+        return;
+    case Operator::Or:
+        extreme(instruction, frame, larger);
+        return;
+    case Operator::Not:
+        map(instruction, frame, [](Real x) { return 1.0 - x; });
+        return;
+    case Operator::If:
+        select(instruction, frame);
+        return;
     }
 }
 
@@ -371,17 +472,21 @@ void check_sweep(const Tape &tape,
     }
 }
 
-void forward(const Block &block, std::span<const Real> point, Workspace &workspace) noexcept
+void forward(const Block &block,
+             std::span<const Real> point,
+             const Tolerances &tolerances,
+             Workspace &workspace) noexcept
 {
-    forward(block, point, workspace.shared, workspace);
+    forward(block, point, workspace.shared, tolerances, workspace);
 }
 
 void forward(const Block &block,
              std::span<const Real> point,
              std::span<const Real> shared,
+             const Tolerances &tolerances,
              Workspace &workspace) noexcept
 {
-    const Frame frame = enter(block, point, shared, workspace);
+    const Frame frame = enter(block, point, shared, tolerances, workspace);
     for (const Instruction &instruction : block.instructions)
     {
         evaluate(instruction, frame);
@@ -389,18 +494,22 @@ void forward(const Block &block,
     }
 }
 
-void linearize(const Block &block, std::span<const Real> point, Workspace &workspace) noexcept
+void linearize(const Block &block,
+               std::span<const Real> point,
+               const Tolerances &tolerances,
+               Workspace &workspace) noexcept
 {
-    linearize(block, point, workspace.shared, workspace.partials, workspace);
+    linearize(block, point, workspace.shared, tolerances, workspace.partials, workspace);
 }
 
 void linearize(const Block &block,
                std::span<const Real> point,
                std::span<const Real> shared,
+               const Tolerances &tolerances,
                std::span<Real> all,
                Workspace &workspace) noexcept
 {
-    const Frame frame = enter(block, point, shared, workspace);
+    const Frame frame = enter(block, point, shared, tolerances, workspace);
     const std::size_t lanes = workspace.lanes;
     const std::span<Real> partials = region(block, all, lanes);
     for (std::size_t k = 0; k < block.instructions.size(); ++k)
@@ -427,6 +536,7 @@ void store(const Block &block, const Workspace &workspace, std::span<Real> outpu
 
 void forward(const Tape &tape,
              std::span<const Real> point,
+             const Tolerances &tolerances,
              Workspace &workspace,
              std::span<Real> values)
 {
@@ -435,7 +545,7 @@ void forward(const Tape &tape,
     const std::size_t prepass = to_size(tape.prepass());
     for (std::size_t k = 0; k < blocks.size(); ++k)
     {
-        forward(blocks[k], point, workspace);
+        forward(blocks[k], point, tolerances, workspace);
         const std::span<Real> outputs = k < prepass ? std::span(workspace.shared) : values;
         store(blocks[k], workspace, outputs);
     }
@@ -449,14 +559,6 @@ void broadcast(std::span<const Real> point, std::size_t lanes, std::span<Real> p
         refuse("points", size + ", not the point size " + text_of(point.size()) + in_lanes(lanes));
     }
     repeat(point, lanes, points);
-}
-
-void repeat(std::span<const Real> point, std::size_t lanes, std::span<Real> points) noexcept
-{
-    for (std::size_t k = 0; k < point.size(); ++k)
-    {
-        std::ranges::fill(row(points, k, lanes), point[k]);
-    }
 }
 
 void seed_directions(std::span<const Index> variables,

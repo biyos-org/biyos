@@ -311,7 +311,7 @@ def _declare_names(lib: ctypes.CDLL) -> None:
     for noun in ("var", "fun", "con", "obj", "ind", "sos", "cone", "ccon"):
         _declare_pair(lib, f"BIYOS_set{noun}name", _STRINGS)
         _declare_pair(lib, f"BIYOS_get{noun}name", _STRINGS)
-        _declare(lib, f"BIYOS_get{noun}idx", *find)
+        _declare(lib, f"BIYOS_find{noun}", *find)
         _declare_pair(lib, f"BIYOS_del{noun}name")
 
 

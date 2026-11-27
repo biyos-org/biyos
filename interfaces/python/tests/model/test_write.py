@@ -3,7 +3,7 @@ import pytest
 import biyos
 from biyos import FileFormat
 from listed import indexed
-from samples import LP_MPS, STRUCTURE_MPS, written
+from samples import LP_MPS, LP_NL, STRUCTURE_MPS, written
 
 UNSUPPORTED = -201
 FILEIO = -401
@@ -87,13 +87,13 @@ def test_fixed_read_only(env, tmp_path):
     assert str(caught.value) == f"unsupported: file '{path}': {reason}"
 
 
-def test_nl_read_only(env, tmp_path):
-    path = str(tmp_path / "lp.nl")
-    with biyos.Model(env) as model, pytest.raises(biyos.Error) as caught:
+def test_nl(env, tmp_path):
+    source = written(tmp_path / "source.nl", LP_NL)
+    path = tmp_path / "lp.nl"
+    with biyos.Model.read(env, source, FileFormat.NL) as model:
         model.write(path, FileFormat.NL)
-    assert caught.value.code == UNSUPPORTED
-    message = f"unsupported: file '{path}': NL files are read, never written"
-    assert str(caught.value) == message
+        with biyos.Model.read(env, path, FileFormat.NL) as back:
+            assert model.compare(back) is None
 
 
 def test_refused(env, tmp_path):

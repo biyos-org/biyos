@@ -8,6 +8,7 @@
 
 #include <cstddef>
 #include <string>
+#include <string_view>
 
 namespace biyos
 {
@@ -15,12 +16,17 @@ namespace biyos
 namespace
 {
 
-void describe(Event &event, const std::string &file, std::size_t line, const std::string &text)
+void describe(Event &event,
+              const std::string &file,
+              std::string_view unit,
+              std::size_t at,
+              const std::string &text)
 {
+    const std::string name(unit);
     event.module = "io";
-    event.text = "file '" + file + "' line " + text_of(line) + ": " + text;
+    event.text = "file '" + file + "' " + name + " " + text_of(at) + ": " + text;
     event.fields.push_back(Field{.name = "file", .value = file});
-    event.fields.push_back(Field{.name = "line", .value = text_of(line)});
+    event.fields.push_back(Field{.name = name, .value = text_of(at)});
 }
 
 void describe(Event &event, const std::string &file, const std::string &text)
@@ -32,14 +38,24 @@ void describe(Event &event, const std::string &file, const std::string &text)
 
 }
 
+void bad_file(const std::string &where, const std::string &message)
+{
+    throw Error(ErrorKind::BadFile, where, message);
+}
+
 void bad_file(const Lines &lines, const std::string &message)
 {
-    throw Error(ErrorKind::BadFile, lines.where(), message);
+    bad_file(lines.where(), message);
+}
+
+void unsupported(const std::string &where, const std::string &message)
+{
+    throw Error(ErrorKind::Unsupported, where, message);
 }
 
 void unsupported(const Lines &lines, const std::string &message)
 {
-    throw Error(ErrorKind::Unsupported, lines.where(), message);
+    unsupported(lines.where(), message);
 }
 
 void warn(Stream stream,
@@ -47,7 +63,7 @@ void warn(Stream stream,
           std::size_t line,
           const std::string &text) noexcept
 {
-    const auto fill = [&](Event &event) { describe(event, file, line, text); };
+    const auto fill = [&](Event &event) { describe(event, file, "line", line, text); };
     stream.emit(EventKind::Message, EventLevel::Warning, fill);
 }
 
@@ -64,7 +80,22 @@ void warn(Stream stream, const std::string &file, const std::string &text) noexc
 
 void inform(Stream stream, const Lines &lines, const std::string &text) noexcept
 {
-    const auto fill = [&](Event &event) { describe(event, lines.file(), lines.number(), text); };
+    inform(stream, lines.file(), "line", lines.number(), text);
+}
+
+void inform(Stream stream, const std::string &file, const std::string &text) noexcept
+{
+    const auto fill = [&](Event &event) { describe(event, file, text); };
+    stream.emit(EventKind::Message, EventLevel::Info, fill);
+}
+
+void inform(Stream stream,
+            const std::string &file,
+            std::string_view unit,
+            std::size_t at,
+            const std::string &text) noexcept
+{
+    const auto fill = [&](Event &event) { describe(event, file, unit, at, text); };
     stream.emit(EventKind::Message, EventLevel::Info, fill);
 }
 
@@ -76,9 +107,9 @@ void reject(const std::string &where, const Error &error)
     }
     if (error.object().empty())
     {
-        throw Error(ErrorKind::BadFile, where, error.message());
+        bad_file(where, error.message());
     }
-    throw Error(ErrorKind::BadFile, where, error.object() + ": " + error.message());
+    bad_file(where, error.object() + ": " + error.message());
 }
 
 void reject(const Lines &lines, const Error &error)

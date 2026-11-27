@@ -159,6 +159,7 @@ inline constexpr std::array kFamilies{
 };
 
 std::string_view noun_of(Family family) noexcept;
+std::string_view word_of(Family family) noexcept;
 
 inline constexpr Offset kNoRoot = -1;
 

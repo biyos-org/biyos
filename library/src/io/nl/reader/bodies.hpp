@@ -2,8 +2,8 @@
 
 #include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"
-#include "io/nl/expressions.hpp"
-#include "io/utils/lines.hpp"
+#include "io/nl/reader/expressions.hpp"
+#include "io/nl/source/source.hpp"
 #include "model/model.hpp"
 
 #include <optional>
@@ -21,7 +21,7 @@ class Bodies
     void set_body(Index function, const Operand &body);
     bool has_terms(Index function) const noexcept;
     void set_terms(Index function, std::vector<LinearTerm> terms);
-    void add_to(const Lines &lines, Model &model) const;
+    Index add_to(const Source &source, Model &model) const;
 
   private:
     std::vector<std::optional<Operand>> bodies_;

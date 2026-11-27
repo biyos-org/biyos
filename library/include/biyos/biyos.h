@@ -300,10 +300,10 @@ BIYOS_API BIYOS_status BIYOS_getvarnamerg(const BIYOS_model *mdl,
                                           BIYOS_index beg,
                                           BIYOS_index end,
                                           const char **name);
-BIYOS_API BIYOS_status BIYOS_getvaridx(const BIYOS_model *mdl,
-                                       BIYOS_index n,
-                                       const char *const *name,
-                                       BIYOS_index *var);
+BIYOS_API BIYOS_status BIYOS_findvar(const BIYOS_model *mdl,
+                                     BIYOS_index n,
+                                     const char *const *name,
+                                     BIYOS_index *var);
 BIYOS_API BIYOS_status BIYOS_delvarnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *var);
 BIYOS_API BIYOS_status BIYOS_delvarnamerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end);
 BIYOS_API BIYOS_status BIYOS_delvarsp(BIYOS_model *mdl,
@@ -356,10 +356,10 @@ BIYOS_API BIYOS_status BIYOS_getfunnamerg(const BIYOS_model *mdl,
                                           BIYOS_index beg,
                                           BIYOS_index end,
                                           const char **name);
-BIYOS_API BIYOS_status BIYOS_getfunidx(const BIYOS_model *mdl,
-                                       BIYOS_index n,
-                                       const char *const *name,
-                                       BIYOS_index *fun);
+BIYOS_API BIYOS_status BIYOS_findfun(const BIYOS_model *mdl,
+                                     BIYOS_index n,
+                                     const char *const *name,
+                                     BIYOS_index *fun);
 BIYOS_API BIYOS_status BIYOS_delfunnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *fun);
 BIYOS_API BIYOS_status BIYOS_delfunnamerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end);
 BIYOS_API BIYOS_status BIYOS_delfunsp(BIYOS_model *mdl,
@@ -566,10 +566,10 @@ BIYOS_API BIYOS_status BIYOS_getconnamerg(const BIYOS_model *mdl,
                                           BIYOS_index beg,
                                           BIYOS_index end,
                                           const char **name);
-BIYOS_API BIYOS_status BIYOS_getconidx(const BIYOS_model *mdl,
-                                       BIYOS_index n,
-                                       const char *const *name,
-                                       BIYOS_index *con);
+BIYOS_API BIYOS_status BIYOS_findcon(const BIYOS_model *mdl,
+                                     BIYOS_index n,
+                                     const char *const *name,
+                                     BIYOS_index *con);
 BIYOS_API BIYOS_status BIYOS_delconnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *con);
 BIYOS_API BIYOS_status BIYOS_delconnamerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end);
 BIYOS_API BIYOS_status BIYOS_delconsp(BIYOS_model *mdl,
@@ -686,10 +686,10 @@ BIYOS_API BIYOS_status BIYOS_getobjnamerg(const BIYOS_model *mdl,
                                           BIYOS_index beg,
                                           BIYOS_index end,
                                           const char **name);
-BIYOS_API BIYOS_status BIYOS_getobjidx(const BIYOS_model *mdl,
-                                       BIYOS_index n,
-                                       const char *const *name,
-                                       BIYOS_index *obj);
+BIYOS_API BIYOS_status BIYOS_findobj(const BIYOS_model *mdl,
+                                     BIYOS_index n,
+                                     const char *const *name,
+                                     BIYOS_index *obj);
 BIYOS_API BIYOS_status BIYOS_delobjnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *obj);
 BIYOS_API BIYOS_status BIYOS_delobjnamerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end);
 BIYOS_API BIYOS_status BIYOS_delobjsp(BIYOS_model *mdl,
@@ -781,10 +781,10 @@ BIYOS_API BIYOS_status BIYOS_getindnamerg(const BIYOS_model *mdl,
                                           BIYOS_index beg,
                                           BIYOS_index end,
                                           const char **name);
-BIYOS_API BIYOS_status BIYOS_getindidx(const BIYOS_model *mdl,
-                                       BIYOS_index n,
-                                       const char *const *name,
-                                       BIYOS_index *ind);
+BIYOS_API BIYOS_status BIYOS_findind(const BIYOS_model *mdl,
+                                     BIYOS_index n,
+                                     const char *const *name,
+                                     BIYOS_index *ind);
 BIYOS_API BIYOS_status BIYOS_delindnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *ind);
 BIYOS_API BIYOS_status BIYOS_delindnamerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end);
 BIYOS_API BIYOS_status BIYOS_delindsp(BIYOS_model *mdl,
@@ -843,10 +843,10 @@ BIYOS_API BIYOS_status BIYOS_getsosnamerg(const BIYOS_model *mdl,
                                           BIYOS_index beg,
                                           BIYOS_index end,
                                           const char **name);
-BIYOS_API BIYOS_status BIYOS_getsosidx(const BIYOS_model *mdl,
-                                       BIYOS_index n,
-                                       const char *const *name,
-                                       BIYOS_index *sos);
+BIYOS_API BIYOS_status BIYOS_findsos(const BIYOS_model *mdl,
+                                     BIYOS_index n,
+                                     const char *const *name,
+                                     BIYOS_index *sos);
 BIYOS_API BIYOS_status BIYOS_delsosnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *sos);
 BIYOS_API BIYOS_status BIYOS_delsosnamerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end);
 BIYOS_API BIYOS_status BIYOS_delsossp(BIYOS_model *mdl,
@@ -979,10 +979,10 @@ BIYOS_API BIYOS_status BIYOS_getconenamerg(const BIYOS_model *mdl,
                                            BIYOS_index beg,
                                            BIYOS_index end,
                                            const char **name);
-BIYOS_API BIYOS_status BIYOS_getconeidx(const BIYOS_model *mdl,
-                                        BIYOS_index n,
-                                        const char *const *name,
-                                        BIYOS_index *cone);
+BIYOS_API BIYOS_status BIYOS_findcone(const BIYOS_model *mdl,
+                                      BIYOS_index n,
+                                      const char *const *name,
+                                      BIYOS_index *cone);
 BIYOS_API BIYOS_status BIYOS_delconenamesp(BIYOS_model *mdl,
                                            BIYOS_index n,
                                            const BIYOS_index *cone);
@@ -1075,10 +1075,10 @@ BIYOS_API BIYOS_status BIYOS_getcconnamerg(const BIYOS_model *mdl,
                                            BIYOS_index beg,
                                            BIYOS_index end,
                                            const char **name);
-BIYOS_API BIYOS_status BIYOS_getcconidx(const BIYOS_model *mdl,
-                                        BIYOS_index n,
-                                        const char *const *name,
-                                        BIYOS_index *ccon);
+BIYOS_API BIYOS_status BIYOS_findccon(const BIYOS_model *mdl,
+                                      BIYOS_index n,
+                                      const char *const *name,
+                                      BIYOS_index *ccon);
 BIYOS_API BIYOS_status BIYOS_delcconnamesp(BIYOS_model *mdl,
                                            BIYOS_index n,
                                            const BIYOS_index *ccon);
@@ -1126,6 +1126,16 @@ BIYOS_API BIYOS_status BIYOS_delcconrg(BIYOS_model *mdl,
 #define BIYOS_OP_KEEP 32
 #define BIYOS_OP_REF 33
 #define BIYOS_OP_ATAN2 34
+#define BIYOS_OP_LE 35
+#define BIYOS_OP_GE 36
+#define BIYOS_OP_EQ 37
+#define BIYOS_OP_LT 38
+#define BIYOS_OP_GT 39
+#define BIYOS_OP_NE 40
+#define BIYOS_OP_AND 41
+#define BIYOS_OP_OR 42
+#define BIYOS_OP_NOT 43
+#define BIYOS_OP_IF 44
 
 BIYOS_API BIYOS_status BIYOS_addvarnode(BIYOS_model *mdl, BIYOS_index var, BIYOS_offset *node);
 BIYOS_API BIYOS_status BIYOS_addnode(BIYOS_model *mdl,

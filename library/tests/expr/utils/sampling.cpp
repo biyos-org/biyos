@@ -7,6 +7,7 @@
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "reference.hpp"
+#include "sweep.hpp"
 
 #include <gtest/gtest.h>
 
@@ -200,6 +201,16 @@ void expect_point(const Check &check, const Point &point)
     }
 }
 
+std::vector<Offset> conditions_of(Graph &graph, Operator op, std::span<const Offset> x)
+{
+    std::vector<Offset> conditions{graph.add(Operator::Less, x.first(2))};
+    if (op != Operator::Not)
+    {
+        conditions.push_back(graph.add(Operator::GreaterEqual, x.last(2)));
+    }
+    return conditions;
+}
+
 }
 
 std::vector<int> biyos::test::sampled_codes()
@@ -209,7 +220,10 @@ std::vector<int> biyos::test::sampled_codes()
     {
         codes.push_back(code);
     }
-    codes.push_back(BIYOS_OP_ATAN2);
+    for (int code = BIYOS_OP_ATAN2; code <= BIYOS_OP_IF; ++code)
+    {
+        codes.push_back(code);
+    }
     return codes;
 }
 
@@ -257,11 +271,25 @@ Graph biyos::test::operator_graph(Operator op, const Parameters &parameters)
     case Operator::Division:
     case Operator::Power:
     case Operator::Atan2:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
         graph.add(op, two);
         break;
     case Operator::Max:
     case Operator::Min:
         graph.add(op, x);
+        break;
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
+        graph.add(op, conditions_of(graph, op, x));
+        break;
+    case Operator::If:
+        graph.add(op, std::array{graph.add(Operator::Less, two), x[1], x[2]});
         break;
     case Operator::Negation:
     case Operator::Exp:
@@ -294,7 +322,7 @@ Graph biyos::test::operator_graph(Operator op, const Parameters &parameters)
 std::vector<Interval> biyos::test::enclosures(const Graph &graph, std::span<const Interval> box)
 {
     std::vector<Interval> nodes(static_cast<std::size_t>(graph.size()), Interval::empty());
-    biyos::enclose(graph, box, nodes);
+    biyos::enclose(graph, box, default_tolerances(), nodes);
     return nodes;
 }
 

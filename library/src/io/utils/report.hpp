@@ -6,11 +6,14 @@
 
 #include <cstddef>
 #include <string>
+#include <string_view>
 
 namespace biyos
 {
 
+[[noreturn]] void bad_file(const std::string &where, const std::string &message);
 [[noreturn]] void bad_file(const Lines &lines, const std::string &message);
+[[noreturn]] void unsupported(const std::string &where, const std::string &message);
 [[noreturn]] void unsupported(const Lines &lines, const std::string &message);
 void warn(Stream stream,
           const std::string &file,
@@ -19,10 +22,16 @@ void warn(Stream stream,
 void warn(Stream stream, const Lines &lines, const std::string &text) noexcept;
 void warn(Stream stream, const std::string &file, const std::string &text) noexcept;
 void inform(Stream stream, const Lines &lines, const std::string &text) noexcept;
+void inform(Stream stream, const std::string &file, const std::string &text) noexcept;
+void inform(Stream stream,
+            const std::string &file,
+            std::string_view unit,
+            std::size_t at,
+            const std::string &text) noexcept;
 [[noreturn]] void reject(const std::string &where, const Error &error);
 [[noreturn]] void reject(const Lines &lines, const Error &error);
 
-template <typename Call> auto checked(const Lines &lines, Call call)
+template <typename Place, typename Call> auto checked(const Place &place, Call call)
 {
     try
     {
@@ -30,7 +39,7 @@ template <typename Call> auto checked(const Lines &lines, Call call)
     }
     catch (const Error &error)
     {
-        reject(lines, error);
+        reject(place, error);
     }
 }
 

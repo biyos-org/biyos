@@ -317,7 +317,7 @@ TEST(CApiTest, ComplementBounds)
     expect_doubles(listed, {1.0, BIYOS_INF, 1.0});
     EXPECT_EQ(read_all(model).multipliers, kSample.multipliers);
     EXPECT_EQ(BIYOS_setcconbndsp(held, 2, nullptr, lower, upper), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'ccon': is null");
 }
 
 TEST(CApiTest, RefusedComplements)
@@ -352,7 +352,7 @@ TEST(CApiTest, RefusedComplements)
     EXPECT_EQ(env.message(), "invalid argument: complement 3: unknown");
     EXPECT_EQ(BIYOS_getcconsp(held, 1, nullptr, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'ccon': is null");
     expect_records(read_all(model), kSample);
 }
 
@@ -441,7 +441,7 @@ TEST(CApiTest, RefusedTolerances)
     EXPECT_EQ(BIYOS_setccontolsp(held, 1, &unknown, &small, &small), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: complement 3: unknown");
     EXPECT_EQ(BIYOS_setccontolsp(held, 1, nullptr, &small, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'ccon': is null");
     const BIYOS_index indices[] = {0, 2};
     const double absolute[] = {0.5, kNan};
     EXPECT_EQ(BIYOS_setccontolsp(held, 2, indices, absolute, nullptr), BIYOS_ERR_BADARG);
@@ -489,7 +489,7 @@ TEST(CApiTest, RefusedDeletion)
     EXPECT_EQ(BIYOS_delccontolsp(held, 2, indices), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: complement 3: unknown");
     EXPECT_EQ(BIYOS_delccontolsp(held, 1, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'ccon': is null");
     EXPECT_EQ(BIYOS_delccontolrg(held, 2, 4), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: complement 3: unknown");
     expect_tolerances(read_tolerances(model), before);

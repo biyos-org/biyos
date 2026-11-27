@@ -1,5 +1,7 @@
 #include "io/native/utils/escape.hpp"
 
+#include "core/text/text.hpp"
+
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -11,7 +13,6 @@ namespace biyos::native
 namespace
 {
 
-constexpr std::string_view kDigits = "0123456789ABCDEF";
 constexpr unsigned char kDelete = 0x7F;
 constexpr std::size_t kBase = 16;
 
@@ -22,7 +23,7 @@ bool plain(unsigned char byte) noexcept
 
 std::optional<std::size_t> digit_of(char digit) noexcept
 {
-    const std::size_t at = kDigits.find(digit);
+    const std::size_t at = kHexDigits.find(digit);
     if (at == std::string_view::npos)
     {
         return std::nullopt;
@@ -44,9 +45,7 @@ std::string escaped(std::string_view name)
             field += letter;
             continue;
         }
-        field += '\\';
-        field += kDigits[byte / kBase];
-        field += kDigits[byte % kBase];
+        field += '\\' + hex_of(byte);
     }
     return field;
 }

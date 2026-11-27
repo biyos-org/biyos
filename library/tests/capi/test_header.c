@@ -126,7 +126,10 @@ extern char request_end[sizeof(BIYOS_cbreq) == 5 * sizeof(void *) + 8 ? 1 : -1];
     BIYOS_OP_ATAN != 20 || BIYOS_OP_SINH != 21 || BIYOS_OP_COSH != 22 || BIYOS_OP_TANH != 23 ||    \
     BIYOS_OP_ASINH != 24 || BIYOS_OP_ACOSH != 25 || BIYOS_OP_ATANH != 26 || BIYOS_OP_ENT != 27 ||  \
     BIYOS_OP_SPOW != 28 || BIYOS_OP_ERF != 29 || BIYOS_OP_NODE != 30 || BIYOS_OP_PWL != 31 ||      \
-    BIYOS_OP_KEEP != 32 || BIYOS_OP_REF != 33 || BIYOS_OP_ATAN2 != 34
+    BIYOS_OP_KEEP != 32 || BIYOS_OP_REF != 33 || BIYOS_OP_ATAN2 != 34 || BIYOS_OP_LE != 35 ||      \
+    BIYOS_OP_GE != 36 || BIYOS_OP_EQ != 37 || BIYOS_OP_LT != 38 || BIYOS_OP_GT != 39 ||            \
+    BIYOS_OP_NE != 40 || BIYOS_OP_AND != 41 || BIYOS_OP_OR != 42 || BIYOS_OP_NOT != 43 ||          \
+    BIYOS_OP_IF != 44
 #error "a public operator changed"
 #endif
 
@@ -637,13 +640,13 @@ static BIYOS_status find_names(const BIYOS_model *model)
     const char *names[2] = {"y", "x"};
     BIYOS_index variables[2] = {-1, -1};
     BIYOS_index found[6] = {-1, -1, -1, -1, -1, -1};
-    if (BIYOS_getvaridx(model, 2, names, variables) != BIYOS_OK ||
-        BIYOS_getfunidx(model, 1, names, &found[0]) != BIYOS_OK ||
-        BIYOS_getconidx(model, 1, names + 1, &found[1]) != BIYOS_OK ||
-        BIYOS_getobjidx(model, 1, names + 1, &found[2]) != BIYOS_OK ||
-        BIYOS_getindidx(model, 1, names, &found[3]) != BIYOS_OK ||
-        BIYOS_getsosidx(model, 1, names, &found[4]) != BIYOS_OK ||
-        BIYOS_getcconidx(model, 1, names, &found[5]) != BIYOS_OK)
+    if (BIYOS_findvar(model, 2, names, variables) != BIYOS_OK ||
+        BIYOS_findfun(model, 1, names, &found[0]) != BIYOS_OK ||
+        BIYOS_findcon(model, 1, names + 1, &found[1]) != BIYOS_OK ||
+        BIYOS_findobj(model, 1, names + 1, &found[2]) != BIYOS_OK ||
+        BIYOS_findind(model, 1, names, &found[3]) != BIYOS_OK ||
+        BIYOS_findsos(model, 1, names, &found[4]) != BIYOS_OK ||
+        BIYOS_findccon(model, 1, names, &found[5]) != BIYOS_OK)
     {
         return BIYOS_ERR_INTERNAL;
     }
@@ -686,7 +689,7 @@ static BIYOS_status name_cones(BIYOS_model *model)
     BIYOS_index at = -1;
     if (BIYOS_setconenamesp(model, 1, indices, names) != BIYOS_OK ||
         BIYOS_getconenamerg(model, 1, 2, &found) != BIYOS_OK || !matches(found, "k") ||
-        BIYOS_getconeidx(model, 1, names, &at) != BIYOS_OK || at != 1 ||
+        BIYOS_findcone(model, 1, names, &at) != BIYOS_OK || at != 1 ||
         BIYOS_setconenamerg(model, 0, 1, names) != BIYOS_OK ||
         BIYOS_delconenamerg(model, 0, 1) != BIYOS_OK ||
         BIYOS_delconenamesp(model, 1, indices) != BIYOS_OK ||

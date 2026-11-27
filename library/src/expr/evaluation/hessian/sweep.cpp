@@ -2,6 +2,7 @@
 
 #include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "core/numeric/zero.hpp"
 #include "expr/evaluation/derivatives/partials.hpp"
 #include "expr/evaluation/derivatives/reverse.hpp"
@@ -17,6 +18,7 @@
 #include <cstdint>
 #include <ranges>
 #include <span>
+#include <utility>
 #include <vector>
 
 namespace biyos
@@ -25,14 +27,15 @@ namespace biyos
 namespace
 {
 
+constexpr std::size_t kSingle = 1;
+
 struct Lift
 {
     Frame frame;
+    Tangents tangents;
     std::span<const std::uint32_t> places;
     std::span<Real> partials;
     std::span<Real> curves;
-    std::span<Real> slots;
-    std::span<Real> spare;
     std::span<Real> result;
     std::span<const Real> seeds;
 };
@@ -61,26 +64,35 @@ std::span<T> mine(std::span<T> region,
     return region.subspan(places[k] * lanes, (places[k + 1] - places[k]) * lanes);
 }
 
-Lift lift_of(const Block &block, Pass &pass) noexcept
+Lift lift_of(const Block &block,
+             std::span<const Real> point,
+             const Tolerances &tolerances,
+             Pass &pass) noexcept
 {
     const std::size_t lanes = pass.lanes;
     Workspace &workspace = pass.workspace;
     return {
         .frame =
             {
-                .point = pass.points,
+                .point = point,
                 .operands = block.operands,
                 .weights = block.weights,
                 .slots = workspace.slots,
                 .result = workspace.result,
                 .spare = workspace.spare,
+                .lanes = kSingle,
+                .tolerances = tolerances,
+            },
+        .tangents =
+            {
+                .slots = pass.velocity.slots,
+                .running = pass.velocity.running,
+                .prefix = pass.velocity.prefix,
                 .lanes = lanes,
             },
         .places = block.places,
-        .partials = region(block, std::span(workspace.partials), lanes),
+        .partials = region(block, std::span(workspace.partials), kSingle),
         .curves = region(block, std::span(pass.velocity.partials), lanes),
-        .slots = pass.velocity.slots,
-        .spare = pass.velocity.spare,
         .result = pass.velocity.result,
         .seeds = pass.seeds,
     };
@@ -88,14 +100,14 @@ Lift lift_of(const Block &block, Pass &pass) noexcept
 
 std::span<const Real> tangent(const Lift &lift, std::uint32_t slot) noexcept
 {
-    return row(std::span<const Real>(lift.slots), slot, lift.frame.lanes);
+    return row(std::span<const Real>(lift.tangents.slots), slot, lift.tangents.lanes);
 }
 
-void add(const Lift &lift, std::span<const Real> tangents, std::span<const Real> partials) noexcept
+void add(const Lift &lift, std::span<const Real> tangents, Real partial) noexcept
 {
-    for (std::size_t l = 0; l < lift.frame.lanes; ++l)
+    for (std::size_t l = 0; l < lift.tangents.lanes; ++l)
     {
-        lift.result[l] += scaled(tangents[l], partials[l]);
+        lift.result[l] += scaled(tangents[l], partial);
     }
 }
 
@@ -108,11 +120,7 @@ void add_sum(const Instruction &instruction,
         lift.frame.weights.subspan(place(instruction.payload) + 1, terms.size());
     for (std::size_t k = 0; k < terms.size(); ++k)
     {
-        const std::span<const Real> t = tangent(lift, terms[k]);
-        for (std::size_t l = 0; l < lift.frame.lanes; ++l)
-        {
-            lift.result[l] += scaled(t[l], partials[l] * weights[k]);
-        }
+        add(lift, tangent(lift, terms[k]), partials[0] * weights[k]);
     }
 }
 
@@ -123,29 +131,31 @@ void add_product(const Instruction &instruction,
     const std::span<const std::uint32_t> factors = listed(instruction, lift.frame.operands);
     for (std::size_t k = 0; k < factors.size(); ++k)
     {
-        add(lift, tangent(lift, factors[k]), row(partials, k, lift.frame.lanes));
+        add(lift, tangent(lift, factors[k]), partials[k]);
     }
 }
 
-void pick(std::span<Real> into,
-          std::size_t k,
-          std::span<const Real> from,
-          std::span<const Real> partials) noexcept
+void pick(Real &into, std::size_t k, Real from, Real partial) noexcept
+{
+    if (is_zero(from))
+    {
+        return;
+    }
+    if (std::isnan(partial))
+    {
+        into += from * partial;
+    }
+    else if (chosen(partial) == k)
+    {
+        into += from;
+    }
+}
+
+void pick(std::span<Real> into, std::size_t k, std::span<const Real> from, Real partial) noexcept
 {
     for (std::size_t l = 0; l < into.size(); ++l)
     {
-        if (is_zero(from[l]))
-        {
-            continue;
-        }
-        if (std::isnan(partials[l]))
-        {
-            into[l] += from[l] * partials[l];
-        }
-        else if (chosen(partials[l]) == k)
-        {
-            into[l] += from[l];
-        }
+        pick(into[l], k, from[l], partial);
     }
 }
 
@@ -156,7 +166,7 @@ void add_extreme(const Instruction &instruction,
     const std::span<const std::uint32_t> operands = listed(instruction, lift.frame.operands);
     for (std::size_t k = 0; k < operands.size(); ++k)
     {
-        pick(lift.result, k, tangent(lift, operands[k]), partials);
+        pick(lift.result, k, tangent(lift, operands[k]), partials[0]);
     }
 }
 
@@ -164,11 +174,20 @@ void motion(const Instruction &instruction,
             const Lift &lift,
             std::span<const Real> partials) noexcept
 {
-    const std::size_t lanes = lift.frame.lanes;
+    const std::size_t lanes = lift.tangents.lanes;
     std::ranges::fill(lift.result, 0.0);
     switch (instruction.op)
     {
     case Operator::Constant:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
         return;
     case Operator::Variable:
         std::ranges::copy(row(lift.seeds, place(instruction.payload), lanes), lift.result.begin());
@@ -182,8 +201,8 @@ void motion(const Instruction &instruction,
     case Operator::Division:
     case Operator::Power:
     case Operator::Atan2:
-        add(lift, tangent(lift, instruction.first), row(partials, 0, lanes));
-        add(lift, tangent(lift, instruction.second), row(partials, 1, lanes));
+        add(lift, tangent(lift, instruction.first), partials[0]);
+        add(lift, tangent(lift, instruction.second), partials[1]);
         return;
     case Operator::Negation:
     case Operator::ConstantPower:
@@ -207,10 +226,11 @@ void motion(const Instruction &instruction,
     case Operator::SignPower:
     case Operator::Erf:
     case Operator::PiecewiseLinear:
-        add(lift, tangent(lift, instruction.first), partials);
+        add(lift, tangent(lift, instruction.first), partials[0]);
         return;
     case Operator::Max:
     case Operator::Min:
+    case Operator::If:
         add_extreme(instruction, lift, partials);
         return;
     }
@@ -218,15 +238,15 @@ void motion(const Instruction &instruction,
 
 void advance(const Instruction &instruction, std::size_t k, const Lift &lift) noexcept
 {
-    const std::size_t lanes = lift.frame.lanes;
-    const std::span<Real> partials = mine(lift.partials, lift.places, k, lanes);
+    const std::size_t lanes = lift.tangents.lanes;
+    const std::span<Real> partials = mine(lift.partials, lift.places, k, kSingle);
     const std::span<Real> curves = mine(lift.curves, lift.places, k, lanes);
     evaluate(instruction, lift.frame);
     partials_of(instruction, lift.frame, partials);
-    partial_tangents(instruction, lift.frame, {lift.slots, lift.spare}, partials, curves);
+    partial_tangents(instruction, lift.frame, lift.tangents, partials, curves);
     motion(instruction, lift, partials);
     keep(instruction, lift.frame);
-    std::ranges::copy(lift.result, row(lift.slots, instruction.target, lanes).begin());
+    std::ranges::copy(lift.result, row(lift.tangents.slots, instruction.target, lanes).begin());
 }
 
 void copy_row(std::span<const Real> from,
@@ -246,16 +266,20 @@ void load(const Block &block, std::size_t output, Pass &pass) noexcept
         for (std::uint32_t k = run.begin; k < run.end; ++k)
         {
             const std::size_t from = to_size(block.loads[k]);
-            copy_row(pass.workspace.shared, from, pass.workspace.slots, k, lanes);
+            pass.workspace.slots[k] = pass.workspace.shared[from];
             copy_row(pass.velocity.shared, from, pass.velocity.slots, k, lanes);
         }
     }
 }
 
-void lift(const Block &block, std::size_t output, Pass &pass) noexcept
+void lift(const Block &block,
+          std::size_t output,
+          std::span<const Real> point,
+          const Tolerances &tolerances,
+          Pass &pass) noexcept
 {
     load(block, output, pass);
-    const Lift lift = lift_of(block, pass);
+    const Lift lift = lift_of(block, point, tolerances, pass);
     for (const Run run : slice(std::span(block.runs), block.starts, output))
     {
         for (std::uint32_t k = run.begin; k < run.end; ++k)
@@ -270,16 +294,15 @@ void hold(const Block &block, std::size_t output, Pass &pass) noexcept
     const std::size_t lanes = pass.lanes;
     const std::size_t position = to_size(block.begin) + output;
     const std::uint32_t slot = block.outputs[output];
-    copy_row(pass.workspace.slots, slot, pass.workspace.shared, position, lanes);
+    pass.workspace.shared[position] = pass.workspace.slots[slot];
     copy_row(pass.velocity.slots, slot, pass.velocity.shared, position, lanes);
 }
 
-const Block &block_of(std::span<const Block> blocks, Offset position) noexcept
-{
-    return *(std::ranges::upper_bound(blocks, position, {}, &Block::begin) - 1);
-}
-
-void rise(const Tape &tape, Offset element, Pass &pass) noexcept
+void rise(const Tape &tape,
+          Offset element,
+          std::span<const Real> point,
+          const Tolerances &tolerances,
+          Pass &pass) noexcept
 {
     const std::span<const Block> prepass = tape.blocks().first(to_size(tape.prepass()));
     for (const Range range : tape.route(element))
@@ -288,7 +311,7 @@ void rise(const Tape &tape, Offset element, Pass &pass) noexcept
         {
             const Block &block = block_of(prepass, position);
             const std::size_t output = to_size(position - block.begin);
-            lift(block, output, pass);
+            lift(block, output, point, tolerances, pass);
             hold(block, output, pass);
         }
     }
@@ -301,7 +324,7 @@ Trail trail_of(const Block &block, Pass &pass) noexcept
         .operands = block.operands,
         .weights = block.weights,
         .places = block.places,
-        .partials = region(block, std::span<const Real>(pass.workspace.partials), lanes),
+        .partials = region(block, std::span<const Real>(pass.workspace.partials), kSingle),
         .curves = region(block, std::span<const Real>(pass.velocity.partials), lanes),
         .adjoints = pass.first.slots,
         .tangents = pass.second.slots,
@@ -314,25 +337,23 @@ Trail trail_of(const Block &block, Pass &pass) noexcept
 
 void take(const Instruction &instruction, const Trail &trail) noexcept
 {
-    const std::span<Real> adjoint = row(trail.adjoints, instruction.target, trail.lanes);
     const std::span<Real> tangent = row(trail.tangents, instruction.target, trail.lanes);
-    std::ranges::copy(adjoint, trail.taken.begin());
+    trail.taken[0] = std::exchange(trail.adjoints[instruction.target], 0.0);
     std::ranges::copy(tangent, trail.held.begin());
-    std::ranges::fill(adjoint, 0.0);
     std::ranges::fill(tangent, 0.0);
 }
 
 void both(std::uint32_t slot,
-          std::span<const Real> partials,
+          Real partial,
           std::span<const Real> curves,
           const Trail &trail) noexcept
 {
-    const std::span<Real> adjoint = row(trail.adjoints, slot, trail.lanes);
+    const Real taken = trail.taken[0];
     const std::span<Real> tangent = row(trail.tangents, slot, trail.lanes);
+    trail.adjoints[slot] += scaled(taken, partial);
     for (std::size_t l = 0; l < trail.lanes; ++l)
     {
-        adjoint[l] += scaled(trail.taken[l], partials[l]);
-        tangent[l] += scaled(trail.held[l], partials[l]) + scaled(trail.taken[l], curves[l]);
+        tangent[l] += scaled(trail.held[l], partial) + scaled(taken, curves[l]);
     }
 }
 
@@ -345,12 +366,12 @@ void spread_sum(const Instruction &instruction,
         trail.weights.subspan(place(instruction.payload) + 1, terms.size());
     for (std::size_t k = 0; k < terms.size(); ++k)
     {
-        const std::span<Real> adjoint = row(trail.adjoints, terms[k], trail.lanes);
+        const Real partial = partials[0] * weights[k];
         const std::span<Real> tangent = row(trail.tangents, terms[k], trail.lanes);
+        trail.adjoints[terms[k]] += scaled(trail.taken[0], partial);
         for (std::size_t l = 0; l < trail.lanes; ++l)
         {
-            adjoint[l] += scaled(trail.taken[l], partials[l] * weights[k]);
-            tangent[l] += scaled(trail.held[l], partials[l] * weights[k]);
+            tangent[l] += scaled(trail.held[l], partial);
         }
     }
 }
@@ -363,7 +384,7 @@ void spread(const Instruction &instruction,
     const std::span<const std::uint32_t> operands = listed(instruction, trail.operands);
     for (std::size_t k = 0; k < operands.size(); ++k)
     {
-        both(operands[k], row(partials, k, trail.lanes), row(curves, k, trail.lanes), trail);
+        both(operands[k], partials[k], row(curves, k, trail.lanes), trail);
     }
 }
 
@@ -374,8 +395,8 @@ void send(const Instruction &instruction,
     const std::span<const std::uint32_t> operands = listed(instruction, trail.operands);
     for (std::size_t k = 0; k < operands.size(); ++k)
     {
-        pick(row(trail.adjoints, operands[k], trail.lanes), k, trail.taken, partials);
-        pick(row(trail.tangents, operands[k], trail.lanes), k, trail.held, partials);
+        pick(trail.adjoints[operands[k]], k, trail.taken[0], partials[0]);
+        pick(row(trail.tangents, operands[k], trail.lanes), k, trail.held, partials[0]);
     }
 }
 
@@ -406,13 +427,21 @@ void step(const Instruction &instruction,
         spread_sum(instruction, partials, trail);
         return;
     case Operator::Product:
+    case Operator::And:
+    case Operator::Or:
         spread(instruction, partials, curves, trail);
         return;
     case Operator::Division:
     case Operator::Power:
     case Operator::Atan2:
-        both(instruction.first, row(partials, 0, lanes), row(curves, 0, lanes), trail);
-        both(instruction.second, row(partials, 1, lanes), row(curves, 1, lanes), trail);
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
+        both(instruction.first, partials[0], row(curves, 0, lanes), trail);
+        both(instruction.second, partials[1], row(curves, 1, lanes), trail);
         return;
     case Operator::Negation:
     case Operator::ConstantPower:
@@ -436,10 +465,12 @@ void step(const Instruction &instruction,
     case Operator::SignPower:
     case Operator::Erf:
     case Operator::PiecewiseLinear:
-        both(instruction.first, partials, curves, trail);
+    case Operator::Not:
+        both(instruction.first, partials[0], curves, trail);
         return;
     case Operator::Max:
     case Operator::Min:
+    case Operator::If:
         send(instruction, partials, trail);
         return;
     }
@@ -451,8 +482,7 @@ void release(const Block &block, Run loads, Pass &pass) noexcept
     for (std::uint32_t load = loads.begin; load < loads.end; ++load)
     {
         const std::size_t into = to_size(block.loads[load]);
-        drain(row(std::span(pass.first.slots), load, lanes),
-              row(std::span(pass.first.shared), into, lanes));
+        pass.first.shared[into] += std::exchange(pass.first.slots[load], 0.0);
         drain(row(std::span(pass.second.slots), load, lanes),
               row(std::span(pass.second.shared), into, lanes));
     }
@@ -467,7 +497,7 @@ void retrace(const Block &block, std::size_t output, Pass &pass) noexcept
         for (std::uint32_t k = run.end; k > run.begin; --k)
         {
             step(block.instructions[k - 1],
-                 mine(trail.partials, trail.places, k - 1, lanes),
+                 mine(trail.partials, trail.places, k - 1, kSingle),
                  mine(trail.curves, trail.places, k - 1, lanes),
                  trail);
         }
@@ -483,8 +513,7 @@ void fall(const Block &block, std::size_t output, Pass &pass) noexcept
     const std::size_t lanes = pass.lanes;
     const std::size_t position = to_size(block.begin) + output;
     const std::uint32_t slot = block.outputs[output];
-    drain(row(std::span(pass.first.shared), position, lanes),
-          row(std::span(pass.first.slots), slot, lanes));
+    pass.first.slots[slot] += std::exchange(pass.first.shared[position], 0.0);
     drain(row(std::span(pass.second.shared), position, lanes),
           row(std::span(pass.second.slots), slot, lanes));
     retrace(block, output, pass);
@@ -507,26 +536,29 @@ void descend(const Tape &tape, Offset element, Pass &pass) noexcept
 
 Velocity::Velocity(const Tape &tape, std::size_t lanes)
     : slots(sized(tape.width(), lanes), 0.0), shared(sized(to_size(tape.pinned()), lanes), 0.0),
-      partials(sized(to_size(tape.partials()), lanes), 0.0),
-      spare(sized(tangent_rows(tape), lanes), 0.0), result(lanes, 0.0)
+      partials(sized(to_size(tape.partials()), lanes), 0.0), running(lanes, 0.0),
+      prefix(widest_product(tape), 0.0), result(lanes, 0.0)
 {
 }
 
 Pass::Pass(const Tape &tape, std::size_t count)
-    : lanes(lanes_of(tape, count)), workspace(tape, lanes), velocity(tape, lanes),
-      first(tape, lanes), second(tape, lanes), points(sized(to_size(tape.variables()), lanes), 0.0),
-      seeds(points.size(), 0.0)
+    : lanes(lanes_of(tape, count)), workspace(tape), velocity(tape, lanes), first(tape),
+      second(tape, lanes), seeds(sized(to_size(tape.variables()), lanes), 0.0)
 {
 }
 
-void sweep(const Tape &tape, Offset element, Pass &pass) noexcept
+void sweep(const Tape &tape,
+           Offset element,
+           std::span<const Real> point,
+           const Tolerances &tolerances,
+           Pass &pass) noexcept
 {
     const std::span<const Block> partition = tape.blocks().subspan(to_size(tape.prepass()));
     const Block &block = block_of(partition, element);
     const std::size_t output = to_size(element - block.begin);
-    rise(tape, element, pass);
-    lift(block, output, pass);
-    std::ranges::fill(row(std::span(pass.first.slots), block.outputs[output], pass.lanes), 1.0);
+    rise(tape, element, point, tolerances, pass);
+    lift(block, output, point, tolerances, pass);
+    pass.first.slots[block.outputs[output]] = 1.0;
     retrace(block, output, pass);
     descend(tape, element, pass);
 }

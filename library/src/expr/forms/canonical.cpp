@@ -240,6 +240,16 @@ void Walk::visit(const Item &item)
     case Operator::Erf:
     case Operator::PiecewiseLinear:
     case Operator::Atan2:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
+    case Operator::If:
         keep(item);
         break;
     }

@@ -11,6 +11,7 @@ def build(model):
             biyos.exp(s) + biyos.sin(s) <= 4,
             1 <= x[2] + biyos.max(x[3], 0),
             x[0] - x[1] == x[2],
+            biyos.ifelse(x[3] <= 1, x[3], x[3] ** 2) <= 4,
         ]
     )
     return x

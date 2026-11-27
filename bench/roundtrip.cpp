@@ -108,13 +108,18 @@ std::optional<std::string> difference(BIYOS_env *env, const BIYOS_model *a, cons
     return text;
 }
 
+BIYOS_int written_as(BIYOS_int format)
+{
+    return format == BIYOS_FILEFMT_FIXMPS ? BIYOS_FILEFMT_MPS : format;
+}
+
 int round_trip(const char *source, const char *scratch, BIYOS_int given)
 {
     const EnvPtr env = new_env();
     Stopwatch watch;
     const ModelPtr model = read_model(env.get(), source, given);
     watch.lap("read");
-    const BIYOS_int format = BIYOS_FILEFMT_MPS;
+    const BIYOS_int format = written_as(given);
     const BIYOS_status written = BIYOS_writemdl(model.get(), scratch, format);
     if (written == BIYOS_ERR_UNSUPPORTED)
     {
@@ -144,6 +149,10 @@ std::optional<BIYOS_int> format_of(int argc, char **argv)
     {
         return BIYOS_FILEFMT_FIXMPS;
     }
+    if (argc == 4 && std::strcmp(argv[3], "nl") == 0)
+    {
+        return BIYOS_FILEFMT_NL;
+    }
     return std::nullopt;
 }
 
@@ -154,7 +163,7 @@ int main(int argc, char **argv)
     const std::optional<BIYOS_int> format = format_of(argc, argv);
     if (!format)
     {
-        std::cerr << "usage: roundtrip <file> <scratch> [fixed]\n";
+        std::cerr << "usage: roundtrip <file> <scratch> [fixed|nl]\n";
         return kError;
     }
     try

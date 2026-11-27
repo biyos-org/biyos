@@ -77,4 +77,6 @@ class Tape
     Offset partials_ = 0;
 };
 
+const Block &block_of(std::span<const Block> blocks, Offset position) noexcept;
+
 }

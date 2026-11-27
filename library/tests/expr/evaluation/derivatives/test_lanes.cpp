@@ -1,4 +1,5 @@
 #include "core/numbers.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "core/numeric/zero.hpp"
 #include "expr/evaluation/derivatives/derivative.hpp"
 #include "expr/evaluation/derivatives/reverse.hpp"
@@ -7,6 +8,7 @@
 #include "expr/graph/node.hpp"
 #include "expr/tape/tape.hpp"
 #include "graphs.hpp"
+#include "lanes.hpp"
 #include "refusal.hpp"
 #include "sweep.hpp"
 
@@ -40,26 +42,28 @@ using biyos::Real;
 using biyos::seed_directions;
 using biyos::Tape;
 using biyos::to_size;
+using biyos::Tolerances;
 using biyos::weighted_gradient;
 using biyos::Workspace;
+using biyos::test::default_tolerances;
 using biyos::test::every_operator;
 using biyos::test::gradient_of;
+using biyos::test::interleave;
 using biyos::test::jacobian_of;
 using biyos::test::kBudgets;
+using biyos::test::kLanes;
 using biyos::test::kRoots;
 using biyos::test::kVariables;
+using biyos::test::lane;
 using biyos::test::listed;
 using biyos::test::picks;
+using biyos::test::Points;
 using biyos::test::Random;
 using biyos::test::random_graph;
 using biyos::test::random_point;
 using biyos::test::refusal;
 using biyos::test::unary;
 using biyos::test::values_of;
-
-using Points = std::vector<std::vector<Real>>;
-
-constexpr std::array kLanes{std::size_t{1}, std::size_t{3}, std::size_t{16}};
 
 Points random_points(Random &random, std::size_t n)
 {
@@ -69,30 +73,6 @@ Points random_points(Random &random, std::size_t n)
         points.push_back(random_point(random));
     }
     return points;
-}
-
-std::vector<Real> interleave(const Points &points)
-{
-    const std::size_t lanes = points.size();
-    std::vector<Real> items(points[0].size() * lanes);
-    for (std::size_t l = 0; l < lanes; ++l)
-    {
-        for (std::size_t k = 0; k < points[l].size(); ++k)
-        {
-            items[k * lanes + l] = points[l][k];
-        }
-    }
-    return items;
-}
-
-std::vector<Real> lane(std::span<const Real> items, std::size_t l, std::size_t lanes)
-{
-    std::vector<Real> mine;
-    for (std::size_t k = l; k < items.size(); k += lanes)
-    {
-        mine.push_back(items[k]);
-    }
-    return mine;
 }
 
 void expect_bits(std::span<const Real> found, std::span<const Real> wanted)
@@ -115,7 +95,7 @@ void expect_values(const Tape &tape, Workspace &workspace, const Points &points)
 {
     const std::size_t lanes = points.size();
     std::vector<Real> values(to_size(tape.roots()) * lanes);
-    forward(tape, interleave(points), workspace, values);
+    forward(tape, interleave(points), default_tolerances(), workspace, values);
     for (std::size_t l = 0; l < lanes; ++l)
     {
         SCOPED_TRACE(l);
@@ -128,7 +108,7 @@ std::string refused(const Tape &tape,
                     std::span<const Real> point,
                     std::span<Real> values)
 {
-    return refusal([&] { forward(tape, point, workspace, values); });
+    return refusal([&] { forward(tape, point, default_tolerances(), workspace, values); });
 }
 
 bool cleared(const Adjoints &adjoints)
@@ -164,7 +144,8 @@ void expect_jacobian(const Tape &tape,
     const std::size_t lanes = points.size();
     std::vector<Real> values(to_size(tape.roots()) * lanes);
     std::vector<Real> gradients(tape.pattern().variables.size() * lanes);
-    jacobian(tape, interleave(points), workspace, adjoints, values, gradients);
+    const Tolerances tolerances = default_tolerances();
+    jacobian(tape, interleave(points), tolerances, workspace, adjoints, values, gradients);
     EXPECT_TRUE(cleared(adjoints));
     for (std::size_t l = 0; l < lanes; ++l)
     {
@@ -184,7 +165,15 @@ void expect_weighted(const Tape &tape,
     const std::vector<Real> point = interleave(points);
     std::vector<Real> values(to_size(tape.roots()) * lanes);
     std::vector<Real> gradient(point.size(), (std::numeric_limits<Real>::quiet_NaN)());
-    weighted_gradient(tape, point, interleave(weights), workspace, adjoints, values, gradient);
+    const Tolerances tolerances = default_tolerances();
+    weighted_gradient(tape,
+                      point,
+                      interleave(weights),
+                      tolerances,
+                      workspace,
+                      adjoints,
+                      values,
+                      gradient);
     EXPECT_TRUE(cleared(adjoints));
     for (std::size_t l = 0; l < lanes; ++l)
     {
@@ -239,7 +228,10 @@ struct Sweep
 
 void run_jacobian(const Sweep &call)
 {
-    jacobian(*call.tape, call.point, *call.workspace, *call.adjoints, call.values, call.out);
+    Workspace &workspace = *call.workspace;
+    Adjoints &adjoints = *call.adjoints;
+    const Tolerances tolerances = default_tolerances();
+    jacobian(*call.tape, call.point, tolerances, workspace, adjoints, call.values, call.out);
 }
 
 void run_weighted(const Sweep &call)
@@ -247,7 +239,15 @@ void run_weighted(const Sweep &call)
     const Tape &tape = *call.tape;
     Workspace &workspace = *call.workspace;
     Adjoints &adjoints = *call.adjoints;
-    weighted_gradient(tape, call.point, call.weights, workspace, adjoints, call.values, call.out);
+    const Tolerances tolerances = default_tolerances();
+    weighted_gradient(tape,
+                      call.point,
+                      call.weights,
+                      tolerances,
+                      workspace,
+                      adjoints,
+                      call.values,
+                      call.out);
 }
 
 std::string refused(void (*sweep)(const Sweep &), const Sweep &call)
@@ -292,7 +292,7 @@ void expect_seeded(const Tape &tape, Random &random, std::size_t lanes)
     const std::vector<Real> point = random_point(random);
     Workspace workspace(tape, lanes);
     std::vector<Real> values(to_size(tape.roots()) * lanes);
-    forward(tape, stepped(point, directions, lanes), workspace, values);
+    forward(tape, stepped(point, directions, lanes), default_tolerances(), workspace, values);
     for (std::size_t l = 0; l < lanes; ++l)
     {
         SCOPED_TRACE(l);
