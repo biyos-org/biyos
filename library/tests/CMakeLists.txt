@@ -91,6 +91,7 @@ biyos_add_test(test_expr
     expr/evaluation/hessian/test_elements.cpp
     expr/evaluation/hessian/test_hessian.cpp
     expr/evaluation/hessian/test_pattern.cpp
+    expr/evaluation/hessian/test_pushing.cpp
     expr/evaluation/hessian/test_tangents.cpp
     expr/evaluation/threads/test_levels.cpp
     expr/evaluation/threads/test_threads.cpp
