@@ -479,8 +479,9 @@ TEST(AllocationTest, Intervals)
     const Graph graph = every_operator();
     std::vector<Interval> nodes(static_cast<std::size_t>(graph.size()), Interval::empty());
     const std::array box{Interval(-0.5, 2.0), Interval(-1.0, 3.0)};
+    const Tolerances tolerances = default_tolerances();
     const std::size_t before = allocations();
-    enclose(graph, box, nodes);
+    enclose(graph, box, tolerances, nodes);
     EXPECT_EQ(allocations(), before);
     EXPECT_FALSE(nodes.back().is_empty());
 }
@@ -543,7 +544,7 @@ TEST(AllocationTest, Curvature)
     const Graph graph = every_operator();
     std::vector<Interval> nodes(static_cast<std::size_t>(graph.size()), Interval::empty());
     const std::array box{Interval(-0.5, 2.0), Interval(-1.0, 3.0)};
-    enclose(graph, box, nodes);
+    enclose(graph, box, default_tolerances(), nodes);
     Shapes shapes(graph);
     const std::size_t before = allocations();
     shapes.classify(graph, nodes);

@@ -7,6 +7,7 @@
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "reference.hpp"
+#include "sweep.hpp"
 
 #include <gtest/gtest.h>
 
@@ -294,7 +295,7 @@ Graph biyos::test::operator_graph(Operator op, const Parameters &parameters)
 std::vector<Interval> biyos::test::enclosures(const Graph &graph, std::span<const Interval> box)
 {
     std::vector<Interval> nodes(static_cast<std::size_t>(graph.size()), Interval::empty());
-    biyos::enclose(graph, box, nodes);
+    biyos::enclose(graph, box, default_tolerances(), nodes);
     return nodes;
 }
 
