@@ -16,6 +16,8 @@
 namespace biyos::test
 {
 
+constexpr Real kSide = 1e-7;
+
 inline std::vector<Real> values_of(const Tape &tape, std::span<const Real> point)
 {
     Workspace workspace(tape);

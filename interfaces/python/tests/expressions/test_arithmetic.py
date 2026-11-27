@@ -216,6 +216,7 @@ def test_operators():
         Operator.OR,
         Operator.NOT,
     }
-    assert reached | postfix | conditions == set(Operator)
+    logic = {*conditions, Operator.IF}
+    assert reached | postfix | logic == set(Operator)
     assert not reached & postfix
-    assert not (reached | postfix) & conditions
+    assert not (reached | postfix) & logic

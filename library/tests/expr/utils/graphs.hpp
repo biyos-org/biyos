@@ -107,6 +107,11 @@ inline Offset binary(Graph &graph, Operator op, Offset left, Offset right)
     return graph.add(op, children);
 }
 
+inline Offset branch(Graph &graph, Offset condition, Offset then, Offset otherwise)
+{
+    return graph.add(Operator::If, std::array{condition, then, otherwise});
+}
+
 inline Offset power(Graph &graph, Offset base, Real exponent)
 {
     return graph.add(Operator::ConstantPower, exponent, std::span(&base, 1));
@@ -221,6 +226,8 @@ inline std::vector<Offset> every_operator(Graph &graph)
     };
     const std::array logic = connectives(graph, x, y, z);
     roots.insert(roots.end(), logic.begin(), logic.end());
+    const Offset above = binary(graph, Operator::Greater, x, y);
+    roots.push_back(branch(graph, above, x, z));
     return roots;
 }
 

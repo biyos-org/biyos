@@ -24,7 +24,7 @@ Inside a tape the operands are slot indices local to the tape, and the workspace
 
 Running a tape is its forward sweep: the instructions in order, each writing its value into its slot. The sweep also stores, for each instruction, the partial derivatives of its value with respect to each of its operands, $\partial \operatorname{op}_i / \partial v_j$ for $j \in \mathcal{C}(i)$, at the point. These are the local derivatives the reverse sweep of [Derivatives](#sec-derivatives) needs, and storing them once costs less than computing them again in every sweep that passes through a shared node, as `sin`, `cos` and the powers would require.
 
-For a product the partials are the products of the other factors, computed as prefix and suffix products rather than by dividing the product by a factor, so a zero factor gives the right partials. The maximum and the minimum pass their derivative to the operand that gives the value.
+For a product the partials are the products of the other factors, computed as prefix and suffix products rather than by dividing the product by a factor, so a zero factor gives the right partials. The maximum, the minimum and the if pass their derivative to the operand that gives the value.
 
 Every instruction of a tape belongs to one or several roots, and each root's instructions form runs of consecutive instructions, located once when the tape is compiled. A sweep for one root visits only its runs and the pinned nodes it reaches.
 

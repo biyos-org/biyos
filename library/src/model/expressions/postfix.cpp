@@ -222,6 +222,7 @@ void Decoder::build(Operator op, Offset argument)
     case Operator::And:
     case Operator::Or:
     case Operator::Not:
+    case Operator::If:
         builder_.apply(op, argument);
         return;
     }

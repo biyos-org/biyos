@@ -340,6 +340,26 @@ TEST(IntervalTest, Connectives)
     }
 }
 
+TEST(IntervalTest, Branches)
+{
+    Graph graph;
+    const std::array x{graph.add_variable(0), graph.add_variable(1), graph.add_variable(2)};
+    const Offset below = graph.add(Operator::Less, std::span(x).first(2));
+    const auto node =
+        static_cast<std::size_t>(graph.add(Operator::If, std::array{below, x[1], x[2]}));
+    const Interval held(1.0, 2.0);
+    const Interval high(3.0, 4.0);
+    EXPECT_TRUE(exact(enclosures(graph, Box{held, high, Interval(-1.0, 0.0)})[node], -1.0, 4.0));
+    EXPECT_TRUE(enclosures(graph, Box{Interval::empty(), high, held})[node].is_empty());
+    EXPECT_TRUE(exact(enclosures(graph, Box{held, high, Interval::empty()})[node], 3.0, 4.0));
+    const Offset zero = graph.add(Operator::Constant, 0.0, {});
+    const Offset positive = graph.add(Operator::GreaterEqual, std::array{x[0], zero});
+    const Offset root = graph.add(Operator::Sqrt, std::span(x).first(1));
+    const auto domain =
+        static_cast<std::size_t>(graph.add(Operator::If, std::array{positive, root, zero}));
+    EXPECT_TRUE(exact(enclosures(graph, Box{Interval(-2.0, -1.0), held, held})[domain], 0.0, 0.0));
+}
+
 TEST(IntervalTest, Comparisons)
 {
     const Interval held(1.0, 2.0);

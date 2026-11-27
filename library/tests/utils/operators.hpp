@@ -11,9 +11,10 @@ struct Arity
     int least;
     bool listed;
     bool conditions = false;
+    bool guarded = false;
 };
 
-constexpr int kTail = BIYOS_OP_NOT - BIYOS_OP_ATAN2 + 1;
+constexpr int kTail = BIYOS_OP_IF - BIYOS_OP_ATAN2 + 1;
 
 constexpr int operator_count(int first)
 {
@@ -76,8 +77,16 @@ constexpr Arity arity_of(Operator op)
     case Operator::Greater:
     case Operator::NotEqual:
         return {.least = 2, .listed = false};
+    case Operator::If:
+        return {.least = 3, .listed = false, .guarded = true};
     }
     return {.least = 0, .listed = false};
+}
+
+constexpr bool takes_condition(Operator op, int k)
+{
+    const Arity children = arity_of(op);
+    return children.conditions || (children.guarded && k == 0);
 }
 
 }

@@ -51,6 +51,7 @@ Form form_of(Operator op) noexcept
     case Operator::Min:
     case Operator::And:
     case Operator::Or:
+    case Operator::If:
         return Form::Listed;
     case Operator::Negation:
     case Operator::Division:

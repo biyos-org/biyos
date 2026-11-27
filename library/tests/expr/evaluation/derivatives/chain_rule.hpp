@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/numbers.hpp"
+#include "core/numeric/zero.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "expr/graph/points.hpp"
@@ -154,6 +155,8 @@ class ChainRule
         case Operator::Or:
         case Operator::Not:
             return connective(graph_.op(node), operands_of(node));
+        case Operator::If:
+            return select(x, child(node, 1), child(node, 2));
         }
         return (std::numeric_limits<Real>::quiet_NaN)();
     }
@@ -200,6 +203,10 @@ class ChainRule
 
     std::size_t taken(Offset node) const
     {
+        if (graph_.op(node) == Operator::If)
+        {
+            return is_zero(child(node, 0)) ? 2 : 1;
+        }
         const auto bits = std::bit_cast<Bits>(values_[at(node)]);
         for (std::size_t k = 0; k < graph_.children(node).size(); ++k)
         {
@@ -273,6 +280,7 @@ class ChainRule
             return x < 0.0L ? -1.0L : 1.0L;
         case Operator::Max:
         case Operator::Min:
+        case Operator::If:
             return k == taken(node) ? 1.0L : 0.0L;
         case Operator::Asin:
             return 1.0L / std::sqrt(1.0L - x * x);
@@ -362,8 +370,9 @@ class ChainRule
 
     bool passed(Offset node, std::size_t k) const
     {
-        const bool extreme = graph_.op(node) == Operator::Max || graph_.op(node) == Operator::Min;
-        return extreme && !std::isnan(values_[at(node)]) && k != taken(node);
+        const Operator op = graph_.op(node);
+        const bool chosen = op == Operator::Max || op == Operator::Min || op == Operator::If;
+        return chosen && !std::isnan(values_[at(node)]) && k != taken(node);
     }
 
     void spread(Offset node)

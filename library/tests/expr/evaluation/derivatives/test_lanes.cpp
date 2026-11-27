@@ -8,6 +8,7 @@
 #include "expr/graph/node.hpp"
 #include "expr/tape/tape.hpp"
 #include "graphs.hpp"
+#include "lanes.hpp"
 #include "refusal.hpp"
 #include "sweep.hpp"
 
@@ -47,22 +48,22 @@ using biyos::Workspace;
 using biyos::test::default_tolerances;
 using biyos::test::every_operator;
 using biyos::test::gradient_of;
+using biyos::test::interleave;
 using biyos::test::jacobian_of;
 using biyos::test::kBudgets;
+using biyos::test::kLanes;
 using biyos::test::kRoots;
 using biyos::test::kVariables;
+using biyos::test::lane;
 using biyos::test::listed;
 using biyos::test::picks;
+using biyos::test::Points;
 using biyos::test::Random;
 using biyos::test::random_graph;
 using biyos::test::random_point;
 using biyos::test::refusal;
 using biyos::test::unary;
 using biyos::test::values_of;
-
-using Points = std::vector<std::vector<Real>>;
-
-constexpr std::array kLanes{std::size_t{1}, std::size_t{3}, std::size_t{16}};
 
 Points random_points(Random &random, std::size_t n)
 {
@@ -72,30 +73,6 @@ Points random_points(Random &random, std::size_t n)
         points.push_back(random_point(random));
     }
     return points;
-}
-
-std::vector<Real> interleave(const Points &points)
-{
-    const std::size_t lanes = points.size();
-    std::vector<Real> items(points[0].size() * lanes);
-    for (std::size_t l = 0; l < lanes; ++l)
-    {
-        for (std::size_t k = 0; k < points[l].size(); ++k)
-        {
-            items[k * lanes + l] = points[l][k];
-        }
-    }
-    return items;
-}
-
-std::vector<Real> lane(std::span<const Real> items, std::size_t l, std::size_t lanes)
-{
-    std::vector<Real> mine;
-    for (std::size_t k = l; k < items.size(); k += lanes)
-    {
-        mine.push_back(items[k]);
-    }
-    return mine;
 }
 
 void expect_bits(std::span<const Real> found, std::span<const Real> wanted)

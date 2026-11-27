@@ -116,6 +116,7 @@ std::vector<Partials> cmath_partials(Real x, Real y, Real z, Real w)
         {0.0, 0.0},
         {0.0, 0.0},
         {0.0},
+        {x > y ? 1.0 : 2.0},
     };
 }
 

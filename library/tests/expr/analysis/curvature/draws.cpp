@@ -85,6 +85,8 @@ std::size_t arity_of(Operator op, Engine &engine)
     case Operator::Greater:
     case Operator::NotEqual:
         return 2;
+    case Operator::If:
+        return 3;
     case Operator::Negation:
     case Operator::ConstantPower:
     case Operator::Exp:

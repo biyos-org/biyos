@@ -43,6 +43,7 @@ def direct(x):
         (Expression(Operator.AND, (a, b), ()), "and(x[0], x[1])"),
         (Expression(Operator.OR, (a, b), ()), "or(x[0], x[1])"),
         (Expression(Operator.NOT, (a,), ()), "not(x[0])"),
+        (Expression(Operator.IF, (a, b, a), ()), "if(x[0], x[1], x[0])"),
     ]
 
 

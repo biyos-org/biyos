@@ -46,6 +46,7 @@ using biyos::TimingTree;
 using biyos::to_size;
 using biyos::test::arrow;
 using biyos::test::binary;
+using biyos::test::branch;
 using biyos::test::default_tolerances;
 using biyos::test::kBudgets;
 using biyos::test::kComparisons;
@@ -382,4 +383,23 @@ TEST(PatternTest, Connectives)
         EXPECT_EQ(sorted(exact(graph, root)), own);
         EXPECT_EQ(sorted(exact(graph, scaled(graph, 2.0, root, x[2]))), own);
     }
+}
+
+TEST(PatternTest, Branches)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 4);
+    const Offset curved = scaled(graph, 1.0, x[0], x[1]);
+    const Offset below = binary(graph, Operator::Less, curved, x[2]);
+    const Offset grown = unary(graph, Operator::Exp, x[3]);
+    const Offset root = branch(graph, below, grown, x[2]);
+    EXPECT_EQ(sorted(exact(graph, root)), (Pairs{{1, 0}, {3, 3}}));
+    EXPECT_EQ(sorted(exact(graph, scaled(graph, 2.0, root, x[2]))),
+              (Pairs{{1, 0}, {2, 2}, {3, 2}, {3, 3}}));
+    const Offset outer = unary(graph, Operator::Exp, root);
+    const Tape tape(graph, std::span(&outer, 1));
+    Pusher pusher(tape);
+    const Shape shape = pusher.shape(0);
+    EXPECT_EQ(shape.pushes, 8);
+    EXPECT_EQ(sorted(pairs_of(tape, 0, shape)), (Pairs{{1, 0}, {2, 2}, {3, 2}, {3, 3}}));
 }
