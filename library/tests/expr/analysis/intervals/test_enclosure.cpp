@@ -68,6 +68,29 @@ constexpr Parameters kFixed{
     .exponent = 1.5,
 };
 
+struct Connected
+{
+    Box box;
+    std::array<Interval, 3> wanted;
+};
+
+constexpr Interval kTrue{1.0, 1.0};
+constexpr Interval kFalse{0.0, 0.0};
+constexpr Interval kUnknown{0.0, 1.0};
+
+const std::array kConnected{
+    Connected{.box = {Interval(1.0, 2.0), Interval(3.0, 4.0), Interval(1.0, 2.0)},
+              .wanted = {kTrue, kTrue, kFalse}},
+    Connected{.box = {Interval(1.0, 2.0), Interval(3.0, 4.0), Interval(2.0, 5.0)},
+              .wanted = {kUnknown, kTrue, kFalse}},
+    Connected{.box = {Interval(3.0, 4.0), Interval(1.0, 2.0), Interval(0.0, 0.5)},
+              .wanted = {kFalse, kTrue, kTrue}},
+    Connected{.box = {Interval(3.0, 4.0), Interval(1.0, 2.0), Interval(1.5, 3.0)},
+              .wanted = {kFalse, kUnknown, kTrue}},
+    Connected{.box = {Interval(1.0, 3.0), Interval(2.0, 4.0), Interval(2.0, 4.0)},
+              .wanted = {kUnknown, kUnknown, kUnknown}},
+};
+
 Offset rational(Graph &graph)
 {
     Builder build(graph);
@@ -331,8 +354,13 @@ TEST(IntervalTest, Connectives)
         const std::span<const Offset> children =
             op == Operator::Not ? std::span(conditions).first(1) : std::span(conditions);
         const auto node = static_cast<std::size_t>(graph.add(op, children));
-        const Box apart{held, Interval(3.0, 4.0), held};
-        EXPECT_TRUE(exact(enclosures(graph, apart)[node], 0.0, 1.0)) << code;
+        const std::size_t row = static_cast<std::size_t>(code - BIYOS_OP_AND);
+        for (std::size_t k = 0; k < kConnected.size(); ++k)
+        {
+            const Interval found = enclosures(graph, kConnected[k].box)[node];
+            const Interval wanted = kConnected[k].wanted[row];
+            EXPECT_TRUE(exact(found, wanted.lower(), wanted.upper())) << code << " box " << k;
+        }
         const Box first{Interval::empty(), held, held};
         EXPECT_TRUE(enclosures(graph, first)[node].is_empty()) << code;
         const Box last{held, held, Interval::empty()};

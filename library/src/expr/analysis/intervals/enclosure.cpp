@@ -131,18 +131,6 @@ Interval compared(const Pass &pass, Offset node, Comparison compare) noexcept
     return compare(pass.tolerances, first(pass, node), second(pass, node));
 }
 
-Interval undecided(const Pass &pass, Offset node) noexcept
-{
-    for (const Offset child : pass.graph.children(node))
-    {
-        if (pass.nodes[to_size(child)].is_empty())
-        {
-            return Interval::empty();
-        }
-    }
-    return {0.0, 1.0};
-}
-
 Interval branches_of(const Pass &pass, Offset node) noexcept
 {
     if (first(pass, node).is_empty())
@@ -232,9 +220,11 @@ Interval enclosure(const Pass &pass, Offset node) noexcept
     case Operator::NotEqual:
         return compared(pass, node, not_equal);
     case Operator::And:
+        return smallest(pass, node);
     case Operator::Or:
+        return largest(pass, node);
     case Operator::Not:
-        return undecided(pass, node);
+        return complement(first(pass, node));
     case Operator::If:
         return branches_of(pass, node);
     }
