@@ -39,5 +39,6 @@ struct Opcode
 };
 
 const Opcode *find_opcode(Offset code) noexcept;
+int code_of(Operator op) noexcept;
 
 }

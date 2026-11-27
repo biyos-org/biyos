@@ -78,4 +78,16 @@ const Opcode *find_opcode(Offset code) noexcept
     return found == kOpcodes.end() ? nullptr : &*found;
 }
 
+int code_of(Operator op) noexcept
+{
+    for (const Opcode &opcode : kOpcodes)
+    {
+        if (opcode.rule == Rule::Same && opcode.op == op)
+        {
+            return opcode.code;
+        }
+    }
+    return -1;
+}
+
 }
