@@ -10,6 +10,7 @@ from listed import indexed
 
 NAMED = ("var", "fun", "con", "obj", "ind", "sos", "cone", "ccon")
 TOLERANCES = ("var", "con", "obj", "cone", "ccon")
+SELECTIONS = ("idx", *NAMED, "pwl")
 WRITERS = [
     ("setvarbnd", "var", {"lb": 1.0, "ub": 1.0}),
     ("setvarknd", "var", {"knd": VariableKind.INTEGER}),
@@ -277,12 +278,17 @@ def test_delcb_scalar(model):
     assert model.getcbfun(0).indices() == [1, 2]
 
 
+def selection(call):
+    names = list(signature(call).parameters)
+    return len(names) > 1 and names[1] in SELECTIONS
+
+
 def test_coverage():
     tested = {call[0] for call in WRITERS + DELETERS} | {"delcb", "delhook"}
     for name in dir(biyos.Model):
         if name.startswith(("set", "del")):
             call = getattr(biyos.Model, name)
-            assert "idx" not in signature(call).parameters or name in tested
+            assert not selection(call) or name in tested
 
 
 def unwrapped(found):
@@ -325,4 +331,4 @@ def test_reader_coverage():
     for name in dir(biyos.Model):
         if name.startswith("get") and not name.startswith("getn"):
             call = getattr(biyos.Model, name)
-            assert "idx" not in signature(call).parameters or name in tested
+            assert not selection(call) or name in tested
