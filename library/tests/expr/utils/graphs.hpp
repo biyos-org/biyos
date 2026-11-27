@@ -139,6 +139,15 @@ inline Offset arrow(Graph &graph, const std::vector<Offset> &x)
     return graph.add(Operator::Product, 1.0, std::array{grown, waves_of(graph, x)});
 }
 
+inline Offset clique(Graph &graph, const std::vector<Offset> &x, Offset tail, Index wide)
+{
+    const std::vector<Offset> head(x.begin(), x.begin() + wide);
+    const Offset total = graph.add_sum(0.0, head, std::vector<Real>(head.size(), 1.0));
+    const std::array terms{unary(graph, Operator::Exp, total), tail};
+    const Offset both = graph.add_sum(0.0, terms, std::vector<Real>(terms.size(), 1.0));
+    return unary(graph, Operator::Abs, both);
+}
+
 inline Offset band(Graph &graph, const std::vector<Offset> &x)
 {
     std::vector<Offset> waves;

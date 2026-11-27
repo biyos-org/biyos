@@ -42,6 +42,7 @@ using biyos::to_size;
 using biyos::Tolerances;
 using biyos::test::arrow;
 using biyos::test::band;
+using biyos::test::clique;
 using biyos::test::default_tolerances;
 using biyos::test::products;
 using biyos::test::Random;
@@ -144,14 +145,6 @@ Values point_of(Random &random, Index size)
 bool colored(const Graph &graph, Offset root)
 {
     return hessian_of(graph, std::span(&root, 1)).colored(0);
-}
-
-Offset clique(Graph &graph, const std::vector<Offset> &x, Offset waves, Index wide)
-{
-    const std::vector<Offset> head(x.begin(), x.begin() + wide);
-    const Offset total = graph.add_sum(0.0, head, Values(head.size(), 1.0));
-    const std::array terms{unary(graph, Operator::Exp, total), waves};
-    return unary(graph, Operator::Abs, graph.add_sum(0.0, terms, Values(terms.size(), 1.0)));
 }
 
 bool cheap(Index wide)

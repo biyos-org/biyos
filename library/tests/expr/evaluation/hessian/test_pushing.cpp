@@ -45,6 +45,7 @@ using biyos::test::arrow;
 using biyos::test::band;
 using biyos::test::binary;
 using biyos::test::bits;
+using biyos::test::clique;
 using biyos::test::default_tolerances;
 using biyos::test::every_operator;
 using biyos::test::kBudgets;
@@ -161,12 +162,9 @@ void expect_tape(const Tape &tape, std::span<const Real> point)
     }
 }
 
-Offset subset(Graph &graph, const std::vector<Offset> &x, Index wide)
+Offset subset(Graph &graph, const std::vector<Offset> &x)
 {
-    const std::vector<Offset> head(x.begin(), x.begin() + wide);
-    const Offset total = graph.add_sum(0.0, head, Values(head.size(), 1.0));
-    const std::array terms{unary(graph, Operator::Exp, total), waves_of(graph, x)};
-    return unary(graph, Operator::Abs, graph.add_sum(0.0, terms, Values(terms.size(), 1.0)));
+    return clique(graph, x, waves_of(graph, x), kSubset);
 }
 
 std::vector<Offset> shapes_of(Graph &graph, Index size, Random &random)
@@ -205,7 +203,7 @@ TEST(PushingTest, Subset)
     Random random(7);
     Graph graph;
     const std::vector<Offset> x = variables(graph, kMany);
-    const std::array root{subset(graph, x, kSubset)};
+    const std::array root{subset(graph, x)};
     expect_tape(Tape(graph, root), point_of(random, kMany));
 }
 
