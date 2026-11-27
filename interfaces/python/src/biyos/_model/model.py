@@ -3195,19 +3195,19 @@ class Model:
 
     @overload
     def setobjsense(
-        self, idx: One[Objective], sense: ObjectiveSense | None
+        self, obj: One[Objective], sense: ObjectiveSense | None
     ) -> None: ...
 
     @overload
     def setobjsense(
         self,
-        idx: Many[Objective, Objectives],
+        obj: Many[Objective, Objectives],
         sense: Sequence[ObjectiveSense] | None,
     ) -> None: ...
 
     def setobjsense(
         self,
-        idx: Selection[Objective, Objectives],
+        obj: Selection[Objective, Objectives],
         sense: ObjectiveSense | Sequence[ObjectiveSense] | None,
     ) -> None:
         """Set the senses of objectives.
@@ -3216,7 +3216,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        obj
             The objectives.
             An index or a view stands for one objective, and each other argument
             is then a scalar.
@@ -3228,26 +3228,26 @@ class Model:
         BIYOS_setobjsensesp
         BIYOS_setobjsenserg
         """
-        one, n, chosen = self._selected("BIYOS_setobjsense", Objectives, idx)
+        one, n, chosen = self._selected("BIYOS_setobjsense", Objectives, obj)
         arrays = (ints("sense", sense, n, one),)
         self._call(*chosen, *arrays)
 
     @overload
-    def getobjsense(self, idx: One[Objective]) -> ObjectiveSense: ...
+    def getobjsense(self, obj: One[Objective]) -> ObjectiveSense: ...
 
     @overload
     def getobjsense(
-        self, idx: Many[Objective, Objectives]
+        self, obj: Many[Objective, Objectives]
     ) -> list[ObjectiveSense]: ...
 
     def getobjsense(
-        self, idx: Selection[Objective, Objectives]
+        self, obj: Selection[Objective, Objectives]
     ) -> ObjectiveSense | list[ObjectiveSense]:
         """Read the senses of objectives.
 
         Parameters
         ----------
-        idx
+        obj
             The objectives, in any order, any of them more than once.
             An index or a view stands for one objective, and the result is then
             a scalar.
@@ -3263,23 +3263,23 @@ class Model:
         BIYOS_getobjsenserg
         """
         (found,) = self._getlist(
-            "BIYOS_getobjsense", Objectives, idx, c_integer
+            "BIYOS_getobjsense", Objectives, obj, c_integer
         )
         sense: ObjectiveSense | list[ObjectiveSense]
         sense = _each(ObjectiveSense, found)
         return sense
 
     @overload
-    def setobjprio(self, idx: One[Objective], prio: int | None) -> None: ...
+    def setobjprio(self, obj: One[Objective], prio: int | None) -> None: ...
 
     @overload
     def setobjprio(
-        self, idx: Many[Objective, Objectives], prio: Sequence[int] | None
+        self, obj: Many[Objective, Objectives], prio: Sequence[int] | None
     ) -> None: ...
 
     def setobjprio(
         self,
-        idx: Selection[Objective, Objectives],
+        obj: Selection[Objective, Objectives],
         prio: int | Sequence[int] | None,
     ) -> None:
         """Set the priorities of objectives.
@@ -3288,7 +3288,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        obj
             The objectives.
             An index or a view stands for one objective, and each other argument
             is then a scalar.
@@ -3300,24 +3300,24 @@ class Model:
         BIYOS_setobjpriosp
         BIYOS_setobjpriorg
         """
-        one, n, chosen = self._selected("BIYOS_setobjprio", Objectives, idx)
+        one, n, chosen = self._selected("BIYOS_setobjprio", Objectives, obj)
         arrays = (ints("prio", prio, n, one),)
         self._call(*chosen, *arrays)
 
     @overload
-    def getobjprio(self, idx: One[Objective]) -> int: ...
+    def getobjprio(self, obj: One[Objective]) -> int: ...
 
     @overload
-    def getobjprio(self, idx: Many[Objective, Objectives]) -> list[int]: ...
+    def getobjprio(self, obj: Many[Objective, Objectives]) -> list[int]: ...
 
     def getobjprio(
-        self, idx: Selection[Objective, Objectives]
+        self, obj: Selection[Objective, Objectives]
     ) -> int | list[int]:
         """Read the priorities of objectives.
 
         Parameters
         ----------
-        idx
+        obj
             The objectives, in any order, any of them more than once.
             An index or a view stands for one objective, and the result is then
             a scalar.
@@ -3333,20 +3333,20 @@ class Model:
         BIYOS_getobjpriorg
         """
         prio: int | list[int]
-        (prio,) = self._getlist("BIYOS_getobjprio", Objectives, idx, c_integer)
+        (prio,) = self._getlist("BIYOS_getobjprio", Objectives, obj, c_integer)
         return prio
 
     @overload
-    def setobjcoef(self, idx: One[Objective], coef: Real | None) -> None: ...
+    def setobjcoef(self, obj: One[Objective], coef: Real | None) -> None: ...
 
     @overload
     def setobjcoef(
-        self, idx: Many[Objective, Objectives], coef: Sequence[Real] | None
+        self, obj: Many[Objective, Objectives], coef: Sequence[Real] | None
     ) -> None: ...
 
     def setobjcoef(
         self,
-        idx: Selection[Objective, Objectives],
+        obj: Selection[Objective, Objectives],
         coef: Real | Sequence[Real] | None,
     ) -> None:
         """Set the weights of objectives.
@@ -3355,7 +3355,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        obj
             The objectives.
             An index or a view stands for one objective, and each other argument
             is then a scalar.
@@ -3368,24 +3368,24 @@ class Model:
         BIYOS_setobjcoefsp
         BIYOS_setobjcoefrg
         """
-        one, n, chosen = self._selected("BIYOS_setobjcoef", Objectives, idx)
+        one, n, chosen = self._selected("BIYOS_setobjcoef", Objectives, obj)
         arrays = (doubles("coef", coef, n, one),)
         self._call(*chosen, *arrays)
 
     @overload
-    def getobjcoef(self, idx: One[Objective]) -> Real: ...
+    def getobjcoef(self, obj: One[Objective]) -> Real: ...
 
     @overload
-    def getobjcoef(self, idx: Many[Objective, Objectives]) -> list[Real]: ...
+    def getobjcoef(self, obj: Many[Objective, Objectives]) -> list[Real]: ...
 
     def getobjcoef(
-        self, idx: Selection[Objective, Objectives]
+        self, obj: Selection[Objective, Objectives]
     ) -> Real | list[Real]:
         """Read the weights of objectives.
 
         Parameters
         ----------
-        idx
+        obj
             The objectives, in any order, any of them more than once.
             An index or a view stands for one objective, and the result is then
             a scalar.
@@ -3401,13 +3401,13 @@ class Model:
         BIYOS_getobjcoefrg
         """
         coef: Real | list[Real]
-        (coef,) = self._getlist("BIYOS_getobjcoef", Objectives, idx, c_real)
+        (coef,) = self._getlist("BIYOS_getobjcoef", Objectives, obj, c_real)
         return coef
 
     @overload
     def setobjtol(
         self,
-        idx: One[Objective],
+        obj: One[Objective],
         atol: Real | None = None,
         rtol: Real | None = None,
     ) -> None: ...
@@ -3415,14 +3415,14 @@ class Model:
     @overload
     def setobjtol(
         self,
-        idx: Many[Objective, Objectives],
+        obj: Many[Objective, Objectives],
         atol: Sequence[Real] | None = None,
         rtol: Sequence[Real] | None = None,
     ) -> None: ...
 
     def setobjtol(
         self,
-        idx: Selection[Objective, Objectives],
+        obj: Selection[Objective, Objectives],
         atol: Real | Sequence[Real] | None = None,
         rtol: Real | Sequence[Real] | None = None,
     ) -> None:
@@ -3435,7 +3435,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        obj
             The objectives.
             An index or a view stands for one objective, and each other argument
             is then a scalar.
@@ -3448,7 +3448,7 @@ class Model:
         BIYOS_setobjtolsp
         BIYOS_setobjtolrg
         """
-        one, n, chosen = self._selected("BIYOS_setobjtol", Objectives, idx)
+        one, n, chosen = self._selected("BIYOS_setobjtol", Objectives, obj)
         arrays = (
             doubles("atol", atol, n, one),
             doubles("rtol", rtol, n, one),
@@ -3456,21 +3456,21 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getobjtol(self, idx: One[Objective]) -> tuple[Real, Real]: ...
+    def getobjtol(self, obj: One[Objective]) -> tuple[Real, Real]: ...
 
     @overload
     def getobjtol(
-        self, idx: Many[Objective, Objectives]
+        self, obj: Many[Objective, Objectives]
     ) -> tuple[list[Real], list[Real]]: ...
 
     def getobjtol(
-        self, idx: Selection[Objective, Objectives]
+        self, obj: Selection[Objective, Objectives]
     ) -> tuple[Real, Real] | tuple[list[Real], list[Real]]:
         """Read the tolerances of objectives.
 
         Parameters
         ----------
-        idx
+        obj
             The objectives, in any order, any of them more than once.
             An index or a view stands for one objective, and each result is then
             a scalar.
@@ -3488,7 +3488,7 @@ class Model:
         BIYOS_getobjtolrg
         """
         pair = (c_real, c_real)
-        atol, rtol = self._getlist("BIYOS_getobjtol", Objectives, idx, *pair)
+        atol, rtol = self._getlist("BIYOS_getobjtol", Objectives, obj, *pair)
         return atol, rtol
 
     def getnobj(self) -> Index:
@@ -3509,16 +3509,16 @@ class Model:
 
     @overload
     def getobj(
-        self, idx: One[Objective]
+        self, obj: One[Objective]
     ) -> tuple[Function, ObjectiveSense, int, Real]: ...
 
     @overload
     def getobj(
-        self, idx: Many[Objective, Objectives] | None = None
+        self, obj: Many[Objective, Objectives] | None = None
     ) -> tuple[Functions, list[ObjectiveSense], list[int], list[Real]]: ...
 
     def getobj(
-        self, idx: Selection[Objective, Objectives] | None = None
+        self, obj: Selection[Objective, Objectives] | None = None
     ) -> (
         tuple[Function, ObjectiveSense, int, Real]
         | tuple[Functions, list[ObjectiveSense], list[int], list[Real]]
@@ -3530,7 +3530,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        obj
             The objectives, in any order, any of them more than once; every
             objective by default.
             An index or a view stands for one objective, and each result is then
@@ -3553,7 +3553,7 @@ class Model:
         BIYOS_getobjsp
         BIYOS_getobjrg
         """
-        every = range(self.getnobj()) if idx is None else idx
+        every = range(self.getnobj()) if obj is None else obj
         types = (Functions, c_integer, c_integer, c_real)
         found = self._getlist("BIYOS_getobj", Objectives, every, *types)
         functions, codes, priorities, weights = found
@@ -3561,50 +3561,50 @@ class Model:
         return functions, senses, priorities, weights
 
     @overload
-    def setobjname(self, idx: One[Objective], name: str) -> None: ...
+    def setobjname(self, obj: One[Objective], name: str) -> None: ...
 
     @overload
     def setobjname(
-        self, idx: Many[Objective, Objectives], name: Sequence[str]
+        self, obj: Many[Objective, Objectives], name: Sequence[str]
     ) -> None: ...
 
     def setobjname(
-        self, idx: Selection[Objective, Objectives], name: str | Sequence[str]
+        self, obj: Selection[Objective, Objectives], name: str | Sequence[str]
     ) -> None:
         """Name objectives of the model, as ``setvarname`` names variables.
 
         Parameters
         ----------
-        idx
+        obj
             The objectives to name.
             An index or a view stands for one objective, and each other argument
             is then a scalar.
         name
-            The new name of each, as many as ``idx``.
+            The new name of each, as many as ``obj``.
 
         See Also
         --------
         BIYOS_setobjnamesp
         BIYOS_setobjnamerg
         """
-        self._setname("BIYOS_setobjname", Objectives, idx, name)
+        self._setname("BIYOS_setobjname", Objectives, obj, name)
 
     @overload
-    def getobjname(self, idx: One[Objective]) -> str | None: ...
+    def getobjname(self, obj: One[Objective]) -> str | None: ...
 
     @overload
     def getobjname(
-        self, idx: Many[Objective, Objectives]
+        self, obj: Many[Objective, Objectives]
     ) -> list[str | None]: ...
 
     def getobjname(
-        self, idx: Selection[Objective, Objectives]
+        self, obj: Selection[Objective, Objectives]
     ) -> str | None | list[str | None]:
         """Return the names of objectives, as ``getvarname`` does.
 
         Parameters
         ----------
-        idx
+        obj
             The objectives to read.
             An index or a view stands for one objective, and the result is then
             a scalar.
@@ -3619,7 +3619,7 @@ class Model:
         BIYOS_getobjnamesp
         BIYOS_getobjnamerg
         """
-        return self._getname("BIYOS_getobjname", Objectives, idx)
+        return self._getname("BIYOS_getobjname", Objectives, obj)
 
     def getobjidx(self, name: Sequence[str]) -> Objectives:
         """Return the named objectives, as ``getvaridx`` does.
@@ -3631,7 +3631,7 @@ class Model:
 
         Returns
         -------
-        idx
+        obj
             The objective that alone holds each name, as a ``Objectives`` block.
 
         See Also
@@ -3640,12 +3640,12 @@ class Model:
         """
         return self._getidx(lib.BIYOS_getobjidx, Objectives, name)
 
-    def delobjname(self, idx: Selection[Objective, Objectives]) -> None:
+    def delobjname(self, obj: Selection[Objective, Objectives]) -> None:
         """Remove the names of objectives, as ``delvarname`` does.
 
         Parameters
         ----------
-        idx
+        obj
             The objectives that lose their names.
             An index or a view stands for one objective.
 
@@ -3654,9 +3654,9 @@ class Model:
         BIYOS_delobjnamesp
         BIYOS_delobjnamerg
         """
-        self._delname("BIYOS_delobjname", Objectives, idx)
+        self._delname("BIYOS_delobjname", Objectives, obj)
 
-    def delobj(self, idx: Selection[Objective, Objectives]) -> list[Index]:
+    def delobj(self, obj: Selection[Objective, Objectives]) -> list[Index]:
         """Delete objectives.
 
         The objectives left keep their order and are numbered from 0 again. A
@@ -3666,7 +3666,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        obj
             The objectives to delete, in any order, none of them twice.
             An index or a view stands for one objective.
 
@@ -3681,7 +3681,7 @@ class Model:
         BIYOS_delobjsp
         BIYOS_delobjrg
         """
-        return self._delete("BIYOS_delobj", Objectives, idx)
+        return self._delete("BIYOS_delobj", Objectives, obj)
 
     def addind(
         self,

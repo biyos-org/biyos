@@ -42,7 +42,7 @@ The readers return lists, in the order of the C call's arrays, and a block for a
 | `getclinterm(var)` | `Functions`, `Variables`, coefficients |
 | `getexpr(fun)` | counts, codes, arguments, values |
 | `getcon(con)` | `Functions`, lower bounds, upper bounds |
-| `getobj(idx)` | `Functions`, senses, priorities, weights |
+| `getobj(obj)` | `Functions`, senses, priorities, weights |
 | `getind(idx)` | `Variables`, values, `Functions`, lower bounds, upper bounds |
 | `getsos(idx)` | kinds, counts, `Variables`, weights |
 | `getcone(idx)` | kinds, counts, `Functions` |
@@ -64,7 +64,7 @@ model.addclinterm(x[2], [f[0], f[1]], [1.0, 2.0])
 
 An entry of `coef` longer or shorter than its entry of `var` raises `ValueError`, as does one of `var2` against `var1`, and a scalar anywhere else `TypeError`.
 
-A getter of an attribute takes the items its setter takes and returns lists the same way, or one value for one index or one view: `model.getvarbnd(var)` returns the lower and the upper bounds of the variables `var` lists, `model.getvarbnd(2)` the two bounds of variable 2, and `model.getvarknd(var)` the kinds. The readers of names do the same, so `model.getvarname(x[2])` is a `str`, or None for a variable without a name. `getvaridx(name)` finds variables by name and returns a `Variables` block, the variable that alone holds each name in turn, and `getfunidx`, `getconidx`, `getobjidx`, `getindidx`, `getsosidx`, `getconeidx` and `getcconidx` return the block of their family the same way. Every reader that takes one index has a `typing.overload` pair, so a type checker reads one value for one index and lists for a sequence. `getobjtol(idx)` returns the absolute and the relative tolerances of objectives, which `getobj` leaves out, as `addobj` does, and `getvartol(var)`, `getcontol(con)`, `getconetol(idx)` and `getccontol(idx)` those of variables, constraints, cones and complements, None where an item holds none. `getcst(fun)` returns the constants of functions, which `setcst` sets and `addcst` adds to.
+A getter of an attribute takes the items its setter takes and returns lists the same way, or one value for one index or one view: `model.getvarbnd(var)` returns the lower and the upper bounds of the variables `var` lists, `model.getvarbnd(2)` the two bounds of variable 2, and `model.getvarknd(var)` the kinds. The readers of names do the same, so `model.getvarname(x[2])` is a `str`, or None for a variable without a name. `getvaridx(name)` finds variables by name and returns a `Variables` block, the variable that alone holds each name in turn, and `getfunidx`, `getconidx`, `getobjidx`, `getindidx`, `getsosidx`, `getconeidx` and `getcconidx` return the block of their family the same way. Every reader that takes one index has a `typing.overload` pair, so a type checker reads one value for one index and lists for a sequence. `getobjtol(obj)` returns the absolute and the relative tolerances of objectives, which `getobj` leaves out, as `addobj` does, and `getvartol(var)`, `getcontol(con)`, `getconetol(idx)` and `getccontol(idx)` those of variables, constraints, cones and complements, None where an item holds none. `getcst(fun)` returns the constants of functions, which `setcst` sets and `addcst` adds to.
 
 ## Expressions {#sec-python-expressions}
 
