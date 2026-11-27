@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <utility>
 #include <vector>
 
 namespace biyos
@@ -46,9 +47,16 @@ Shape Pusher::shape(Offset element)
     start(element);
     rise(element);
     const Block &block = block_of(tape_.blocks().subspan(to_size(tape_.prepass())), element);
-    walk(block, to_size(element - block.begin));
+    const std::size_t output = to_size(element - block.begin);
+    walk(block, output);
+    const std::uint32_t root = occupants_[block.outputs[output]];
     eliminate();
-    return {.entries = entries(), .pushes = pushes_};
+    return {.entries = entries(),
+            .pushes = pushes_,
+            .nodes = std::move(nodes_),
+            .operands = std::move(operands_),
+            .links = std::move(links_),
+            .root = root};
 }
 
 Pusher::Rule Pusher::rule_of(const Instruction &instruction) noexcept
@@ -189,6 +197,7 @@ void Pusher::eliminate()
 {
     const std::size_t ids = variables_ + nodes_.size();
     rows_.resize((std::max)(rows_.size(), ids));
+    links_.assign(ids, 0);
     for (std::vector<std::uint32_t> &row : std::span(rows_).first(ids))
     {
         row.clear();
@@ -260,6 +269,7 @@ void Pusher::pairs(std::span<const std::uint32_t> operands)
 void Pusher::link(std::uint32_t a, std::uint32_t b)
 {
     rows_[(std::max)(a, b)].push_back((std::min)(a, b));
+    ++links_[(std::max)(a, b)];
     ++pushes_;
 }
 

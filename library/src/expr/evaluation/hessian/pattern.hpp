@@ -12,10 +12,29 @@
 namespace biyos
 {
 
+enum class Bending
+{
+    None,
+    Full,
+    Quotient,
+    Cross,
+};
+
+struct Node
+{
+    Bending bending;
+    std::uint32_t begin;
+    std::uint32_t end;
+};
+
 struct Shape
 {
     std::vector<Entry> entries;
     Offset pushes;
+    std::vector<Node> nodes;
+    std::vector<std::uint32_t> operands;
+    std::vector<Offset> links;
+    std::uint32_t root;
 };
 
 class Pusher
@@ -35,25 +54,10 @@ class Pusher
         Listed,
     };
 
-    enum class Bending
-    {
-        None,
-        Full,
-        Quotient,
-        Cross,
-    };
-
     struct Rule
     {
         Form form;
         Bending bending;
-    };
-
-    struct Node
-    {
-        Bending bending;
-        std::uint32_t begin;
-        std::uint32_t end;
     };
 
     static Rule rule_of(const Instruction &instruction) noexcept;
@@ -76,6 +80,7 @@ class Pusher
     std::vector<Node> nodes_;
     std::vector<std::uint32_t> operands_;
     std::vector<std::vector<std::uint32_t>> rows_;
+    std::vector<Offset> links_;
     std::uint32_t variables_ = 0;
     Offset pushes_ = 0;
 };
