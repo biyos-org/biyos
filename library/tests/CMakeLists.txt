@@ -78,6 +78,7 @@ biyos_add_test(test_expr
     expr/analysis/curvature/test_curvature.cpp
     expr/analysis/curvature/test_segments.cpp
     expr/analysis/curvature/test_waves.cpp
+    expr/analysis/intervals/test_atan2.cpp
     expr/analysis/intervals/test_enclosure.cpp
     expr/analysis/intervals/test_interval.cpp
     expr/analysis/intervals/test_piecewise.cpp
