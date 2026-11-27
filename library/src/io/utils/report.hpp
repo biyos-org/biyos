@@ -2,7 +2,7 @@
 
 #include "core/env/error.hpp"
 #include "core/events/stream.hpp"
-#include "io/lines.hpp"
+#include "io/utils/lines.hpp"
 
 #include <cstddef>
 #include <string>

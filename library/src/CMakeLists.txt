@@ -72,8 +72,6 @@ add_library(biyos_internal STATIC
     expr/tape/plan.cpp
     expr/tape/reads.cpp
     expr/tape/tape.cpp
-    io/codes.cpp
-    io/directory.cpp
     io/draft/column_shape.cpp
     io/draft/draft.cpp
     io/draft/labels.cpp
@@ -82,8 +80,6 @@ add_library(biyos_internal STATIC
     io/draft/structure.cpp
     io/draft/support.cpp
     io/files.cpp
-    io/leftovers.cpp
-    io/lines.cpp
     io/mps/mps.cpp
     io/mps/print.cpp
     io/mps/readers/bounds.cpp
@@ -113,8 +109,12 @@ add_library(biyos_internal STATIC
     io/native/writers/attributes.cpp
     io/native/writers/functions.cpp
     io/native/writers/records.cpp
-    io/records.cpp
-    io/report.cpp
+    io/utils/codes.cpp
+    io/utils/directory.cpp
+    io/utils/leftovers.cpp
+    io/utils/lines.cpp
+    io/utils/records.cpp
+    io/utils/report.cpp
     model/attributes/names.cpp
     model/attributes/naming.cpp
     model/attributes/records.cpp

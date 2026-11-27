@@ -2,8 +2,8 @@
 
 #include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"
-#include "io/lines.hpp"
 #include "io/nl/expressions.hpp"
+#include "io/utils/lines.hpp"
 #include "model/model.hpp"
 
 #include <optional>

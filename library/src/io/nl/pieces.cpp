@@ -1,8 +1,8 @@
 #include "io/nl/pieces.hpp"
 
 #include "core/numbers.hpp"
-#include "io/lines.hpp"
-#include "io/report.hpp"
+#include "io/utils/lines.hpp"
+#include "io/utils/report.hpp"
 
 #include <algorithm>
 #include <cmath>

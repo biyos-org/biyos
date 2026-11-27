@@ -2,9 +2,9 @@
 
 #include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"
-#include "io/lines.hpp"
 #include "io/nl/expressions.hpp"
-#include "io/report.hpp"
+#include "io/utils/lines.hpp"
+#include "io/utils/report.hpp"
 #include "model/model.hpp"
 
 #include <cstddef>

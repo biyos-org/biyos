@@ -7,13 +7,13 @@
 #include "core/timing/timer.hpp"
 #include "io/draft/draft.hpp"
 #include "io/draft/sketch.hpp"
-#include "io/leftovers.hpp"
 #include "io/mps/mps.hpp"
 #include "io/mps/print.hpp"
 #include "io/native/native.hpp"
 #include "io/native/print.hpp"
 #include "io/nl/nl.hpp"
-#include "io/report.hpp"
+#include "io/utils/leftovers.hpp"
+#include "io/utils/report.hpp"
 #include "model/model.hpp"
 
 #include <filesystem>

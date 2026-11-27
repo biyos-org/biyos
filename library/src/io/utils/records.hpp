@@ -1,8 +1,8 @@
 #pragma once
 
 #include "core/numbers.hpp"
-#include "io/directory.hpp"
-#include "io/lines.hpp"
+#include "io/utils/directory.hpp"
+#include "io/utils/lines.hpp"
 
 #include <cstddef>
 #include <span>

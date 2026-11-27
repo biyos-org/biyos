@@ -1,10 +1,10 @@
-#include "io/report.hpp"
+#include "io/utils/report.hpp"
 
 #include "core/env/error.hpp"
 #include "core/events/event.hpp"
 #include "core/events/stream.hpp"
 #include "core/text/text.hpp"
-#include "io/lines.hpp"
+#include "io/utils/lines.hpp"
 
 #include <cstddef>
 #include <string>

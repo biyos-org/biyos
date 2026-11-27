@@ -4,12 +4,12 @@
 #include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"
 #include "expr/graph/node.hpp"
-#include "io/lines.hpp"
 #include "io/nl/operators.hpp"
 #include "io/nl/pieces.hpp"
 #include "io/nl/tokens.hpp"
-#include "io/records.hpp"
-#include "io/report.hpp"
+#include "io/utils/lines.hpp"
+#include "io/utils/records.hpp"
+#include "io/utils/report.hpp"
 #include "model/model.hpp"
 
 #include <array>

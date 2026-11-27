@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/numbers.hpp"
-#include "io/directory.hpp"
+#include "io/utils/directory.hpp"
 #include "model/model.hpp"
 
 #include <cstddef>

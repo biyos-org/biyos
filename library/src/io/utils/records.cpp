@@ -1,9 +1,9 @@
-#include "io/records.hpp"
+#include "io/utils/records.hpp"
 
 #include "core/numbers.hpp"
-#include "io/directory.hpp"
-#include "io/lines.hpp"
-#include "io/report.hpp"
+#include "io/utils/directory.hpp"
+#include "io/utils/lines.hpp"
+#include "io/utils/report.hpp"
 #include "model/attributes/names.hpp"
 
 #include <cstddef>

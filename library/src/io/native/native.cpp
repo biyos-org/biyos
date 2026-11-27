@@ -3,15 +3,15 @@
 #include "core/env/error.hpp"
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
-#include "io/lines.hpp"
 #include "io/native/parts.hpp"
 #include "io/native/readers/attributes.hpp"
 #include "io/native/readers/functions.hpp"
 #include "io/native/readers/records.hpp"
 #include "io/native/utils/body.hpp"
 #include "io/native/utils/record.hpp"
-#include "io/records.hpp"
-#include "io/report.hpp"
+#include "io/utils/lines.hpp"
+#include "io/utils/records.hpp"
+#include "io/utils/report.hpp"
 #include "model/model.hpp"
 
 #include <algorithm>
