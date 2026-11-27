@@ -230,20 +230,11 @@ def test_same(env, x):
 def test_refused(x):
     nan = float("nan")
     for bound in (nan, biyos.inf, -biyos.inf):
-        with pytest.raises(ValueError, match="refuses the bound"):
-            eq(x[0], bound)
-        with pytest.raises(ValueError, match="refuses the bound"):
-            ne(x[0], bound)
-    for bound in (nan, biyos.inf):
-        with pytest.raises(ValueError, match="refuses the bound"):
-            gt(x[0], bound)
-        with pytest.raises(ValueError, match="refuses the bound"):
-            lt(bound, x[0])
-    for bound in (nan, -biyos.inf):
-        with pytest.raises(ValueError, match="refuses the bound"):
-            lt(x[0], bound)
-        with pytest.raises(ValueError, match="refuses the bound"):
-            gt(bound, x[0])
+        for compare in (eq, ne, lt, gt):
+            with pytest.raises(ValueError, match="refuses the bound"):
+                compare(x[0], bound)
+            with pytest.raises(ValueError, match="refuses the bound"):
+                compare(bound, x[0])
     for bound in (nan, biyos.inf):
         with pytest.raises(ValueError, match="refuses the bound"):
             ge(x[0], bound)

@@ -421,6 +421,23 @@ def test_open(model, x, con, named):
     assert model.getncon() == 1
 
 
+@pytest.mark.parametrize(
+    "cond",
+    [
+        lambda x: (x[0] <= biyos.inf) | (x[1] >= 0),
+        lambda x: ~(x[0] >= -biyos.inf),
+        lambda x: (x[1] >= 0) & (biyos.inf >= x[0]),
+    ],
+)
+def test_infinite(model, x, cond):
+    with pytest.raises(ValueError, match="a condition refuses the bound"):
+        model.addcon(cond(x))
+    with pytest.raises(ValueError, match="a condition refuses the bound"):
+        model.addcon([x[0] <= 1, cond(x)])
+    assert model.getncon() == 0
+    assert model.getnfun() == 2
+
+
 def test_condition_bounds(model, x):
     with pytest.raises(TypeError, match="lb and ub come from"):
         model.addcon((x[0] <= 1) | (x[1] <= 1), lb=[0.0])

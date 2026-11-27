@@ -313,7 +313,7 @@ class Operand:
         TypeError
             When ``other`` is of another type.
         ValueError
-            When ``other`` is NaN or ``-inf``.
+            When ``other`` is NaN or infinite.
         """
         return _compared(self, other, ComparisonSense.LESS)
 
@@ -335,7 +335,7 @@ class Operand:
         TypeError
             When ``other`` is of another type.
         ValueError
-            When ``other`` is NaN or ``inf``.
+            When ``other`` is NaN or infinite.
         """
         return _compared(self, other, ComparisonSense.GREATER)
 
@@ -629,6 +629,8 @@ class Comparison(Logical):
         )
 
     def _node(self) -> Expression:
+        if not isinstance(self._rhs, Operand) and isinf(self._rhs):
+            raise ValueError(f"a condition refuses the bound {self._rhs}")
         operator = Operator[self._sense.name]
         return Operation(operator, (self._lhs, _operand(self._rhs)), ())
 
@@ -753,7 +755,8 @@ def _compared(
     if isinstance(right, Operand):
         body = _sum(left, right, -1.0)
     else:
-        bound = _bound(float(right), lower, upper)
+        finite = sense in _NEGATED
+        bound = _bound(float(right), lower or finite, upper or finite)
         rhs = bound
     lb = bound if lower else -inf
     ub = bound if upper else inf
