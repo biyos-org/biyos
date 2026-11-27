@@ -111,7 +111,7 @@ def test_views(env, model):
     with pytest.raises(ValueError, match="fun is a block of another"):
         model.addcon(g)
     with pytest.raises(TypeError, match="is a variable, not a function"):
-        model.addcon([x[0]])
+        model.addcon([0, x[0]])
     with pytest.raises(TypeError, match="of variables, not functions"):
         model.addcon(x)
     with pytest.raises(ValueError, match="is a constraint of another model"):
