@@ -2,6 +2,7 @@
 
 #include "core/env/pool.hpp"
 #include "core/numbers.hpp"
+#include "core/timing/timer.hpp"
 #include "expr/evaluation/hessian/elements.hpp"
 #include "expr/evaluation/hessian/sweep.hpp"
 #include "expr/graph/graph.hpp"
@@ -22,6 +23,7 @@ class Hessian
     Hessian(const Graph &graph,
             std::span<const Offset> roots,
             std::span<const Entry> declared,
+            Timing timing,
             std::size_t lanes = kLanes,
             Offset budget = kBudget);
 

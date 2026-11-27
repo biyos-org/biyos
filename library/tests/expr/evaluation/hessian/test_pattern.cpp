@@ -1,6 +1,8 @@
+#include "core/env/env.hpp"
 #include "core/env/pool.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/zero.hpp"
+#include "core/timing/timer.hpp"
 #include "expr/evaluation/hessian/elements.hpp"
 #include "expr/evaluation/hessian/hessian.hpp"
 #include "expr/evaluation/hessian/pattern.hpp"
@@ -26,6 +28,7 @@ namespace
 using biyos::Elements;
 using biyos::elements_of;
 using biyos::Entry;
+using biyos::Env;
 using biyos::Graph;
 using biyos::Hessian;
 using biyos::Index;
@@ -38,6 +41,7 @@ using biyos::Pusher;
 using biyos::Real;
 using biyos::Shape;
 using biyos::Tape;
+using biyos::TimingTree;
 using biyos::to_size;
 using biyos::test::arrow;
 using biyos::test::binary;
@@ -83,7 +87,9 @@ Pairs exact(const Graph &graph, Offset root)
 
 Pairs nonzeros(const Graph &graph, Offset root, std::span<const Values> points)
 {
-    Hessian hessian(graph, std::span(&root, 1), {});
+    Env env;
+    TimingTree tree;
+    Hessian hessian(graph, std::span(&root, 1), {}, {env.stream(), tree});
     const Lower &lower = hessian.pattern();
     Pairs pairs;
     Pool pool;

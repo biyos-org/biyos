@@ -1,5 +1,7 @@
+#include "core/env/env.hpp"
 #include "core/env/pool.hpp"
 #include "core/numbers.hpp"
+#include "core/timing/timer.hpp"
 #include "expr/evaluation/hessian/elements.hpp"
 #include "expr/evaluation/hessian/hessian.hpp"
 #include "expr/graph/graph.hpp"
@@ -22,6 +24,7 @@
 namespace
 {
 
+using biyos::Env;
 using biyos::Graph;
 using biyos::Hessian;
 using biyos::Index;
@@ -31,6 +34,7 @@ using biyos::Pool;
 using biyos::position;
 using biyos::Real;
 using biyos::Tape;
+using biyos::TimingTree;
 using biyos::to_size;
 using biyos::test::binary;
 using biyos::test::bits;
@@ -88,8 +92,10 @@ std::vector<Real> slopes_at(const Point &point)
 
 std::vector<Real> hessian_at(const Point &point)
 {
+    Env env;
+    TimingTree tree;
     const Angle made;
-    Hessian hessian(made.graph, std::span(&made.root, 1), {});
+    Hessian hessian(made.graph, std::span(&made.root, 1), {}, {env.stream(), tree});
     std::vector<Real> out(hessian.pattern().rows.size(), -1.0);
     Pool pool;
     hessian.values(point, kWeight, out, pool);

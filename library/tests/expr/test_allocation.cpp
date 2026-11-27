@@ -1,6 +1,8 @@
 #include "allocations.hpp"
+#include "core/env/env.hpp"
 #include "core/env/pool.hpp"
 #include "core/numbers.hpp"
+#include "core/timing/timer.hpp"
 #include "expr/analysis/curvature/curvature.hpp"
 #include "expr/analysis/intervals/enclosure.hpp"
 #include "expr/analysis/intervals/interval.hpp"
@@ -16,6 +18,7 @@
 #include "expr/graph/node.hpp"
 #include "expr/graph/sharing.hpp"
 #include "expr/tape/tape.hpp"
+#include "utils/graphs.hpp"
 #include "utils/refusal.hpp"
 
 #include <gtest/gtest.h>
@@ -33,6 +36,7 @@ using biyos::Adjoints;
 using biyos::Builder;
 using biyos::compact;
 using biyos::enclose;
+using biyos::Env;
 using biyos::forward;
 using biyos::Graph;
 using biyos::Hessian;
@@ -48,14 +52,18 @@ using biyos::Shapes;
 using biyos::share;
 using biyos::Tape;
 using biyos::Team;
+using biyos::TimingTree;
 using biyos::to_size;
 using biyos::weighted_gradient;
 using biyos::Workspace;
 using biyos::test::allocated_bytes;
 using biyos::test::allocations;
+using biyos::test::arrow;
 using biyos::test::fail_after;
+using biyos::test::kWide;
 using biyos::test::refusal;
 using biyos::test::stop_failing;
+using biyos::test::variables;
 
 constexpr std::size_t kAttempts = 100;
 constexpr Index kSteps = 1000;
@@ -64,6 +72,7 @@ constexpr Index kTerms = 1000;
 constexpr Offset kWhole = Offset{1} << 40;
 constexpr Index kRing = 200;
 constexpr std::size_t kThreads = 3;
+constexpr std::array kPair{0.5, 2.0};
 
 constexpr std::array kUnary{
     Operator::Negation, Operator::Exp,   Operator::Log,     Operator::Sqrt, Operator::Sin,
@@ -222,12 +231,16 @@ std::vector<Offset> products(Graph &graph)
     return roots;
 }
 
-std::size_t hessian_cost(const Graph &graph, std::span<const Offset> roots, std::size_t lanes)
+std::size_t hessian_cost(const Graph &graph,
+                         std::span<const Offset> roots,
+                         std::span<const Real> point,
+                         std::size_t lanes)
 {
-    Hessian hessian(graph, roots, {}, lanes, 4);
+    Env env;
+    TimingTree tree;
+    Hessian hessian(graph, roots, {}, {env.stream(), tree}, lanes, 4);
     std::vector<Real> out(hessian.pattern().rows.size());
     const std::vector<Real> weights(roots.size(), 1.0);
-    const std::array point{0.5, 2.0};
     Pool pool;
     const std::size_t start = allocations();
     hessian.values(point, weights, out, pool);
@@ -236,7 +249,9 @@ std::size_t hessian_cost(const Graph &graph, std::span<const Offset> roots, std:
 
 std::size_t product_cost(const Graph &graph, std::span<const Offset> roots, std::size_t lanes)
 {
-    Hessian hessian(graph, roots, {}, lanes, 4);
+    Env env;
+    TimingTree tree;
+    Hessian hessian(graph, roots, {}, {env.stream(), tree}, lanes, 4);
     const std::array point{0.5, 2.0};
     const std::array direction{1.5, -0.5};
     std::vector<Real> out(point.size());
@@ -346,6 +361,8 @@ struct Threaded
     Threaded(const Graph &graph, std::span<const Offset> roots);
     void run();
 
+    Env env;
+    TimingTree tree;
     Tape tape;
     Team team;
     Hessian hessian;
@@ -359,9 +376,10 @@ struct Threaded
 };
 
 Threaded::Threaded(const Graph &graph, std::span<const Offset> roots)
-    : tape(graph, roots, 4), team(tape), hessian(graph, roots, {}), point(to_size(kRing), 0.5),
-      weights(roots.size(), 1.0), values(roots.size()), gradients(tape.pattern().variables.size()),
-      gradient(point.size()), entries(hessian.pattern().rows.size())
+    : tape(graph, roots, 4), team(tape), hessian(graph, roots, {}, {env.stream(), tree}),
+      point(to_size(kRing), 0.5), weights(roots.size(), 1.0), values(roots.size()),
+      gradients(tape.pattern().variables.size()), gradient(point.size()),
+      entries(hessian.pattern().rows.size())
 {
     team.fit(tape, kThreads);
     hessian.fit(kThreads);
@@ -478,8 +496,13 @@ TEST(AllocationTest, HessianSweep)
     Graph graph;
     const std::vector<Offset> roots = products(graph);
     ASSERT_GT(Tape(graph, roots, 4).prepass(), 0);
-    EXPECT_EQ(hessian_cost(graph, roots, 1), 0U);
-    EXPECT_EQ(hessian_cost(graph, roots, kLanes), 0U);
+    EXPECT_EQ(hessian_cost(graph, roots, kPair, 1), 0U);
+    EXPECT_EQ(hessian_cost(graph, roots, kPair, kLanes), 0U);
+    Graph wide;
+    const std::array arrows{arrow(wide, variables(wide, kWide))};
+    const std::vector<Real> point(to_size(kWide), 0.5);
+    EXPECT_EQ(hessian_cost(wide, arrows, point, 1), 0U);
+    EXPECT_EQ(hessian_cost(wide, arrows, point, kLanes), 0U);
 }
 
 TEST(AllocationTest, HessianProduct)

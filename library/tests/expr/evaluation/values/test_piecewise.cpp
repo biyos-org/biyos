@@ -1,5 +1,7 @@
+#include "core/env/env.hpp"
 #include "core/env/pool.hpp"
 #include "core/numbers.hpp"
+#include "core/timing/timer.hpp"
 #include "expr/evaluation/hessian/hessian.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
@@ -21,6 +23,7 @@ namespace
 
 using biyos::Bits;
 using biyos::Block;
+using biyos::Env;
 using biyos::Graph;
 using biyos::Hessian;
 using biyos::Index;
@@ -31,6 +34,7 @@ using biyos::Operator;
 using biyos::Pool;
 using biyos::Real;
 using biyos::Tape;
+using biyos::TimingTree;
 using biyos::test::jacobian_of;
 using biyos::test::values_of;
 
@@ -324,11 +328,13 @@ TEST(PiecewiseTest, Differences)
 
 TEST(PiecewiseTest, Curvature)
 {
+    Env env;
+    TimingTree tree;
     Single made = single();
     const std::array pair{made.root, made.root};
     const Offset square = made.graph.add(Operator::Product, 1.0, pair);
-    Hessian flat(made.graph, std::span(&made.root, 1), {});
-    Hessian curved(made.graph, std::span(&square, 1), {});
+    Hessian flat(made.graph, std::span(&made.root, 1), {}, {env.stream(), tree});
+    Hessian curved(made.graph, std::span(&square, 1), {}, {env.stream(), tree});
     ASSERT_EQ(flat.pattern().rows.size(), 1U);
     for (const Real t : probes())
     {
@@ -341,6 +347,8 @@ TEST(PiecewiseTest, Curvature)
 
 TEST(PiecewiseTest, Pattern)
 {
+    Env env;
+    TimingTree tree;
     Graph graph;
     const Offset pwl = graph.add_piecewise_linear(kKinks, kHeights);
     const std::array x{graph.add_variable(0), graph.add_variable(1), graph.add_variable(2)};
@@ -354,7 +362,7 @@ TEST(PiecewiseTest, Pattern)
     const Real s = slope(segment(0.5 + 0.25 - 1.0));
     EXPECT_EQ(bits(gradient[0]), bits(s));
     EXPECT_EQ(bits(gradient[1]), bits(-2.0 * s));
-    Hessian hessian(graph, std::span(&root, 1), {});
+    Hessian hessian(graph, std::span(&root, 1), {}, {env.stream(), tree});
     const std::vector<Offset> starts{0, 2, 2, 3};
     const std::vector<Index> rows{0, 2, 2};
     EXPECT_EQ(hessian.pattern().starts, starts);
