@@ -254,6 +254,61 @@ def test_constant(model, x):
     assert model.getcst(funs) == [3.0]
 
 
+def by_path(env, cnt, code, arg, val, lb, ub):
+    with biyos.Model(env) as model:
+        model.addvar(4)
+        nodes = model.addexpr(cnt, code, arg, val)
+        funs = model.addfun(len(cnt))
+        model.attachexpr(funs, nodes)
+        return constrained(model, model.addcon(funs, lb, ub))
+
+
+def constrained(model, cons):
+    funs, lb, ub = model.getcon(cons)
+    return records(model, funs), lb, ub
+
+
+def test_range(env, model, x):
+    cons = model.addcon(x[0] * x[1], [0.0], [3.0])
+    assert type(cons) is biyos.Constraints
+    code = [VAR, VAR, PRODUCT]
+    expected = by_path(env, [3], code, [0, 1, 2], [1.0], [0.0], [3.0])
+    assert constrained(model, cons) == expected
+
+
+def test_lone(env, model, x):
+    cons = model.addcon(x[2], [1.0], [2.0])
+    funs = model.getcon(cons)[0]
+    assert indexed(model.getrlinterm(funs)) == ([0], [2], [1.0])
+    expected = by_path(env, [1], [VAR], [2], [], [1.0], [2.0])
+    assert constrained(model, cons) == expected
+
+
+def test_ranges(env, model, x):
+    lb = [0.0, -1.0, 1.0]
+    ub = [1.0, 1.0, 5.0]
+    cons = model.addcon([x[0], x[1] + 2 * x[2], biyos.exp(x[3])], lb, ub)
+    code = [VAR, VAR, VAR, SUM, VAR, EXP]
+    arg = [0, 1, 2, 2, 3, 1]
+    val = [0.0, 1.0, 2.0]
+    expected = by_path(env, [1, 3, 2], code, arg, val, lb, ub)
+    assert constrained(model, cons) == expected
+
+
+def test_unbounded(model, x):
+    cons = model.addcon([x[0] * x[1], x[2]])
+    assert model.getcon(cons)[1:] == ([-biyos.inf] * 2, [biyos.inf] * 2)
+    cons = model.addcon(x[0] * x[1], ub=[3.0])
+    assert model.getcon(cons)[1:] == ([-biyos.inf], [3.0])
+
+
+def test_refused(model, x):
+    with pytest.raises(biyos.Error):
+        model.addcon(x[0] * x[1], [biyos.inf])
+    assert (model.getnfun(), model.getncon()) == (1, 0)
+    assert indexed(model.getquadterm()) == ([0], [0], [1], [1.0])
+
+
 def test_bounds(model, x):
     with pytest.raises(TypeError, match="lb and ub come from"):
         model.addcon(x[0] <= 1, ub=[2.0])
@@ -267,16 +322,27 @@ def test_mixed(model, x):
         model.addcon([x[0] <= 1, 0])
     with pytest.raises(TypeError, match="fun.1. is str, not an expression"):
         model.addobj([x[0], "a"])
+    with pytest.raises(TypeError, match="fun.1. is int, not an expression"):
+        model.addcon([x[0] * x[1], 0])
+    with pytest.raises(TypeError, match="is Variable, not a comparison"):
+        model.addcon([x[0] <= 1, x[1]])
+    with pytest.raises(TypeError, match="is Comparison, not an expression"):
+        model.addcon([x[1], x[0] <= 1])
     assert model.getnfun() == 0
 
 
 def test_stale(model, x):
     e = x[0] + x[1]
+    v = x[2]
     model.delvar([3])
     with pytest.raises(ValueError, match=STALE):
         model.addobj(e)
     with pytest.raises(ValueError, match=STALE):
         model.addcon(e <= 1)
+    with pytest.raises(ValueError, match=STALE):
+        model.addcon(e, [0.0], [1.0])
+    with pytest.raises(ValueError, match=STALE):
+        model.addcon([v], [0.0])
     assert model.getnfun() == 0
 
 
@@ -287,4 +353,8 @@ def test_foreign(env, model, x):
             model.addobj(x[0] + y[0])
         with pytest.raises(ValueError, match="variable of another model"):
             model.addcon(y[0] <= 1)
+        with pytest.raises(ValueError, match="variable of another model"):
+            model.addcon(x[0] + y[0], ub=[1.0])
+        with pytest.raises(ValueError, match="variable of another model"):
+            model.addcon(y[0], [0.0])
     assert model.getnfun() == 0

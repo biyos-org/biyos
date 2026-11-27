@@ -2711,6 +2711,9 @@ class Model:
         self,
         fun: Sequence[Index | Function]
         | Functions
+        | Expression
+        | Variable
+        | Sequence[Expression | Variable]
         | Comparison
         | Condition
         | Sequence[Comparison | Condition],
@@ -2719,21 +2722,24 @@ class Model:
     ) -> Constraints:
         """Add constraints after the last one, one for each function given.
 
-        A comparison, or a list of them, adds a function for each, holding
-        the expression its constraint bounds, and takes its bounds from the
-        comparison. A condition is a logical constraint: its function holds
-        the condition, valued 0 or 1, with bounds 1 and 1. Every expression
-        goes to the model in one ``addexpr`` call, then ``attachexpr``
-        splits off its constant, linear and quadratic terms. When the model
-        refuses a later step, the nodes and functions already added stay in
-        it.
+        An expression or a variable, or a list of them, adds a function for
+        each, holding the expression its constraint bounds, and ``lb`` and
+        ``ub`` bound it: ``addcon(x[0] * x[1], [0], [3])`` keeps the product
+        between 0 and 3, which no single comparison can say. A comparison,
+        or a list of them, adds a function the same way and takes its bounds
+        from the comparison. A condition is a logical constraint: its
+        function holds the condition, valued 0 or 1, with bounds 1 and 1.
+        Every expression goes to the model in one ``addexpr`` call, then
+        ``attachexpr`` splits off its constant, linear and quadratic terms.
+        When the model refuses a later step, the nodes and functions already
+        added stay in it.
 
         Parameters
         ----------
         fun
-            The function each new constraint bounds, or comparisons and
-            conditions such as ``x[0] * x[1] <= 3`` and
-            ``(x[0] <= 1) | (x[1] >= 2)``.
+            The function each new constraint bounds, expressions such as
+            ``x[0] * x[1]``, or comparisons and conditions such as
+            ``x[0] * x[1] <= 3`` and ``(x[0] <= 1) | (x[1] >= 2)``.
         lb, ub
             The bounds of each, unbounded by default. None with comparisons
             and conditions.
@@ -2747,7 +2753,7 @@ class Model:
         ------
         TypeError
             When ``lb`` or ``ub`` comes with comparisons, or a list mixes
-            comparisons and conditions with other values.
+            comparisons, conditions or expressions with other values.
         ValueError
             When an expression holds a variable of another model, or one
             made before a deletion from the model, a comparison alone is
@@ -2761,14 +2767,14 @@ class Model:
         cons = given(fun, Logical, "a comparison or a condition")
         if cons is not None:
             return self._compared(cons, lb, ub)
+        trees = given(fun, Operand, "an expression")
         funs = cast("Sequence[Index | Function] | Functions", fun)
-        n = len(funs)
-        arrays = (
-            indices_of(self, Functions, "fun", funs, n),
-            doubles("lb", lb, n),
-            doubles("ub", ub, n),
-        )
-        return self._added(Constraints, lib.BIYOS_addcon, n, *arrays)
+        n = len(funs) if trees is None else len(trees)
+        bounds = (doubles("lb", lb, n), doubles("ub", ub, n))
+        if trees is not None:
+            funs = attached(self, trees, {})
+        idx = indices_of(self, Functions, "fun", funs, n)
+        return self._added(Constraints, lib.BIYOS_addcon, n, idx, *bounds)
 
     @overload
     def setconbnd(

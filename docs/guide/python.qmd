@@ -76,11 +76,17 @@ Arithmetic on variable views builds an `Expression`, a tree that holds its opera
 
 `biyos.ifelse(cond, a, b)` gives the `Operator.IF` expression of a comparison or a condition and two operands: `a` where `cond` holds and `b` elsewhere, as in `ifelse(x[0] >= x[1], x[0]**2, x[1])`. Both branches are evaluated, and the one not taken never reaches the value, so `ifelse(x[0] >= 0, biyos.sqrt(x[0]), 0)` is 0 at `x[0] = -1`. A number or an expression as `cond` raises `TypeError`, and a comparison with an infinite bound in it raises `ValueError` once a model takes the expression. A condition is not an operand, so `c + 1` raises `TypeError`, and `ifelse(c, 1, 0)` gives the value of `c` as a number.
 
-`addobj` takes an expression, a view or a list of them, and `addcon` a comparison, a condition or a list of them, its bounds from the comparisons, with `lb` and `ub` left out. A condition is a logical constraint, with bounds 1 and 1, and refuses a comparison with an infinite bound, such as `x[0] <= biyos.inf`, with `ValueError`. A constraint is closed, so `<`, `>` or `!=` alone raises `ValueError` and nothing is added, with a message that names the condition to write instead, such as `~(x[0] >= 1)` for `x[0] < 1`. Every expression of the call goes to the model in one `addexpr`, a subexpression used twice is sent once with `Operator.KEEP` and `Operator.REFERENCE`, and `attachexpr` splits off the constant, linear and quadratic terms ([Expressions](#sec-model-expressions)). A view made before a deletion, or one of another model, raises `ValueError` before anything is added.
+`addobj` takes an expression, a view or a list of them. `addcon` takes the same, bounded by `lb` and `ub`, or a comparison, a condition or a list of them, its bounds from the comparisons, with `lb` and `ub` left out. A condition is a logical constraint, with bounds 1 and 1, and refuses a comparison with an infinite bound, such as `x[0] <= biyos.inf`, with `ValueError`. A constraint is closed, so `<`, `>` or `!=` alone raises `ValueError` and nothing is added, with a message that names the condition to write instead, such as `~(x[0] >= 1)` for `x[0] < 1`. Every expression of the call goes to the model in one `addexpr`, a subexpression used twice is sent once with `Operator.KEEP` and `Operator.REFERENCE`, and `attachexpr` splits off the constant, linear and quadratic terms ([Expressions](#sec-model-expressions)). A view made before a deletion, or one of another model, raises `ValueError` before anything is added.
 
 A defined quantity can be written two ways. With `y` a variable, `y == sum(...)` is an equality constraint, a row on top of the variable `y`, which the solver keeps equal to the sum. Held in a name, `y = sum(...)` is an expression and no variable, and every expression built from `y` holds the same tree, which one `addcon` or `addobj` call sends once.
 
 ```{.python file="examples/code/python/expressions.py" item="build"}
+```
+
+A constraint bounded on both sides takes the expression and both bounds, since Python cannot chain `0 <= x[0] * x[1] <= 3` into one comparison:
+
+```python
+model.addcon(x[0] * x[1], [0.0], [3.0])
 ```
 
 A pwl is data `addpwl` adds before any expression applies it, and it takes no name and is never deleted ([Expressions](#sec-model-expressions)):
