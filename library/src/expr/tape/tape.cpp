@@ -373,4 +373,9 @@ Offset Tape::partials() const noexcept
     return partials_;
 }
 
+const Block &block_of(std::span<const Block> blocks, Offset position) noexcept
+{
+    return *(std::ranges::upper_bound(blocks, position, {}, &Block::begin) - 1);
+}
+
 }
