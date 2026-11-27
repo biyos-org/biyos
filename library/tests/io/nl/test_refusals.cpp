@@ -21,11 +21,7 @@ constexpr std::string_view kFormats = "hzBGHZ";
 constexpr std::string_view kFunctionsTail = R"(F0 1 -1 myfunc
 )";
 
-constexpr std::string_view kSosnoTail = R"(S0 1 sosno
-0 1
-)";
-
-constexpr std::string_view kRefTail = R"(S4 1 ref
+constexpr std::string_view kSosnoTail = R"(S4 1 sosno
 0 1.5
 )";
 
@@ -71,10 +67,6 @@ v0
 
 constexpr std::string_view kStringTail = R"(C0
 h3:abc
-)";
-
-constexpr std::string_view kComplementsTail = R"(r
-5 1 0
 )";
 
 constexpr std::string_view kSuffixesTail = R"(S0 1 zork
@@ -125,8 +117,7 @@ TEST(NlTest, Functions)
 
 TEST(NlTest, Sets)
 {
-    EXPECT_EQ(tiny_fault(kSosnoTail), refused(11, "suffix 'sosno'"));
-    EXPECT_EQ(tiny_fault(kRefTail), refused(11, "suffix 'ref'"));
+    EXPECT_EQ(tiny_fault(kSosnoTail), refused(11, "real values of suffix 'sosno'"));
 }
 
 TEST(NlTest, Logical)
@@ -155,11 +146,6 @@ TEST(NlTest, Call)
 TEST(NlTest, String)
 {
     EXPECT_EQ(tiny_fault(kStringTail), refused(12, "strings"));
-}
-
-TEST(NlTest, Complements)
-{
-    EXPECT_EQ(tiny_fault(kComplementsTail), refused(12, "complementarity constraints"));
 }
 
 TEST(NlTest, Skipped)

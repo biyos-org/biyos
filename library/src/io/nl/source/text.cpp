@@ -93,9 +93,9 @@ std::string TextSource::where() const
     return lines_.where();
 }
 
-void TextSource::inform(Stream stream, const std::string &text) const
+Place TextSource::place() const
 {
-    biyos::inform(stream, lines_, text);
+    return {.file = lines_.file(), .unit = "line", .at = lines_.number()};
 }
 
 void TextSource::start(bool keyed)

@@ -5,6 +5,7 @@
 #include "io/nl/source/source.hpp"
 #include "io/utils/records.hpp"
 
+#include <cmath>
 #include <optional>
 
 namespace biyos::nl
@@ -12,8 +13,6 @@ namespace biyos::nl
 
 namespace
 {
-
-constexpr Offset kComplements = 5;
 
 Bounds interval(Source &source)
 {
@@ -54,14 +53,35 @@ Bounds coded_bounds(Source &source, Offset code)
 
 }
 
+Offset finite_of(Real lower, Real upper) noexcept
+{
+    return (std::isinf(lower) ? 0 : kLowerFinite) + (std::isinf(upper) ? 0 : kUpperFinite);
+}
+
 std::optional<Bounds> bounds_of(Source &source)
 {
     const Offset code = source.code();
-    if (code == kComplements)
+    if (code == kPairing)
     {
         return std::nullopt;
     }
     return coded_bounds(source, code);
+}
+
+Pairing pairing_of(Source &source, Index row, Index variables)
+{
+    source.expect(3);
+    const Offset finite = source.integer();
+    if (finite < 0 || finite > kBothFinite)
+    {
+        source.bad("complementarity code " + quote(source.last_field()) + " is unknown");
+    }
+    const Offset variable = source.integer();
+    if (variable < 1 || variable > variables)
+    {
+        source.bad("complemented variable " + quote(source.last_field()) + " is out of range");
+    }
+    return {.row = row, .finite = finite, .variable = static_cast<Index>(variable - 1)};
 }
 
 }

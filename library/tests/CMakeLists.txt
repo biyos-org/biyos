@@ -176,6 +176,7 @@ biyos_add_test(test_io
     io/nl/test_limits.cpp
     io/nl/test_nl.cpp
     io/nl/test_refusals.cpp
+    io/nl/test_structure.cpp
     io/nl/test_write.cpp
     io/test_lines.cpp)
 target_include_directories(test_io PRIVATE io/mps/utils io/native/utils io/nl/utils model/utils utils)

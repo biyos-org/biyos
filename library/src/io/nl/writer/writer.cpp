@@ -5,10 +5,12 @@
 #include "core/numeric/identical.hpp"
 #include "core/text/text.hpp"
 #include "expr/forms/terms.hpp"
+#include "io/nl/source/bounds.hpp"
 #include "io/nl/writer/defined.hpp"
 #include "io/nl/writer/entries.hpp"
 #include "io/nl/writer/layout.hpp"
 #include "io/nl/writer/printer.hpp"
+#include "io/nl/writer/sets.hpp"
 #include "io/nl/writer/usage.hpp"
 #include "io/utils/report.hpp"
 #include "model/model.hpp"
@@ -110,7 +112,7 @@ bool named(const Model &model)
 }
 
 Plan::Plan(const Model &model)
-    : model_(model), records_(records_of(model)), usage_(model, records_.constraints),
+    : model_(model), records_(records_of(model)), usage_(model, records_.rows),
       columns_(columns_of(model, usage_)), entries_(model, usage_, columns_.position),
       defined_(model, usage_)
 {
@@ -129,6 +131,7 @@ void Plan::print(std::ostream &output) const
     print_bounds(output);
     print_columns(output);
     print_entries(output);
+    print_sets(output, model_, columns_.position);
 }
 
 void Plan::report(Stream stream, const std::string &file) const
@@ -141,9 +144,14 @@ void Plan::report(Stream stream, const std::string &file) const
     {
         warn(stream, file, "NL leaves out the names");
     }
+    std::vector<bool> paired(to_size(model_.n_functions()), false);
+    for (const Complement &complement : model_.complements(0, model_.n_complements()))
+    {
+        paired[to_size(complement.function)] = true;
+    }
     for (Index function = 0; function < model_.n_functions(); ++function)
     {
-        if (!reached(usage_.function_reach(function)))
+        if (!reached(usage_.function_reach(function)) && !paired[to_size(function)])
         {
             inform(stream,
                    file,
@@ -163,7 +171,7 @@ void Plan::print_header(std::ostream &output) const
         equations += bound == Bound::Equal ? 1 : 0;
     }
     Offset jacobian = 0;
-    for (Index m = 0; m < model_.n_constraints(); ++m)
+    for (Index m = 0; m < n_rows(); ++m)
     {
         jacobian += to_offset(entries_.of(function_of(m)).size());
     }
@@ -175,10 +183,8 @@ void Plan::print_header(std::ostream &output) const
     const Counts &counts = columns_.counts;
     const auto defined = defined_.counts();
     output << "g3 1 1 0\n";
-    print_row(
-        output,
-        {model_.n_variables(), model_.n_constraints(), model_.n_objectives(), ranges, equations});
-    print_row(output, {records_.nonlinear_constraints, records_.nonlinear_objectives});
+    print_row(output, {model_.n_variables(), n_rows(), model_.n_objectives(), ranges, equations});
+    print_nonlinear(output);
     print_row(output, {0, 0});
     print_row(output, {counts.in_constraints, counts.in_objectives, counts.in_both});
     print_row(output, {0, 0, 0, 1});
@@ -193,9 +199,30 @@ void Plan::print_header(std::ostream &output) const
     print_row(output, {defined[0], defined[1], defined[2], defined[3], defined[4]});
 }
 
+void Plan::print_nonlinear(std::ostream &output) const
+{
+    const Index rows = records_.nonlinear_rows;
+    const Index objectives = records_.nonlinear_objectives;
+    const Index complements = model_.n_complements();
+    if (complements == 0)
+    {
+        print_row(output, {rows, objectives});
+        return;
+    }
+    Index two_sided = 0;
+    Index shifted = 0;
+    for (const Complement &complement : model_.complements(0, complements))
+    {
+        two_sided += finite_of(complement.lower, complement.upper) == kBothFinite ? 1 : 0;
+        shifted += std::isfinite(complement.lower) && !identical(complement.lower, 0.0) ? 1 : 0;
+    }
+    const Index nonlinear = records_.nonlinear_complements;
+    print_row(output, {rows, objectives, complements - nonlinear, nonlinear, two_sided, shifted});
+}
+
 void Plan::print_records(std::ostream &output, Printer &printer) const
 {
-    for (Index m = 0; m < model_.n_constraints(); ++m)
+    for (Index m = 0; m < n_rows(); ++m)
     {
         for (const Definition &definition : defined_.of(Scope::Constraint, m))
         {
@@ -219,16 +246,28 @@ void Plan::print_records(std::ostream &output, Printer &printer) const
 
 void Plan::print_ranges(std::ostream &output) const
 {
-    if (model_.n_constraints() == 0)
+    if (records_.rows.empty())
     {
         return;
     }
     output << "r\n";
-    for (const Index k : records_.constraints)
+    for (const Row &row : records_.rows)
     {
-        const Constraint &constraint = model_.constraint(k);
+        if (row.family == Family::Complement)
+        {
+            print_pairing(output, model_.complement(row.record));
+            continue;
+        }
+        const Constraint &constraint = model_.constraint(row.record);
         print_bound(output, constraint.lower, constraint.upper);
     }
+}
+
+void Plan::print_pairing(std::ostream &output, const Complement &complement) const
+{
+    const Index variable = columns_.position[to_size(variable_of(model_, complement))];
+    const Offset finite = finite_of(complement.lower, complement.upper);
+    output << kPairing << ' ' << finite << ' ' << variable + 1 << '\n';
 }
 
 void Plan::print_bounds(std::ostream &output) const
@@ -252,7 +291,7 @@ void Plan::print_columns(std::ostream &output) const
         return;
     }
     std::vector<Offset> counts(to_size(model_.n_variables()), 0);
-    for (Index m = 0; m < model_.n_constraints(); ++m)
+    for (Index m = 0; m < n_rows(); ++m)
     {
         for (const LinearTerm &term : entries_.of(function_of(m)))
         {
@@ -270,7 +309,7 @@ void Plan::print_columns(std::ostream &output) const
 
 void Plan::print_entries(std::ostream &output) const
 {
-    for (Index m = 0; m < model_.n_constraints(); ++m)
+    for (Index m = 0; m < n_rows(); ++m)
     {
         const auto terms = entries_.of(function_of(m));
         if (!terms.empty())
@@ -290,9 +329,14 @@ void Plan::print_entries(std::ostream &output) const
     }
 }
 
-Index Plan::function_of(Index constraint) const noexcept
+Index Plan::function_of(Index row) const noexcept
 {
-    return model_.constraint(records_.constraints[to_size(constraint)]).function;
+    return records_.rows[to_size(row)].function;
+}
+
+Index Plan::n_rows() const noexcept
+{
+    return to_index(records_.rows.size());
 }
 
 }

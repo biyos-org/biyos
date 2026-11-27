@@ -41,9 +41,9 @@ bool reached(const Reach &reach) noexcept
     return reach.constraint != kNobody || reach.objective != kNobody;
 }
 
-Usage::Usage(const Model &model, std::span<const Index> constraints)
+Usage::Usage(const Model &model, std::span<const Row> rows)
 {
-    reach_functions(model, constraints);
+    reach_functions(model, rows);
     reach_roots(model);
     reach_nodes(model.graph());
     reach_variables(model);
@@ -74,13 +74,13 @@ const Reach &Usage::variable_reach(Index variable) const noexcept
     return variables_[to_size(variable)];
 }
 
-void Usage::reach_functions(const Model &model, std::span<const Index> constraints)
+void Usage::reach_functions(const Model &model, std::span<const Row> rows)
 {
     functions_.assign(to_size(model.n_functions()), kUnreached);
-    for (std::size_t m = 0; m < constraints.size(); ++m)
+    for (std::size_t m = 0; m < rows.size(); ++m)
     {
-        const Index function = model.constraint(constraints[m]).function;
-        join(functions_[to_size(function)], Reach{.constraint = to_index(m), .objective = kNobody});
+        const Reach reach{.constraint = to_index(m), .objective = kNobody};
+        join(functions_[to_size(rows[m].function)], reach);
     }
     for (Index q = 0; q < model.n_objectives(); ++q)
     {

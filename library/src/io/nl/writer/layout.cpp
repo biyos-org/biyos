@@ -98,6 +98,24 @@ Counts counts_of(const Sizes &sizes) noexcept
     };
 }
 
+Index function_of(const Model &model, Family family, Index record)
+{
+    if (family == Family::Complement)
+    {
+        return model.complement(record).multiplier;
+    }
+    return model.constraint(record).function;
+}
+
+void add_row(Records &records, const Model &model, Family family, Index record, bool wanted)
+{
+    const Index function = function_of(model, family, record);
+    if (nonlinear(model, function) == wanted)
+    {
+        records.rows.push_back({.family = family, .record = record, .function = function});
+    }
+}
+
 }
 
 bool nonlinear(const Model &model, Index function)
@@ -106,22 +124,34 @@ bool nonlinear(const Model &model, Index function)
            model.roots(function, function + 1).front() != kNoRoot;
 }
 
+Index variable_of(const Model &model, const Complement &complement)
+{
+    const Index function = complement.function;
+    return model.linear_terms(function, function + 1).front().variable;
+}
+
 Records records_of(const Model &model)
 {
     check_records(model);
-    Records records{.constraints = {}, .nonlinear_constraints = 0, .nonlinear_objectives = 0};
+    Records records{.rows = {},
+                    .nonlinear_rows = 0,
+                    .nonlinear_complements = 0,
+                    .nonlinear_objectives = 0};
     for (const bool wanted : {true, false})
     {
         for (Index k = 0; k < model.n_constraints(); ++k)
         {
-            if (nonlinear(model, model.constraint(k).function) == wanted)
-            {
-                records.constraints.push_back(k);
-            }
+            add_row(records, model, Family::Constraint, k, wanted);
+        }
+        const Index constraints = to_index(records.rows.size());
+        for (Index c = 0; c < model.n_complements(); ++c)
+        {
+            add_row(records, model, Family::Complement, c, wanted);
         }
         if (wanted)
         {
-            records.nonlinear_constraints = to_index(records.constraints.size());
+            records.nonlinear_rows = to_index(records.rows.size());
+            records.nonlinear_complements = records.nonlinear_rows - constraints;
         }
     }
     for (Index q = 0; q < model.n_objectives(); ++q)

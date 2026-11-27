@@ -15,6 +15,13 @@
 namespace biyos::nl
 {
 
+struct Place
+{
+    std::string file;
+    std::string_view unit;
+    std::size_t at;
+};
+
 class Source
 {
   public:
@@ -34,14 +41,16 @@ class Source
     virtual Real constant(char leaf) = 0;
     virtual std::string last_field() const = 0;
     virtual std::string where() const = 0;
-    virtual void inform(Stream stream, const std::string &text) const = 0;
+    virtual Place place() const = 0;
 
+    void inform(Stream stream, const std::string &text) const;
     Index count();
     Index index(Index size, std::string_view noun);
     [[noreturn]] void bad(const std::string &message) const;
     [[noreturn]] void refuse(const std::string &message) const;
 };
 
+void inform(Stream stream, const Place &place, const std::string &text) noexcept;
 [[noreturn]] void reject(const Source &source, const Error &error);
 Offset size_of(std::istream &input);
 std::unique_ptr<Source> source_of(Lines &lines,

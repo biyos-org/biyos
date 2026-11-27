@@ -102,8 +102,11 @@ add_library(biyos_internal STATIC
     io/nl/nl.cpp
     io/nl/operators.cpp
     io/nl/reader/bodies.cpp
+    io/nl/reader/complements.cpp
     io/nl/reader/expressions.cpp
     io/nl/reader/pieces.cpp
+    io/nl/reader/sets.cpp
+    io/nl/reader/suffixes.cpp
     io/nl/source/binary.cpp
     io/nl/source/bounds.cpp
     io/nl/source/source.cpp
@@ -114,6 +117,7 @@ add_library(biyos_internal STATIC
     io/nl/writer/layout.cpp
     io/nl/writer/printer.cpp
     io/nl/writer/refusals.cpp
+    io/nl/writer/sets.cpp
     io/nl/writer/usage.cpp
     io/nl/writer/writer.cpp
     io/native/native.cpp

@@ -132,13 +132,14 @@ TEST(NlTest, Records)
     EXPECT_EQ(refusal(built(indicators)), refused("indicator 0", "indicators"));
     Parts sets = base;
     sets.special_ordered_sets = sample().special_ordered_sets;
-    EXPECT_EQ(refusal(built(sets)), refused("set 0", "special ordered sets"));
+    EXPECT_EQ(refusal(built(sets)), refused("set 1", "variable 0 in two sets"));
     Parts cones = base;
     cones.cones = sample().cones;
     EXPECT_EQ(refusal(built(cones)), refused("cone 0", "cones"));
     Parts complements = base;
     complements.complements = sample().complements;
-    EXPECT_EQ(refusal(built(complements)), refused("complement 0", "complements"));
+    EXPECT_EQ(refusal(built(complements)),
+              refused("complement 0", "a function other than one variable"));
     Model callbacks = built(base);
     callbacks.add_callback(std::vector<Index>{1}, nullptr);
     EXPECT_EQ(refusal(callbacks), refused("callback 0", "callbacks"));

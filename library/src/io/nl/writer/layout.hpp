@@ -11,8 +11,9 @@ namespace biyos::nl
 
 struct Records
 {
-    std::vector<Index> constraints;
-    Index nonlinear_constraints;
+    std::vector<Row> rows;
+    Index nonlinear_rows;
+    Index nonlinear_complements;
     Index nonlinear_objectives;
 };
 
@@ -37,6 +38,7 @@ struct Columns
 };
 
 bool nonlinear(const Model &model, Index function);
+Index variable_of(const Model &model, const Complement &complement);
 Records records_of(const Model &model);
 Columns columns_of(const Model &model, const Usage &usage);
 

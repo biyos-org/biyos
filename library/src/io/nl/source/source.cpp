@@ -1,6 +1,7 @@
 #include "io/nl/source/source.hpp"
 
 #include "core/env/error.hpp"
+#include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "io/nl/header.hpp"
@@ -41,6 +42,11 @@ Index Source::index(Index size, std::string_view noun)
     return index;
 }
 
+void Source::inform(Stream stream, const std::string &text) const
+{
+    nl::inform(stream, place(), text);
+}
+
 void Source::bad(const std::string &message) const
 {
     bad_file(where(), message);
@@ -49,6 +55,11 @@ void Source::bad(const std::string &message) const
 void Source::refuse(const std::string &message) const
 {
     unsupported(where(), message);
+}
+
+void inform(Stream stream, const Place &place, const std::string &text) noexcept
+{
+    biyos::inform(stream, place.file, place.unit, place.at, text);
 }
 
 void reject(const Source &source, const Error &error)

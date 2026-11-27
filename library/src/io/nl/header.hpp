@@ -22,6 +22,7 @@ struct Header
     Index constraints;
     Index objectives;
     Index defined;
+    Index complements;
     std::vector<VariableKind> kinds;
     Encoding encoding;
 };
