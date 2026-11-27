@@ -398,6 +398,20 @@ TEST(CurvatureTest, Comparisons)
     }
 }
 
+TEST(CurvatureTest, Connectives)
+{
+    for (int code = BIYOS_OP_AND; code <= BIYOS_OP_NOT; ++code)
+    {
+        Graph graph;
+        const std::array x{graph.add_variable(0), graph.add_variable(1)};
+        const Offset condition = graph.add(Operator::Less, x);
+        const Offset node = graph.add(static_cast<Operator>(code), std::span(&condition, 1));
+        const Shapes shapes = classified(graph, Box{Interval(1.0, 2.0), Interval(3.0, 4.0), kZero});
+        EXPECT_EQ(shapes.curvature(node), kNeither) << code;
+        EXPECT_EQ(shapes.monotonicity(node, 0), Monotonicity::Unknown) << code;
+    }
+}
+
 TEST(CurvatureTest, Points)
 {
     Graph graph;

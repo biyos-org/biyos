@@ -251,6 +251,43 @@ TEST(GraphTest, Arity)
     EXPECT_EQ(graph.size(), 1);
 }
 
+TEST(GraphTest, Conditions)
+{
+    Graph graph;
+    const Offset x = graph.add_variable(0);
+    const Offset y = graph.add_variable(1);
+    const Offset less = graph.add(Operator::Less, std::array{x, y});
+    const Offset both = graph.add(Operator::And, std::array{less, less});
+    const Offset either = graph.add(Operator::Or, std::array{both, less});
+    const Offset negated = unary(graph, Operator::Not, either);
+    EXPECT_EQ(graph.op(unary(graph, Operator::Not, negated)), Operator::Not);
+    EXPECT_EQ(ids(graph.children(either)), (std::vector<Offset>{both, less}));
+    EXPECT_EQ(graph.op(graph.add(Operator::Equal, std::array{negated, x})), Operator::Equal);
+    EXPECT_EQ(graph.size(), 8);
+}
+
+TEST(GraphTest, NumericOperand)
+{
+    Graph graph;
+    const Offset x = graph.add_variable(0);
+    const Offset less = graph.add(Operator::Less, std::array{x, x});
+    const Offset ratio = graph.add(Operator::Division, std::array{x, x});
+    const Offset two = graph.add(Operator::Constant, 2.0, {});
+    EXPECT_EQ(refusal([&] { graph.add(Operator::And, std::array{less, x}); }),
+              refused(Operator::And, "takes conditions: node 0 is operator 2"));
+    EXPECT_EQ(refusal([&] { graph.add(Operator::Or, std::array{ratio, less}); }),
+              refused(Operator::Or, "takes conditions: node 2 is operator 6"));
+    EXPECT_EQ(refusal([&] { unary(graph, Operator::Not, two); }),
+              refused(Operator::Not, "takes conditions: node 3 is operator 1"));
+    EXPECT_EQ(refusal([&] { graph.add(Operator::Not, std::array{less, less}); }),
+              refused(Operator::Not, "takes 1 child, not 2"));
+    EXPECT_EQ(refusal([&] { graph.add(Operator::And, {}); }),
+              refused(Operator::And, "takes 1 child or more, not 0"));
+    EXPECT_EQ(refusal([&] { graph.add(Operator::Or, 1.0, std::span(&less, 1)); }),
+              refused(Operator::Or, "takes no payload"));
+    EXPECT_EQ(graph.size(), 4);
+}
+
 TEST(GraphTest, UnaryShape)
 {
     Graph graph;

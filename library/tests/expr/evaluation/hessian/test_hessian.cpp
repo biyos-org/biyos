@@ -369,6 +369,40 @@ TEST(HessianTest, Indicator)
     expect_rows_at(hessian, std::array{2.0, 1.0}, {{0.0, 0.0}, {0.0, 0.0}});
 }
 
+TEST(HessianTest, Connective)
+{
+    Env env;
+    TimingTree tree;
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 2);
+    const Offset root = unary(graph, Operator::Sqrt, x[0]);
+    const Offset below = binary(graph, Operator::LessEqual, root, constant(graph, 1.0));
+    const Offset positive = binary(graph, Operator::Greater, x[1], constant(graph, 0.0));
+    const Offset both = graph.add(Operator::And, std::array{below, positive});
+    const Offset either = graph.add(Operator::Or, std::array{below, positive});
+    const Offset outside = unary(graph, Operator::Not, below);
+    const std::array weights{3.0, 2.0, 1.0};
+    const std::array conditions{both, either, outside};
+    std::vector<Offset> products;
+    for (std::size_t k = 0; k < conditions.size(); ++k)
+    {
+        products.push_back(
+            graph.add(Operator::Product, weights[k], std::array{conditions[k], x[1], x[1]}));
+    }
+    Hessian hessian(graph, products, {}, {env.stream(), tree});
+    const std::array ones{1.0, 1.0, 1.0};
+    expect_rows(dense(hessian.pattern(), values_of(hessian, std::array{0.0, 0.5}, ones), 2),
+                {{0.0, 0.0}, {0.0, 10.0}});
+    expect_rows(dense(hessian.pattern(), values_of(hessian, std::array{4.0, 0.5}, ones), 2),
+                {{0.0, 0.0}, {0.0, 6.0}});
+    expect_rows(dense(hessian.pattern(), values_of(hessian, std::array{4.0, -0.5}, ones), 2),
+                {{0.0, 0.0}, {0.0, 2.0}});
+    const Offset undefined = graph.add(Operator::Or, std::array{positive, below});
+    Hessian nan(graph, std::span(&undefined, 1), {}, {env.stream(), tree});
+    EXPECT_TRUE(std::isnan(entry_of(nan, std::array{-1.0, 2.0}, 0, 0)));
+    EXPECT_DOUBLE_EQ(entry_of(nan, std::array{1.0, 2.0}, 0, 0), 0.0);
+}
+
 TEST(HessianTest, Masked)
 {
     Env env;

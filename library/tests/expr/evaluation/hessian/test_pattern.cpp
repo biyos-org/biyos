@@ -49,6 +49,7 @@ using biyos::test::binary;
 using biyos::test::default_tolerances;
 using biyos::test::kBudgets;
 using biyos::test::kComparisons;
+using biyos::test::kConnectives;
 using biyos::test::kExponents;
 using biyos::test::kHeights;
 using biyos::test::kKinks;
@@ -360,6 +361,24 @@ TEST(PatternTest, Comparisons)
     {
         SCOPED_TRACE(static_cast<int>(op));
         const Offset root = binary(graph, op, curved, grown);
+        EXPECT_EQ(sorted(exact(graph, root)), own);
+        EXPECT_EQ(sorted(exact(graph, scaled(graph, 2.0, root, x[2]))), own);
+    }
+}
+
+TEST(PatternTest, Connectives)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 3);
+    const Offset curved = scaled(graph, 1.0, x[0], x[1]);
+    const Offset grown = unary(graph, Operator::Exp, x[2]);
+    const std::array conditions{binary(graph, Operator::Less, curved, grown),
+                                binary(graph, Operator::Equal, grown, curved)};
+    const Pairs own{{1, 0}, {2, 2}};
+    for (const Operator op : kConnectives)
+    {
+        SCOPED_TRACE(static_cast<int>(op));
+        const Offset root = graph.add(op, std::span(conditions).first(op == Operator::Not ? 1 : 2));
         EXPECT_EQ(sorted(exact(graph, root)), own);
         EXPECT_EQ(sorted(exact(graph, scaled(graph, 2.0, root, x[2]))), own);
     }
