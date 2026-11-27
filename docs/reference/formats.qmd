@@ -1,6 +1,6 @@
 # File formats {#sec-formats}
 
-`BIYOS_readmdl` and `Model.read` read a model from a file in the format the caller names, and `BIYOS_writemdl` and `Model.write` write one. This chapter gives the rules of each format as the reader applies them, then the rules of the writer. A file that breaks one gives `BIYOS_ERR_BADFILE`, a section or segment the reader does not handle gives `BIYOS_ERR_UNSUPPORTED`, each oddity the reader reads past is a warning event from module `io`, with the fields `file` and `line`, and each part it skips is an info event with the same fields.
+`BIYOS_readmdl` and `Model.read` read a model from a file in the format the caller names, and `BIYOS_writemdl` and `Model.write` write one. This chapter gives the rules of each format as the reader applies them, then the rules of the writer. A file that breaks one gives `BIYOS_ERR_BADFILE`, a section or segment the reader does not handle gives `BIYOS_ERR_UNSUPPORTED`, each oddity the reader reads past is a warning event from module `io`, with the fields `file` and `line`, and each part it skips is an info event with the same fields. In the binary part of an NL file, `byte` takes the place of `line`.
 
 ## Free MPS
 
@@ -160,9 +160,9 @@ A section line is read as in free MPS, with the model name the rest of the `NAME
 | Tabs | A tab is one column. |
 | Long lines | Field 6 runs to the end of the line, so text after it, such as a card number in columns 73 to 80, makes its value unreadable. |
 
-## Text NL
+## NL
 
-`BIYOS_FILEFMT_NL` reads the text form of NL, the format AMPL writes for a solver. The rules below are those of Gay's description of the format [@gay2005]. Where it says nothing, biyos sets its own rule, given in [Choices](#sec-nl-choices). The format is read only: `BIYOS_writemdl` refuses it with `BIYOS_ERR_UNSUPPORTED`.
+`BIYOS_FILEFMT_NL` reads NL, the format AMPL writes for a solver, in its text and its binary form. The rules below are those of Gay's description of the format [@gay2005], and for what it leaves out of the binary form, those of the NL reader of AMPL's MP library [@amplmp2026]. Where it says nothing, biyos sets its own rule, given in [Choices](#sec-nl-choices). The format is read only: `BIYOS_writemdl` refuses it with `BIYOS_ERR_UNSUPPORTED`.
 
 ### Lines
 
@@ -170,7 +170,13 @@ The first field of a line is a letter, often followed by a number in the same fi
 
 ### Header
 
-The file starts with ten lines. The first starts with `g`; a file that starts with `b` is binary NL, refused with `BIYOS_ERR_UNSUPPORTED`. The next nine hold counts in the order Gay gives, the second line starting with the numbers of variables, constraints and objectives. The counts fix the kind of each variable from its place in the order of variables in Gay's tables [@gay2017], and every variable they do not mark integer or binary is continuous.
+The file starts with ten lines. The first starts with `g` for text or `b` for binary. The other forms AMPL writes, `h` and `z` for large files and `B`, `G`, `H` and `Z` for debugging, are refused with `BIYOS_ERR_UNSUPPORTED`. The next nine hold counts in the order Gay gives, the second line starting with the numbers of variables, constraints and objectives. The counts fix the kind of each variable from its place in the order of variables in Gay's tables [@gay2017], and every variable they do not mark integer or binary is continuous.
+
+### Binary
+
+The header of a binary file is the same ten lines of text. The third count of its sixth line, `arith`, gives the byte order of what follows: `1` little-endian, `2` big-endian. Any other value is refused with `BIYOS_ERR_UNSUPPORTED`, `0` among them.
+
+After the header, the file holds the same items as text with no white space and no newlines. A letter, such as a segment key, the key of an expression item or a bound code, is one byte, a bound code being the ASCII digit. An integer is four bytes in two's complement, a number eight bytes in IEEE double precision, and a name a four byte length followed by its bytes. A constant may be `s`, followed by a two byte integer, or `l`, followed by a four byte integer, as well as `n`. A file that ends inside an item gives `BIYOS_ERR_BADFILE`, and a message names the byte where the item starts, counted from 0 at the start of the file.
 
 ### Segments
 
@@ -215,7 +221,7 @@ Every other operator, among them `atan2`, the comparisons, the logical operators
 
 | Case | biyos's rule |
 |---|---|
-| Header counts | A file must hold at least two bytes for each variable, constraint, objective and defined variable the header counts, so a short file cannot make the reader allocate for a large model. |
+| Header counts | A file must hold at least two bytes for each variable, constraint, objective and defined variable the header counts, one byte in binary, so a short file cannot make the reader allocate for a large model. |
 | Several objectives | Each is read, with its sense, and its priority is its place in the file. |
 | Names | NL holds none; names in separate files are not read. |
 | A linear term with coefficient 0 | Kept as a term of the function. |

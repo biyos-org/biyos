@@ -74,10 +74,12 @@ set_tests_properties(NameTest.LocalBuffer PROPERTIES
 
 biyos_add_test(test_expr
     expr/analysis/curvature/draws.cpp
+    expr/analysis/curvature/test_angle.cpp
     expr/analysis/curvature/test_bends.cpp
     expr/analysis/curvature/test_curvature.cpp
     expr/analysis/curvature/test_segments.cpp
     expr/analysis/curvature/test_waves.cpp
+    expr/analysis/intervals/test_atan2.cpp
     expr/analysis/intervals/test_enclosure.cpp
     expr/analysis/intervals/test_interval.cpp
     expr/analysis/intervals/test_piecewise.cpp
@@ -161,6 +163,7 @@ biyos_add_test(test_io
     io/native/test_random.cpp
     io/native/test_writes.cpp
     io/native/test_words.cpp
+    io/nl/test_binary.cpp
     io/nl/test_faults.cpp
     io/nl/test_nl.cpp
     io/nl/test_refusals.cpp

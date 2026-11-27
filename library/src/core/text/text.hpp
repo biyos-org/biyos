@@ -14,6 +14,7 @@ namespace biyos
 {
 
 inline constexpr std::size_t kTextWidth = 32;
+inline constexpr std::string_view kHexDigits = "0123456789ABCDEF";
 
 template <typename T> constexpr std::size_t shortest_width() noexcept
 {
@@ -46,6 +47,11 @@ template <typename T> std::string text_of(T value)
 template <typename T> std::string interval_of(T lower, T upper)
 {
     return "[" + text_of(lower) + ", " + text_of(upper) + "]";
+}
+
+inline std::string hex_of(unsigned char byte)
+{
+    return {kHexDigits[byte / kHexDigits.size()], kHexDigits[byte % kHexDigits.size()]};
 }
 
 }

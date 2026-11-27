@@ -2,17 +2,22 @@
 
 #include "core/env/error.hpp"
 #include "core/numbers.hpp"
+#include "model/model.hpp"
 #include "model/utils/checks.hpp"
 
 #include <cstddef>
 #include <span>
+#include <string>
 #include <string_view>
 #include <vector>
 
 namespace biyos
 {
 
-std::vector<Index> renumbering(std::string_view noun, Index total, std::span<const Index> deleted)
+std::vector<Index> renumbering(std::string_view noun,
+                               std::string_view word,
+                               Index total,
+                               std::span<const Index> deleted)
 {
     for (const Index index : deleted)
     {
@@ -25,7 +30,7 @@ std::vector<Index> renumbering(std::string_view noun, Index total, std::span<con
         if (entry == kDeleted)
         {
             throw Error(ErrorKind::InvalidArgument,
-                        "argument 'idx'",
+                        "argument '" + std::string(word) + "'",
                         item(noun, index) + " is repeated");
         }
         entry = kDeleted;
@@ -40,6 +45,11 @@ std::vector<Index> renumbering(std::string_view noun, Index total, std::span<con
         }
     }
     return map;
+}
+
+std::vector<Index> renumbering(Family family, Index total, std::span<const Index> deleted)
+{
+    return renumbering(noun_of(family), word_of(family), total, deleted);
 }
 
 void renumber(Index &index, std::span<const Index> map) noexcept

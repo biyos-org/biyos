@@ -84,7 +84,7 @@ void Model::set_complements(std::span<const Index> indices, std::span<const Comp
 
 std::vector<Index> Model::delete_complements(std::span<const Index> indices)
 {
-    std::vector<Index> map = renumbering(kNoun, n_complements(), indices);
+    std::vector<Index> map = renumbering(Family::Complement, n_complements(), indices);
     keep(complements_, map);
     renumber_tolerances(Family::Complement, map);
     renumber_names(Family::Complement, map);

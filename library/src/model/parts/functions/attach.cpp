@@ -140,7 +140,7 @@ std::vector<Index> distinct(std::span<const Index> functions, Index held)
 
 void Model::attach_expressions(std::span<const Index> functions, std::span<const Offset> nodes)
 {
-    check_functions(functions, n_functions(), "idx");
+    check_functions(functions, n_functions(), "fun");
     check_nodes(functions, nodes, graph_.size());
     Rollback rollback(graph_);
     const std::vector<Parts> parts = split_all(graph_, uses_, nodes);

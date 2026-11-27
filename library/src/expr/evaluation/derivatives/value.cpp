@@ -2,6 +2,7 @@
 
 #include "core/env/error.hpp"
 #include "core/numbers.hpp"
+#include "core/numeric/angle.hpp"
 #include "core/text/text.hpp"
 #include "expr/evaluation/derivatives/partials.hpp"
 #include "expr/graph/node.hpp"
@@ -36,11 +37,6 @@ Real entropy(Real value) noexcept
 Real sign_power(Real value, Real exponent) noexcept
 {
     return std::copysign(std::pow(std::fabs(value), exponent), value);
-}
-
-Real angle(Real y, Real x) noexcept
-{
-    return std::atan2(y + 0.0, x + 0.0);
 }
 
 template <typename F> void map(const Instruction &instruction, const Frame &frame, F f) noexcept
