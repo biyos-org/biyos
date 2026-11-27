@@ -1,11 +1,11 @@
-#include "core/env.hpp"
-#include "core/error.hpp"
+#include "core/env/env.hpp"
+#include "core/env/error.hpp"
+#include "core/env/version.hpp"
 #include "core/events/events.hpp"
 #include "core/numbers.hpp"
 #include "core/options/options.hpp"
 #include "core/options/table.hpp"
 #include "core/timing/clock.hpp"
-#include "core/version.hpp"
 
 #include <gtest/gtest.h>
 

@@ -1,7 +1,7 @@
 #pragma once
 
+#include "core/env/version.hpp"
 #include "core/options/options.hpp"
-#include "core/version.hpp"
 
 #include <algorithm>
 #include <cstddef>

@@ -50,6 +50,12 @@ class TimingTree
     std::chrono::nanoseconds observed_cpu_{0};
 };
 
+struct Timing
+{
+    Stream stream;
+    TimingTree &tree;
+};
+
 class Timer
 {
   public:

@@ -322,7 +322,7 @@ TEST(CApiTest, RefusedIndicators)
     EXPECT_EQ(BIYOS_getindbndrg(held, 2, 4, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: indicator 3: unknown");
     EXPECT_EQ(BIYOS_getindvarsp(held, 1, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'ind': is null");
     EXPECT_EQ(BIYOS_getnind(held, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': is null");
     expect_records(read_all(model), kSample);

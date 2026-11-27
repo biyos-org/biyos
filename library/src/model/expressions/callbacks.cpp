@@ -1,6 +1,6 @@
 #include "model/model.hpp"
 
-#include "core/error.hpp"
+#include "core/env/error.hpp"
 #include "core/numbers.hpp"
 #include "model/expressions/callbacks.hpp"
 #include "model/expressions/patterns.hpp"
@@ -20,6 +20,7 @@ namespace
 {
 
 constexpr std::string_view kNoun = "callback";
+constexpr std::string_view kWord = "cb";
 
 void check_count(std::span<const Index> functions)
 {
@@ -123,7 +124,7 @@ void Model::set_callback_data(Index callback, void *data)
 
 std::vector<Index> Model::delete_callbacks(std::span<const Index> indices)
 {
-    std::vector<Index> map = renumbering(kNoun, n_callbacks(), indices);
+    std::vector<Index> map = renumbering(kNoun, kWord, n_callbacks(), indices);
     keep(callbacks_, map);
     return map;
 }

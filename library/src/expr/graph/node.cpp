@@ -1,6 +1,6 @@
 #include "expr/graph/node.hpp"
 
-#include "core/error.hpp"
+#include "core/env/error.hpp"
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
 
@@ -27,6 +27,9 @@ struct Shape
     Offset least;
     Offset most;
     bool positive = false;
+    bool condition = false;
+    bool connective = false;
+    bool guarded = false;
 };
 
 [[noreturn]] void refuse(const std::string &reason)
@@ -81,9 +84,35 @@ std::optional<Shape> find_shape(Operator op) noexcept
     case Operator::Power:
     case Operator::Atan2:
         return Shape{.payload = Payload::None, .least = 2, .most = 2};
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
+        return Shape{.payload = Payload::None, .least = 2, .most = 2, .condition = true};
     case Operator::Max:
     case Operator::Min:
         return Shape{.payload = Payload::None, .least = 1, .most = kMany};
+    case Operator::And:
+    case Operator::Or:
+        return Shape{
+            .payload = Payload::None,
+            .least = 1,
+            .most = kMany,
+            .condition = true,
+            .connective = true,
+        };
+    case Operator::Not:
+        return Shape{
+            .payload = Payload::None,
+            .least = 1,
+            .most = 1,
+            .condition = true,
+            .connective = true,
+        };
+    case Operator::If:
+        return Shape{.payload = Payload::None, .least = 3, .most = 3, .guarded = true};
     }
     return std::nullopt;
 }
@@ -173,6 +202,18 @@ void check_shape(Operator op, Payload payload, Offset children)
     {
         const std::string wanted = arity_text(shape);
         refuse(operator_name(op) + " takes " + wanted + ", not " + text_of(children));
+    }
+}
+
+void check_operand(Operator op, std::size_t k, Offset child, Operator found)
+{
+    const Shape shape = shape_of(op);
+    const bool wanted = shape.connective || (shape.guarded && k == 0);
+    if (wanted && !shape_of(found).condition)
+    {
+        const std::string phrase = shape.connective ? "conditions" : "a condition first";
+        const std::string node = "node " + text_of(child) + " is " + operator_name(found);
+        refuse(operator_name(op) + " takes " + phrase + ": " + node);
     }
 }
 

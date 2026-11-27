@@ -10,13 +10,23 @@ from biyos._model.blocks import (
     Variables,
     index_of,
 )
-from biyos._model.expression import Expression, Operand, Piecewise
+from biyos._model.expression import (
+    Comparison,
+    Condition,
+    Expression,
+    IfElse,
+    Logical,
+    Operand,
+    Operation,
+    Piecewise,
+)
 from biyos._model.operators import Operator
 
 if TYPE_CHECKING:
     from biyos._model.model import Model
 
 Postfix = tuple[list[Offset], list[Operator], list[Offset], list[Real]]
+Made = dict[int, Expression]
 Given = TypeVar("Given")
 
 
@@ -31,7 +41,13 @@ def _inner(node: Operand) -> bool:
     return isinstance(node, Expression) and bool(node._args)
 
 
-def _shared(trees: Sequence[Operand]) -> set[int]:
+def _children(node: Expression, made: Made) -> tuple[Operand, ...]:
+    if isinstance(node, IfElse):
+        return (expression_of(node._cond, made), *node._args)
+    return node._args
+
+
+def _shared(trees: Sequence[Operand], made: Made) -> set[int]:
     seen: set[int] = set()
     shared: set[int] = set()
     stack = list(trees)
@@ -44,7 +60,7 @@ def _shared(trees: Sequence[Operand]) -> set[int]:
             shared.add(key)
             continue
         seen.add(key)
-        stack.extend(node._args)
+        stack.extend(_children(node, made))
     return shared
 
 
@@ -81,9 +97,12 @@ def _flat(
 
 
 class _Writer:
-    def __init__(self, model: "Model", trees: Sequence[Operand]) -> None:
+    def __init__(
+        self, model: "Model", trees: Sequence[Operand], made: Made
+    ) -> None:
         self._model = model
-        self._shared = _shared(trees)
+        self._made = made
+        self._shared = _shared(trees, made)
         self._kept: dict[int, Offset] = {}
         self.cnt: list[Offset] = []
         self.code: list[Operator] = []
@@ -109,7 +128,7 @@ class _Writer:
                 stack.extend(self._open(item))
 
     def _open(self, node: Expression) -> list[Operand | _Close]:
-        children: Sequence[Operand] = node._args
+        children: Sequence[Operand] = _children(node, self._made)
         values = node._values
         if node._op == Operator.SUM:
             children, values = _flat(node, self._shared)
@@ -141,20 +160,39 @@ class _Writer:
         self.val.extend(values)
 
 
-def postfix(model: "Model", trees: Sequence[Operand]) -> Postfix:
+def postfix(model: "Model", trees: Sequence[Operand], made: Made) -> Postfix:
     for tree in trees:
         if not isinstance(tree, Operand):
             found = type(tree).__name__
             raise TypeError(f"expr must be an expression, not {found}")
-    writer = _Writer(model, trees)
+    writer = _Writer(model, trees, made)
     return writer.cnt, writer.code, writer.arg, writer.val
 
 
-def attached(model: "Model", trees: Sequence[Operand]) -> Functions:
-    nodes = model.addexpr(*postfix(model, trees))
+def attached(model: "Model", trees: Sequence[Operand], made: Made) -> Functions:
+    nodes = model.addexpr(*postfix(model, trees, made))
     funs = model.addfun(len(trees))
     model.attachexpr(funs, nodes)
     return funs
+
+
+def expression_of(top: Logical, made: Made) -> Expression:
+    stack: list[tuple[Logical, bool]] = [(top, False)]
+    while stack:
+        item, ready = stack.pop()
+        if id(item) in made:
+            continue
+        if isinstance(item, Comparison):
+            made[id(item)] = item._node()
+            continue
+        assert isinstance(item, Condition)
+        if ready:
+            args = tuple(made[id(arg)] for arg in item._args)
+            made[id(item)] = Operation(item._op, args, ())
+        else:
+            stack.append((item, True))
+            stack.extend((arg, False) for arg in item._args)
+    return made[id(top)]
 
 
 def given(value: object, kind: type[Given], noun: str) -> list[Given] | None:

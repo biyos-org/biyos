@@ -39,7 +39,7 @@ def p(model):
 
 
 def entries(model, *trees):
-    _, code, arg, val = postfix(model, trees)
+    _, code, arg, val = postfix(model, trees, {})
     return list(zip(code, arg)), val
 
 
@@ -117,7 +117,7 @@ def test_same_graph(env):
         nodes.addvar(1)
         top = nodes.addpwlnode(0, nodes.addvarnode(0))
         x = trees.addvar(1)
-        tops = trees.addexpr(*postfix(trees, [biyos.piecewise(0, x[0])]))
+        tops = trees.addexpr(*postfix(trees, [biyos.piecewise(0, x[0])], {}))
         assert tops == [top]
 
 
@@ -136,7 +136,7 @@ def test_refused(model, x):
     with pytest.raises(TypeError, match="not str"):
         biyos.piecewise(0, "a")
     with pytest.raises(TypeError, match="expr is a variable, not a pwl"):
-        postfix(model, [biyos.piecewise(x[1], x[0])])
+        postfix(model, [biyos.piecewise(x[1], x[0])], {})
     assert refusal(model.addobj, biyos.piecewise(5, x[0])) == UNKNOWN
     assert model.getnfun() == 0
 
@@ -157,4 +157,4 @@ def test_stale(model, x, p):
     with pytest.raises(ValueError, match="the pwl predates a deletion"):
         biyos.piecewise(view, 1.0)
     with pytest.raises(ValueError, match="the pwl predates a deletion"):
-        postfix(model, [e])
+        postfix(model, [e], {})

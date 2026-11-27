@@ -1,7 +1,8 @@
 #pragma once
 
 #include "core/numbers.hpp"
-#include "model/compressed.hpp"
+#include "model/model.hpp"
+#include "model/utils/compressed.hpp"
 
 #include <cstddef>
 #include <span>
@@ -13,7 +14,11 @@ namespace biyos
 
 inline constexpr Index kDeleted = -1;
 
-std::vector<Index> renumbering(std::string_view noun, Index total, std::span<const Index> deleted);
+std::vector<Index> renumbering(std::string_view noun,
+                               std::string_view word,
+                               Index total,
+                               std::span<const Index> deleted);
+std::vector<Index> renumbering(Family family, Index total, std::span<const Index> deleted);
 
 void renumber(Index &index, std::span<const Index> map) noexcept;
 void renumber_all(std::span<Index> indices, std::span<const Index> map) noexcept;

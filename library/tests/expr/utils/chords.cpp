@@ -1,10 +1,11 @@
 #include "chords.hpp"
 
 #include "core/numbers.hpp"
-#include "expr/curvature/shape.hpp"
+#include "expr/analysis/curvature/shape.hpp"
+#include "expr/analysis/intervals/interval.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
-#include "expr/intervals/interval.hpp"
+#include "operators.hpp"
 #include "reference.hpp"
 #include "sampling.hpp"
 
@@ -34,6 +35,7 @@ using biyos::to_size;
 using biyos::test::Claims;
 using biyos::test::Engine;
 using biyos::test::Monotonicities;
+using biyos::test::takes_condition;
 using biyos::test::text;
 
 using Values = std::vector<Real>;
@@ -327,12 +329,18 @@ void biyos::test::expect_monotonicities(const Monotonicities &claims, Engine &en
         return;
     }
     const Graph &graph = claims.graph;
-    const std::span<const Offset> children = graph.children(graph.size() - 1);
+    const Offset root = graph.size() - 1;
+    const std::span<const Offset> children = graph.children(root);
     for (int round = 0; round < kPairs; ++round)
     {
         const Values base = point_of(claims.box, engine);
         for (std::size_t k = 0; k < claims.monotonicities.size(); ++k)
         {
+            if (graph.op(children[k]) != Operator::Variable)
+            {
+                EXPECT_TRUE(takes_condition(graph.op(root), static_cast<int>(k)));
+                continue;
+            }
             const auto variable = static_cast<std::size_t>(graph.variable(children[k]));
             const Real first = coordinate(claims.box[variable], engine);
             const Real second = coordinate(claims.box[variable], engine);

@@ -232,7 +232,7 @@ TEST(CApiTest, NullBounds)
     const Records wanted{.functions = {0, 0}, .lower = {2.0, 1.0}, .upper = {BIYOS_INF, 3.0}};
     expect_records(read_all(model), wanted);
     EXPECT_EQ(BIYOS_setconbndsp(held, 2, nullptr, lower, upper), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'con': is null");
     EXPECT_EQ(BIYOS_setconbndsp(held, 0, nullptr, nullptr, nullptr), BIYOS_OK);
 }
 
@@ -374,7 +374,7 @@ TEST(CApiTest, ConstraintRefusals)
     EXPECT_EQ(BIYOS_getconbndsp(held, -1, beyond, lower, upper), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     EXPECT_EQ(BIYOS_getconbndsp(held, 1, nullptr, lower, upper), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'con': is null");
     expect_doubles({lower[0], lower[1]}, {9.0, 9.0});
     expect_doubles({upper[0], upper[1]}, {9.0, 9.0});
 }

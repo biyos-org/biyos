@@ -853,7 +853,7 @@ param n in In the `sp` form, the number of variables to delete.
 param var in In the `sp` form, the variables to delete, in any order; may be null when `n` is 0.
 param map out Receives one entry for each variable the model held before the call: entry `i` is the new index of variable `i`, or -1 when it is deleted; skipped when null.
 return `BIYOS_OK` once the variables are deleted. The others keep their order, their data and their names, and are numbered from 0 again; each term, set, indicator, node and callback that uses one refers to it by its new index.
-error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a variable, a variable is listed more than once, with a message such as `invalid argument: argument 'idx': variable 1 is repeated`, or the range ends past the last variable.
+error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a variable, a variable is listed more than once, with a message such as `invalid argument: argument 'var': variable 1 is repeated`, or the range ends past the last variable.
 error BIYOS_ERR_INUSE A variable to delete has a node, is a member of a set, is the binary of an indicator or is read by a callback that lists it, or a variable is to be deleted while the model has a callback added with `BIYOS_DENSE`, with a message that names one use, such as `in use: variable 3: used by set 1`.
 note A deleted variable's kind, bounds, tolerances and name go with it, and so do its linear and quadratic terms; a function left with no term keeps its constant. A variable keeps its node once `BIYOS_addvarnode` or an expression gives it one, even after the function that used the node is deleted. Once the call succeeds, a pointer read earlier with `BIYOS_getvarnamesp` is no longer valid.
 note The call sends the span `delete` from module `model` ([Events biyos sends](#sec-capi-sent)).
@@ -988,7 +988,7 @@ param n in In the `sp` form, the number of functions to delete.
 param fun in In the `sp` form, the functions to delete, in any order; may be null when `n` is 0.
 param map out Receives one entry for each function the model held before the call: entry `i` is the new index of function `i`, or -1 when it is deleted; skipped when null.
 return `BIYOS_OK` once the functions are deleted. The others keep their order, their data and their names, and are numbered from 0 again; each record and callback that uses one refers to it by its new index.
-error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a function, a function is listed more than once, with a message such as `invalid argument: argument 'idx': function 1 is repeated`, or the range ends past the last function.
+error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a function, a function is listed more than once, with a message such as `invalid argument: argument 'fun': function 1 is repeated`, or the range ends past the last function.
 error BIYOS_ERR_INUSE A function to delete is used by a constraint, an objective, an indicator, a cone, a complement or a callback, with a message that names one use, such as `in use: function 4: used by constraint 2`.
 note A deleted function's name, constant, terms and expression go with it; the nodes of the expression stay in the model with their ids. Once the call succeeds, a pointer read earlier with `BIYOS_getfunnamesp` is no longer valid.
 note The call sends the span `delete` from module `model` ([Events biyos sends](#sec-capi-sent)).
@@ -1369,7 +1369,7 @@ param n in In the `sp` form, the number of constraints to delete.
 param con in In the `sp` form, the constraints to delete, in any order; may be null when `n` is 0.
 param map out Receives one entry for each constraint the model held before the call: entry `i` is the new index of constraint `i`, or -1 when it is deleted; skipped when null.
 return `BIYOS_OK` once the constraints are deleted. The others keep their order, their data and their names, and are numbered from 0 again.
-error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a constraint, a constraint is listed more than once, with a message such as `invalid argument: argument 'idx': constraint 1 is repeated`, or the range ends past the last constraint.
+error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a constraint, a constraint is listed more than once, with a message such as `invalid argument: argument 'con': constraint 1 is repeated`, or the range ends past the last constraint.
 note A deleted constraint's name and tolerances go with it. The functions the deleted constraints bounded stay in the model. Once the call succeeds, a pointer read earlier with `BIYOS_getconnamesp` is no longer valid.
 note The call sends the span `delete` from module `model` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_getncon BIYOS_delconnamesp
@@ -1596,7 +1596,7 @@ param n in In the `sp` form, the number of objectives to delete.
 param obj in In the `sp` form, the objectives to delete, in any order; may be null when `n` is 0.
 param map out Receives one entry for each objective the model held before the call: entry `i` is the new index of objective `i`, or -1 when it is deleted; skipped when null.
 return `BIYOS_OK` once the objectives are deleted. The others keep their order, their data and their names, and are numbered from 0 again.
-error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of an objective, an objective is listed more than once, with a message such as `invalid argument: argument 'idx': objective 1 is repeated`, or the range ends past the last objective.
+error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of an objective, an objective is listed more than once, with a message such as `invalid argument: argument 'obj': objective 1 is repeated`, or the range ends past the last objective.
 note A deleted objective's name goes with it. The functions the deleted objectives used stay in the model. Once the call succeeds, a pointer read earlier with `BIYOS_getobjnamesp` is no longer valid.
 note The call sends the span `delete` from module `model` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_getnobj BIYOS_delobjnamesp
@@ -1766,7 +1766,7 @@ param n in In the `sp` form, the number of indicators to delete.
 param ind in In the `sp` form, the indicators to delete, in any order; may be null when `n` is 0.
 param map out Receives one entry for each indicator the model held before the call: entry `i` is the new index of indicator `i`, or -1 when it is deleted; skipped when null.
 return `BIYOS_OK` once the indicators are deleted. The others keep their order, their data and their names, and are numbered from 0 again.
-error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of an indicator, an indicator is listed more than once, with a message such as `invalid argument: argument 'idx': indicator 1 is repeated`, or the range ends past the last indicator.
+error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of an indicator, an indicator is listed more than once, with a message such as `invalid argument: argument 'ind': indicator 1 is repeated`, or the range ends past the last indicator.
 note A deleted indicator's name goes with it. The variables and functions the deleted indicators used stay in the model. Once the call succeeds, a pointer read earlier with `BIYOS_getindnamesp` is no longer valid.
 note The call sends the span `delete` from module `model` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_getnind BIYOS_delindnamesp
@@ -1897,7 +1897,7 @@ param n in In the `sp` form, the number of sets to delete.
 param sos in In the `sp` form, the sets to delete, in any order; may be null when `n` is 0.
 param map out Receives one entry for each set the model held before the call: entry `i` is the new index of set `i`, or -1 when it is deleted; skipped when null.
 return `BIYOS_OK` once the sets are deleted. The others keep their order, their data and their names, and are numbered from 0 again.
-error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a set, a set is listed more than once, with a message such as `invalid argument: argument 'idx': set 1 is repeated`, or the range ends past the last set.
+error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a set, a set is listed more than once, with a message such as `invalid argument: argument 'sos': set 1 is repeated`, or the range ends past the last set.
 note A deleted set's name, members and weights go with it; the variables stay in the model. Once the call succeeds, a pointer read earlier with `BIYOS_getsosnamesp` is no longer valid.
 note The call sends the span `delete` from module `model` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_getnsos BIYOS_delsosnamesp
@@ -2176,7 +2176,7 @@ param n in In the `sp` form, the number of cones to delete.
 param cone in In the `sp` form, the cones to delete, in any order; may be null when `n` is 0.
 param map out Receives one entry for each cone the model held before the call: entry `i` is the new index of cone `i`, or -1 when it is deleted; skipped when null.
 return `BIYOS_OK` once the cones are deleted. The others keep their order, their data and their names, and are numbered from 0 again.
-error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a cone, a cone is listed more than once, with a message such as `invalid argument: argument 'idx': cone 1 is repeated`, or the range ends past the last cone.
+error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a cone, a cone is listed more than once, with a message such as `invalid argument: argument 'cone': cone 1 is repeated`, or the range ends past the last cone.
 note A deleted cone's name, members, parameters and tolerances go with it; the functions stay in the model. Once the call succeeds, a pointer read earlier with `BIYOS_getconenamesp` is no longer valid.
 note The call sends the span `delete` from module `model` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_getncone BIYOS_delconenamesp
@@ -2359,7 +2359,7 @@ param n in In the `sp` form, the number of complements to delete.
 param ccon in In the `sp` form, the complements to delete, in any order; may be null when `n` is 0.
 param map out Receives one entry for each complement the model held before the call: entry `i` is the new index of complement `i`, or -1 when it is deleted; skipped when null.
 return `BIYOS_OK` once the complements are deleted. The others keep their order, their data and their names, and are numbered from 0 again.
-error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a complement, a complement is listed more than once, with a message such as `invalid argument: argument 'idx': complement 1 is repeated`, or the range ends past the last complement.
+error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a complement, a complement is listed more than once, with a message such as `invalid argument: argument 'ccon': complement 1 is repeated`, or the range ends past the last complement.
 note A deleted complement's name and tolerances go with it; the functions stay in the model. Once the call succeeds, a pointer read earlier with `BIYOS_getcconnamesp` is no longer valid.
 note The call sends the span `delete` from module `model` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_getnccon BIYOS_delcconnamesp
@@ -2462,6 +2462,16 @@ value BIYOS_OP_PWL $p(e)$, the piecewise linear function through the points of a
 value BIYOS_OP_KEEP No operator: in postfix, the operand before it kept as a node of its own.
 value BIYOS_OP_REF No operator: in postfix, the node kept by an earlier `BIYOS_OP_KEEP` entry of the same call, named by that entry's position.
 value BIYOS_OP_ATAN2 $\operatorname{atan2}(e_1, e_2)$, the angle of the point $(e_2, e_1)$, in $(-\pi, \pi]$. A zero counts as $+0$ whatever its sign, so the angle is $\pi$ on the whole negative $e_2$ axis and 0 at the origin.
+value BIYOS_OP_LE $e_1 \le e_2$: 1 when $e_1$ is below $e_2$ or equal to it within `feastol_abs` and `feastol_rel`, else 0, and NaN when either child is NaN.
+value BIYOS_OP_GE $e_1 \ge e_2$, which is `BIYOS_OP_LE` with its children swapped.
+value BIYOS_OP_EQ $e_1 = e_2$: 1 when $e_1$ equals $e_2$ within `feastol_abs` and `feastol_rel`, else 0, and NaN when either child is NaN.
+value BIYOS_OP_LT $e_1 < e_2$, the negation of `BIYOS_OP_GE`: 1 where it gives 0, 0 where it gives 1, and NaN where it gives NaN.
+value BIYOS_OP_GT $e_1 > e_2$, the negation of `BIYOS_OP_LE`.
+value BIYOS_OP_NE $e_1 \ne e_2$, the negation of `BIYOS_OP_EQ`.
+value BIYOS_OP_AND $e_1 \land \dots \land e_n$, of one or more conditions: 1 when each holds, else 0, and NaN when a child is NaN. A condition is a comparison, `BIYOS_OP_AND`, `BIYOS_OP_OR` or `BIYOS_OP_NOT`.
+value BIYOS_OP_OR $e_1 \lor \dots \lor e_n$, of one or more conditions: 1 when one holds, else 0, and NaN when a child is NaN.
+value BIYOS_OP_NOT $\lnot e$, of a condition: 1 where it gives 0, 0 where it gives 1, and NaN where it gives NaN.
+value BIYOS_OP_IF $e_2$ where the condition $e_1$ holds and $e_3$ where it does not, and NaN when $e_1$ is NaN. The branch not taken never reaches the value or its derivatives.
 since 0.1.0
 
 function BIYOS_addvarnode
@@ -2484,7 +2494,7 @@ param arg in The ids of the `n` children, in order; may be null only when `n` is
 param val in The values the operator takes, in order; null when it takes none. `BIYOS_OP_CONST` takes its value, `BIYOS_OP_PROD` its coefficient, `BIYOS_OP_CPOW` and `BIYOS_OP_SPOW` their exponent, and `BIYOS_OP_SUM` its constant followed by the weight of each child, `n + 1` values. The call reads no others.
 param node out Receives the id of the new node; skipped when null.
 return `BIYOS_OK` once the node is added.
-error BIYOS_ERR_BADARG `n` is negative, `op` is not an operator the call takes, a child is not a node of the model, the operator does not take `n` children, a value is not finite, or the exponent of `BIYOS_OP_SPOW` is not positive.
+error BIYOS_ERR_BADARG `n` is negative, `op` is not an operator the call takes, a child is not a node of the model, the operator does not take `n` children, a child of `BIYOS_OP_AND`, `BIYOS_OP_OR` or `BIYOS_OP_NOT`, or the first child of `BIYOS_OP_IF`, is not a condition, a value is not finite, or the exponent of `BIYOS_OP_SPOW` is not positive.
 note The node is added as given, so a sum among the children of a sum stays a child, and so does a product among those of a product. An id given twice in `arg` names the same child twice.
 example BIYOS_offset x, power;
 example BIYOS_addvarnode(mdl, 0, &x);
@@ -2503,7 +2513,7 @@ param arg in The argument of each entry: a variable, a node id, a pwl, a number 
 param val in The values the operators take, in the order of the entries; null when they take none.
 param node out Entry `k` receives the id of the top node of expression `k`; skipped when null.
 return `BIYOS_OK` once the expressions are added.
-error BIYOS_ERR_BADARG `n` is negative, a count in `cnt` is negative or the counts add up past `INT64_MAX`, or an expression is malformed: a code that is no operator, a variable, a node or a pwl the model does not hold, an operator given a number of operands it does not take or more than are left, a `BIYOS_OP_REF` that names no earlier `BIYOS_OP_KEEP` entry, an expression that leaves no operand or more than one, or a value `BIYOS_addnode` would refuse. The message names the expression and the entry, counted from 0 in `code`, as in `invalid argument: expression 1: entry 4: 2 operands taken, 1 given`.
+error BIYOS_ERR_BADARG `n` is negative, a count in `cnt` is negative or the counts add up past `INT64_MAX`, or an expression is malformed: a code that is no operator, a variable, a node or a pwl the model does not hold, an operator given a number of operands it does not take or more than are left, an operand of `BIYOS_OP_AND`, `BIYOS_OP_OR` or `BIYOS_OP_NOT`, or the first of `BIYOS_OP_IF`, that is not a condition, a `BIYOS_OP_REF` that names no earlier `BIYOS_OP_KEEP` entry, an expression that leaves no operand or more than one, or a value `BIYOS_addnode` would refuse. The message names the expression and the entry, counted from 0 in `code`, as in `invalid argument: expression 1: entry 4: 2 operands taken, 1 given`.
 note A call that fails adds no node, so the next call gives the same ids again.
 see BIYOS_addnode BIYOS_attachexprsp
 since 0.1.0
@@ -2762,14 +2772,14 @@ param n in In the `sp` form, the number of callbacks to delete.
 param cb in In the `sp` form, the callbacks to delete, in any order; may be null when `n` is 0.
 param map out Receives one entry for each callback the model held before the call: entry `i` is the new index of callback `i`, or -1 when it is deleted; skipped when null.
 return `BIYOS_OK` once the callbacks are deleted. The others keep their order, their functions, their patterns and their `data`, and are numbered from 0 again.
-error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a callback, a callback is listed more than once, with a message such as `invalid argument: argument 'idx': callback 1 is repeated`, or the range ends past the last callback.
+error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a callback, a callback is listed more than once, with a message such as `invalid argument: argument 'cb': callback 1 is repeated`, or the range ends past the last callback.
 note A deleted callback no longer covers its functions, so a function no other callback covers may then be deleted. The model never frees the `data` of a deleted callback. A copy made by `BIYOS_copymdl` keeps its own callbacks.
 note The call sends the span `delete` from module `model` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_addcb BIYOS_delfunsp BIYOS_delvarsp
 since 0.1.0
 
 group evaluation Evaluation
-text The calls of this group evaluate a model's functions and their derivatives at a point, and read the patterns of the derivatives, as a solver does. The first of them after a change of the model builds what they need, timed as the phase `evaluation` of module `model`, and the model keeps it until its next change, so later calls skip the build.
+text The calls of this group evaluate a model's functions and their derivatives at a point, and read the patterns of the derivatives, as a solver does. The first of them after a change of the model builds what they need, timed as the phase `evaluation` of module `model`, with the [exact Hessian pattern](#sec-hessian-exact) of a large element timed within it as the phase `pattern` of module `expr`, and the model keeps it until its next change, so later calls skip the build.
 text The Jacobian holds the first derivatives of each function, a row for each function and a column for each variable. Its pattern lists, for each function, the variables it may depend on, sorted. The Hessian of the Lagrangian $\sum_k w_k \nabla^2 f_k(x)$ is symmetric, so its pattern lists the lower triangle alone: for each variable $j$, the variables $i \ge j$ whose entry $(i, j)$ may be nonzero, sorted. An entry is in a pattern when some part of a function may give it a value: a linear or quadratic term, an expression or the pattern a callback declares. It stays in the pattern where its value at a point is 0.
 text Each call changes no data of the model, but it runs alone on the model, as a change does, so a call on another thread that would overlap it fails with `BIYOS_ERR_BUSY`. While an evaluation runs a callback, a call from the callback that would change the model, evaluate it or read a pattern fails with `BIYOS_ERR_BUSY` too; one that only reads the model runs.
 text A callback that returns a positive value leaves NaN in every output it computes for that call, and the call still returns `BIYOS_OK`, so a solver steps back. A negative value stops the call with `BIYOS_ERR_CALLBACK`, and its message names the callback, the part it was asked for and the value, such as `callback: callback 0: function returned -3`.
@@ -2812,7 +2822,7 @@ error BIYOS_ERR_BADARG `x`, `w` or `h` is null while the model or the pattern ha
 error BIYOS_ERR_UNSUPPORTED A callback of the model has no `BIYOS_cbh`.
 error BIYOS_ERR_CALLBACK A callback returned a negative value, or a value that is not finite when checks are on.
 note `BIYOS_getnhpatrg` from 0 to the number of variables gives the number of values.
-note The call sends the span `hessian` from module `model` ([Events biyos sends](#sec-capi-sent)).
+note The call sends the span `hessian` from module `model`, and within it the span `pushing` from module `expr` when an element takes [edge pushing](#sec-hessian-pushing) ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_gethpatrg BIYOS_evalhv BIYOS_setcbh
 since 0.1.0
 
@@ -2898,7 +2908,7 @@ text A model is read from a file in the format the caller names, never guessed f
 table Formats
 value BIYOS_FILEFMT_MPS Free MPS, for linear and mixed-integer models.
 value BIYOS_FILEFMT_FIXMPS Fixed MPS, for linear and mixed-integer models. Read only.
-value BIYOS_FILEFMT_NL Text NL, for nonlinear models. Read only.
+value BIYOS_FILEFMT_NL NL, text or binary, for nonlinear models. Written as text.
 value BIYOS_FILEFMT_BYS The biyos format, which holds every part of a model but its callbacks and its options.
 since 0.1.0
 
@@ -2911,9 +2921,9 @@ param mdl out Receives the model; set to null on failure.
 return `BIYOS_OK`, with the model in `*mdl`.
 error BIYOS_ERR_BADARG `path` or `mdl` is null, `fmt` is not a format, or `env` delivers an event.
 error BIYOS_ERR_FILEIO The file cannot be opened or read.
-error BIYOS_ERR_BADFILE The file breaks a rule of its format. The message names the file and the line.
-error BIYOS_ERR_UNSUPPORTED The file holds a part the reader does not handle. The message names the part and its line.
-note Each oddity the reader reads past is a warning event from module `io`, with the fields `file` and `line`, and each part it skips, such as the starting point of an NL file, an info event with the same fields. [File formats](#sec-formats) gives the rules of each format.
+error BIYOS_ERR_BADFILE The file breaks a rule of its format. The message names the file and the line, or the byte in binary NL.
+error BIYOS_ERR_UNSUPPORTED The file holds a part the reader does not handle. The message names the part and its line, or its byte in binary NL.
+note Each oddity the reader reads past is a warning event from module `io`, with the fields `file` and `line`, and each part it skips, such as the starting point of an NL file, an info event with the same fields, `byte` taking the place of `line` in binary NL. [File formats](#sec-formats) gives the rules of each format.
 note The call sends the span `read` from module `io` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_newmdl BIYOS_freemdl
 since 0.1.0
@@ -2970,7 +2980,7 @@ value BIYOS_CLM_GLOBAL What the termination says holds for the whole model.
 since 0.1.0
 
 group sent Events biyos sends
-text A field is a name and a value, both text. The messages so far are an error when a call fails, a warning when a deprecated option is set, the warnings of `BIYOS_readmdl` and `BIYOS_writemdl` from module `io`, and an info message when two compared models differ.
+text A field is a name and a value, both text. The messages so far are an error when a call fails, a warning when a deprecated option is set, the warnings of `BIYOS_readmdl` and `BIYOS_writemdl` from module `io`, an info message when two compared models differ, and a debug message from module `expr` naming the method each large Hessian element takes ([Edge pushing](#sec-hessian-pushing)). A debug message's text and fields may change in any release.
 text A call on an environment that fails sends an error message, unless the environment is delivering an event. Its level is `BIYOS_EVTLVL_ERR`, its module `capi`, its text the message `BIYOS_lasterror` reads for the failure, and its one field `code` the returned status as decimal text, such as `-100`, so a hook can tell the group from the range.
 text Setting a deprecated option sends a warning message at level `BIYOS_EVTLVL_WARN` from module `core`, with a text such as `option 'old': deprecated in 0.2.0, use 'new'` and the fields `option`, `deprecated` and `replacement`, in that order: the name of the option, the version that deprecated it and the name of the option to use instead. A failed set sends no warning. No option is deprecated yet.
 text `BIYOS_cmpmdl` sends an info message at level `BIYOS_EVTLVL_INFO` from module `model` when the two models differ. Its text names the first difference, such as `variable 0: upper bound 1 against 2` or `model name 'a' against none`, and it has no fields.

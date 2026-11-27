@@ -38,6 +38,7 @@ using Finder = BIYOS_status (*)(const BIYOS_model *,
 struct Calls
 {
     std::string noun;
+    std::string word;
     Counter count;
     Listed listed;
     Ranged ranged;
@@ -48,6 +49,7 @@ struct Calls
 const std::array<Calls, 6> kCalls{{
     {
         .noun = "constraint",
+        .word = "con",
         .count = BIYOS_getncon,
         .listed = BIYOS_delconsp,
         .ranged = BIYOS_delconrg,
@@ -56,6 +58,7 @@ const std::array<Calls, 6> kCalls{{
     },
     {
         .noun = "objective",
+        .word = "obj",
         .count = BIYOS_getnobj,
         .listed = BIYOS_delobjsp,
         .ranged = BIYOS_delobjrg,
@@ -64,6 +67,7 @@ const std::array<Calls, 6> kCalls{{
     },
     {
         .noun = "indicator",
+        .word = "ind",
         .count = BIYOS_getnind,
         .listed = BIYOS_delindsp,
         .ranged = BIYOS_delindrg,
@@ -72,6 +76,7 @@ const std::array<Calls, 6> kCalls{{
     },
     {
         .noun = "set",
+        .word = "sos",
         .count = BIYOS_getnsos,
         .listed = BIYOS_delsossp,
         .ranged = BIYOS_delsosrg,
@@ -80,6 +85,7 @@ const std::array<Calls, 6> kCalls{{
     },
     {
         .noun = "cone",
+        .word = "cone",
         .count = BIYOS_getncone,
         .listed = BIYOS_delconesp,
         .ranged = BIYOS_delconerg,
@@ -88,6 +94,7 @@ const std::array<Calls, 6> kCalls{{
     },
     {
         .noun = "complement",
+        .word = "ccon",
         .count = BIYOS_getnccon,
         .listed = BIYOS_delcconsp,
         .ranged = BIYOS_delcconrg,
@@ -249,8 +256,8 @@ void expect_refused(const Calls &calls)
     const Env env;
     const Model model(env);
     build(model);
-    const std::string repeated =
-        "invalid argument: argument 'idx': " + calls.noun + " 1 is repeated";
+    const std::string argument = "invalid argument: argument '" + calls.word + "': ";
+    const std::string repeated = argument + calls.noun + " 1 is repeated";
     EXPECT_EQ(listed_refusal(env, model, calls, {1, 0, 1}), repeated);
     EXPECT_EQ(listed_refusal(env, model, calls, {0, 3}), refused(calls, "3: unknown"));
     EXPECT_EQ(listed_refusal(env, model, calls, {-1}), refused(calls, "-1: unknown"));
@@ -260,14 +267,26 @@ void expect_refused(const Calls &calls)
               "invalid argument: argument 'end': 0 is below 'beg' 1");
     const Model tried(env, model);
     EXPECT_EQ(calls.listed(tried.get(), 1, nullptr, nullptr), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), argument + "is null");
     EXPECT_EQ(calls.listed(tried.get(), -1, kThree.data(), nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(calls.listed(nullptr, 0, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(calls.ranged(nullptr, 0, 0, nullptr), BIYOS_ERR_BADARG);
     expect_unchanged(tried, model);
 }
 
+const Calls kVariables{
+    .noun = "variable",
+    .word = "var",
+    .count = BIYOS_getnvar,
+    .listed = BIYOS_delvarsp,
+    .ranged = BIYOS_delvarrg,
+    .name = BIYOS_setvarnamerg,
+    .find = BIYOS_findvar,
+};
+
 const Calls kFunctions{
     .noun = "function",
+    .word = "fun",
     .count = BIYOS_getnfun,
     .listed = BIYOS_delfunsp,
     .ranged = BIYOS_delfunrg,
@@ -413,6 +432,15 @@ TEST(CApiTest, NullMap)
 TEST(CApiTest, DeleteRefused)
 {
     for (const Calls &calls : kCalls)
+    {
+        SCOPED_TRACE(calls.noun);
+        expect_refused(calls);
+    }
+}
+
+TEST(CApiTest, PartRefused)
+{
+    for (const Calls &calls : {kVariables, kFunctions})
     {
         SCOPED_TRACE(calls.noun);
         expect_refused(calls);

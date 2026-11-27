@@ -1,16 +1,14 @@
 #include "io/nl/tokens.hpp"
 
 #include "core/numbers.hpp"
-#include "core/numeric/limits.hpp"
 #include "core/text/text.hpp"
-#include "io/lines.hpp"
-#include "io/records.hpp"
-#include "io/report.hpp"
+#include "io/utils/lines.hpp"
+#include "io/utils/records.hpp"
+#include "io/utils/report.hpp"
 
 #include <algorithm>
 #include <charconv>
 #include <cstddef>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -21,36 +19,9 @@ namespace biyos::nl
 namespace
 {
 
-constexpr Offset kComplements = 5;
-
 bool comment(std::string_view field) noexcept
 {
     return field.starts_with('#');
-}
-
-Bounds coded_bounds(const Lines &lines, Fields fields, Offset code)
-{
-    switch (code)
-    {
-    case 0:
-        check_size(lines, fields.size(), 3);
-        return {.lower = value_of(lines, fields[1]), .upper = value_of(lines, fields[2])};
-    case 1:
-        check_size(lines, fields.size(), 2);
-        return {.lower = -kInfinity, .upper = value_of(lines, fields[1])};
-    case 2:
-        check_size(lines, fields.size(), 2);
-        return {.lower = value_of(lines, fields[1]), .upper = kInfinity};
-    case 3:
-        check_size(lines, fields.size(), 1);
-        return {.lower = -kInfinity, .upper = kInfinity};
-    case 4:
-        check_size(lines, fields.size(), 2);
-        return {.lower = value_of(lines, fields[1]), .upper = value_of(lines, fields[1])};
-    default:
-        break;
-    }
-    bad_file(lines, "bound code " + quote(fields[0]) + " is unknown");
 }
 
 }
@@ -141,27 +112,6 @@ Index count_of(const Lines &lines, std::string_view field)
         bad_file(lines, quote(field) + " is not a count");
     }
     return static_cast<Index>(value);
-}
-
-Index index_in(const Lines &lines, std::string_view field, Index size, std::string_view noun)
-{
-    const Index index = count_of(lines, field);
-    if (index >= size)
-    {
-        bad_file(lines, std::string(noun) + " " + text_of(index) + " is out of range");
-    }
-    return index;
-}
-
-std::optional<Bounds> bounds_of(const Lines &lines)
-{
-    const Fields fields = fields_of(lines);
-    const Offset code = integer_of(lines, fields.front());
-    if (code == kComplements)
-    {
-        return std::nullopt;
-    }
-    return coded_bounds(lines, fields, code);
 }
 
 }

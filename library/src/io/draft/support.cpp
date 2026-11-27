@@ -1,13 +1,9 @@
 #include "io/draft/support.hpp"
 
-#include "core/error.hpp"
 #include "core/numbers.hpp"
-#include "core/numeric/identical.hpp"
-#include "core/text/text.hpp"
+#include "io/utils/refuse.hpp"
 #include "model/model.hpp"
-#include "model/utils/checks.hpp"
 
-#include <string>
 #include <string_view>
 #include <vector>
 
@@ -17,22 +13,17 @@ namespace biyos
 namespace
 {
 
-[[noreturn]] void refuse_part(std::string_view noun, Index index, std::string_view part)
-{
-    const std::string reason = "free MPS cannot hold " + std::string(part);
-    throw Error(ErrorKind::Unsupported, item(noun, index), reason);
-}
+constexpr std::string_view kFormat = "free MPS";
 
 void check_objectives(const Model &model)
 {
     if (model.n_objectives() > 1)
     {
-        refuse_part("objective", 1, "a second objective");
+        refuse_part(kFormat, "objective", 1, "a second objective");
     }
-    if (model.n_objectives() == 1 && !identical(model.objective(0).weight, 1.0))
+    if (model.n_objectives() == 1)
     {
-        const std::string weight = text_of(model.objective(0).weight);
-        refuse_part("objective", 0, "a weight other than 1, here " + weight);
+        check_weight(kFormat, model, 0);
     }
 }
 
@@ -40,11 +31,11 @@ void check_function(const Model &model, Index function)
 {
     if (!model.quadratic_terms(function, function + 1).empty())
     {
-        refuse_part("function", function, "quadratic terms");
+        refuse_part(kFormat, "function", function, "quadratic terms");
     }
     if (model.roots(function, function + 1).front() != kNoRoot)
     {
-        refuse_part("function", function, "an expression");
+        refuse_part(kFormat, "function", function, "an expression");
     }
 }
 
@@ -75,16 +66,8 @@ void check_indicators(const Model &model)
     {
         if (constrained[to_size(model.indicator(k).function)])
         {
-            refuse_part("indicator", k, "an indicator on a function a constraint uses");
+            refuse_part(kFormat, "indicator", k, "an indicator on a function a constraint uses");
         }
-    }
-}
-
-void check_absent(const Model &model, Family family, std::string_view part)
-{
-    if (model.n_of(family) > 0)
-    {
-        refuse_part(noun_of(family), 0, part);
     }
 }
 
@@ -96,10 +79,10 @@ void check_support(const Model &model)
     check_functions(model);
     if (model.n_callbacks() > 0)
     {
-        refuse_part("callback", 0, "callbacks");
+        refuse_part(kFormat, "callback", 0, "callbacks");
     }
-    check_absent(model, Family::Cone, "cones");
-    check_absent(model, Family::Complement, "complements");
+    check_absent(kFormat, model, Family::Cone, "cones");
+    check_absent(kFormat, model, Family::Complement, "complements");
     check_indicators(model);
 }
 

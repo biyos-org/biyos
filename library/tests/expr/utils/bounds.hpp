@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/numbers.hpp"
-#include "expr/intervals/interval.hpp"
+#include "expr/analysis/intervals/interval.hpp"
 
 #include <gtest/gtest.h>
 
@@ -10,6 +10,9 @@
 
 namespace biyos::test
 {
+
+constexpr Real kPiUp = 0x1.921fb54442d19p+1;
+constexpr Real kHalfPiUp = 0x1.921fb54442d19p+0;
 
 inline std::string interval_text(Interval interval)
 {

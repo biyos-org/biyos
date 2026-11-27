@@ -12,9 +12,15 @@ $$
 \sum_r w_r \nabla^2 f_r(x) = \sum_r w_r \sum_e c_e \nabla^2 f_e(x),
 $$ {#eq-hessian-elements}
 
-and $\nabla^2 f_e$ is nonzero only on the variables of $f_e$. Its pattern is the dense lower triangle over those variables. The pattern of the whole Hessian is the union of these triangles and of any entries the caller declares, such as the pairs of quadratic terms, as one lower triangle stored by columns with sorted rows. A map, found once, gives each entry of each element's triangle its position in that pattern.
+and $\nabla^2 f_e$ is nonzero only on the variables of $f_e$. An element over at most 16 variables, the widest workspace, takes as its pattern the dense lower triangle over them. A larger one takes its [exact pattern](#sec-hessian-exact), since most of its triangle can be structurally zero: $e^{x_0} \sum_i \sin x_i$ has $n(n+1)/2$ entries in its triangle and $2n - 1$ that can be nonzero. The pattern of the whole Hessian is the union of these element patterns and of any entries the caller declares, such as the pairs of quadratic terms, as one lower triangle stored by columns with sorted rows. A map, found once, gives each entry of each element's pattern its position in that pattern.
 
 The elements compile to a tape of their own ([Compiled tapes](#sec-tapes)), one root per element, so a node shared by several elements is pinned and computed once per sweep.
+
+## Exact patterns {#sec-hessian-exact}
+
+The exact pattern of an element comes from one reverse pass over its tape with no values, symbolic edge pushing [@gower2014]. Each node holds the set of nodes it pairs with, a pair standing for a nonlinear interaction. The pass visits the nodes from the root down. At node $i$, a pair $\{i, p\}$ with $p \neq i$ becomes $\{j, p\}$ for each operand $j$ of $i$, and the pair $\{i, i\}$ becomes $\{j, k\}$ for each two operands, equal or not. The condition of an if is no operand here: the pattern cannot know which branch is taken, so it holds the pairs of both, and its condition gets none. The node then adds the pairs its own second derivatives give: none for a sum, a negation, an absolute value, a maximum, a minimum, an if, a piecewise linear function and a power of exponent 0 or 1; each two distinct factors of a product; $\{a, b\}$ and $\{b, b\}$ for a quotient $a / b$; each two operands for any other operator. A comparison is a leaf, as a constant is: it passes no pair to its operands and adds none, so no cross term goes through it. Its operands still add the pairs of their own second derivatives, since the pass takes every adjoint as nonzero, so the entries below a comparison stay in the pattern. When the pass ends, the pairs between variables are the pattern.
+
+The pattern holds every entry that can be nonzero at a point where the element is defined. The sweeps that fill it are those of the dense triangle, writing only the entries the pattern holds, unless the element is [colored](#sec-hessian-coloring) or [pushed](#sec-hessian-pushing). The pass is timed as the phase `pattern` of module `expr`, a child of the phase that builds the Hessian.
 
 ## Second-order adjoints {#sec-hessian-adjoints}
 
@@ -27,7 +33,7 @@ $$
 \dot p_{ij} = \sum_{k \in \mathcal{C}(i)} \frac{\partial^2 \operatorname{op}_i}{\partial v_j \partial v_k}\, \dot v_k.
 $$ {#eq-hessian-tangents}
 
-The partial tangents are zero for a sum, a negation, an absolute value, a maximum, a minimum and a piecewise linear function, whose partials are constant where they exist. For a product of $n$ factors they cost $O(n)$ through running products of value and tangent pairs, not the $O(n^2)$ of the pairwise formula.
+The partial tangents are zero for a sum, a negation, an absolute value, a maximum, a minimum, an if and a piecewise linear function, whose partials are constant where they exist. For a product of $n$ factors they cost $O(n)$ through running products of value and tangent pairs, not the $O(n^2)$ of the pairwise formula.
 
 The reverse sweep then carries each adjoint $\bar v_i$ and its tangent $\dot{\bar v}_i$:
 
@@ -42,9 +48,34 @@ The rule of [a zero adjoint](#sec-derivatives-zero) holds for each of the three 
 
 ## Lanes and chunks {#sec-hessian-lanes}
 
-The sweeps run several directions at once, one per lane, all at the same point. Lane $l$ is seeded with the unit direction of the element's $l$-th variable, so one sweep of an element with $n$ variables and at least $n$ lanes gives its whole triangle. The workspaces come in a few widths, the powers of two below the largest and the largest itself, and each element uses the narrowest that holds its variables. An element with more variables than the widest runs in chunks, each a sweep over a slice of its variables. Every lane computes the same operations whatever its width, so a chunked result is the same, bit for bit, as one sweep.
+The sweeps run several directions at once, one per lane, all at the same point. Values, partials and adjoints do not depend on the direction, so each sweep computes them once; only the tangents, the tangents of the partials and the adjoint tangents take a lane each. Lane $l$ is seeded with the unit direction of the element's $l$-th variable, so one sweep of an element with $n$ variables and at least $n$ lanes gives its whole triangle. The workspaces come in a few widths, the powers of two below the largest and the largest itself, and each element uses the narrowest that holds its variables. An element with more variables than the widest runs in chunks, each a sweep over a slice of its variables. Every lane computes the same operations whatever its width, so a chunked result is the same, bit for bit, as one sweep.
 
 Each element's triangle is scaled by $w_r c_e$ and added into the pattern through the map. An element whose scale is zero is skipped, so a zero multiplier on a constraint undefined at the point gives 0 and not NaN.
+
+## Star coloring {#sec-hessian-coloring}
+
+A sparse exact pattern needs fewer directions than variables. Variables can share a lane when the pattern is star colored: adjacent variables differ in color, and every path on four variables uses at least three colors [@gebremedhin2007]. Lane $c$ is then seeded with the sum of the unit directions of the variables of color $c$. For each entry $h_{ij}$, one of its two rows holds the other variable's color once: if row $i$ holds the color of $j$ once, $h_{ij}$ is the adjoint tangent of $x_i$ in the lane of that color, with nothing to solve. The arrow $e^{x_0} \sum_i \sin x_i$ takes two colors whatever $n$, one for $x_0$ and one for the rest.
+
+The coloring is the greedy one of @gebremedhin2007 [Algorithm 4.1], over the variables in ascending order of degree, ties broken by variable. A neighbor colored earlier then never has a larger degree, so the work grows as the sum, over the off-diagonal entries, of the smaller degree of their two variables. That sum is found in one pass over the pattern before coloring. When it exceeds the cost of a dense evaluation, taken as $\lceil n/16 \rceil$ times the length of the element's tape, the element keeps the dense sweeps on its exact pattern. The full triangle of $e^{\sum_i x_i}$ is one such element.
+
+When the Hessian is built, each entry of a colored element is given the row and the color it is read from, sorted by color [@montoison2025, sec. 5.2]. An element with $p$ colors takes $\lceil p/L \rceil$ sweeps of $L$ lanes, each over a window of colors, and reads its entries in order. The other variables of a color add exact zeros to an entry, so a colored entry equals the dense one up to the sign of a zero. The coloring is timed as the phase `coloring` of module `expr`, beside `pattern`.
+
+## Edge pushing {#sec-hessian-pushing}
+
+An element with many colors and a small nonlinear part costs less by numeric edge pushing [@gower2012], the pass of the exact pattern run with values. A forward sweep over the element stores each value, its partials $p_{ij}$ and its second derivatives. The reverse pass then visits the nodes from the root down, carrying each adjoint $\bar v_i$ and, for each node, a list of weighted pairs: $(p, w)$ in the list of $i$ adds $w$ to the second derivative of the element along $v_i$ and $v_p$, the nodes below the current one held fixed. At node $i$:
+
+- a pair $(p, w)$ with $p \neq i$ adds $p_{ij}\, w$ to the pair $\{j, p\}$ for each operand $j$;
+- the pair $(i, w)$ adds $p_{ij}\, p_{ik}\, w$ to $\{j, k\}$ for each two operands, equal or not;
+- the node adds $\bar v_i\, \partial^2 \operatorname{op}_i / \partial v_j \partial v_k$ to $\{j, k\}$ for the pairs of its pattern rule, through running products for a product;
+- each operand takes $\bar v_j \mathrel{+}= \bar v_i\, p_{ij}$.
+
+A term off the diagonal that lands on it, $\{j, p\}$ with $j = p$ or $\{j, k\}$ from two operands that are one node, adds twice, since it stands for both its orders. When the pass ends, the pairs between variables are the entries of $\nabla^2 f_e$, in the order of its exact pattern. The rule of [a zero adjoint](#sec-derivatives-zero) holds for each product: a term with an exactly zero factor adds no pair. Pushing tests both factors where the sweeps test only the first, so the two methods can differ only off the domain. A value off the domain makes the entries it reaches NaN, as in the sweeps.
+
+The pattern pass counts the pushes of each node, so every list is sized when the Hessian is built and the pass allocates nothing [@petra2018, sec. 3.1]. A node merges its list once, when it is visited, by marking the nodes already present.
+
+When the Hessian is built, each element over 16 variables takes one of three methods by exact counts. Let $P$ be the element's pushes, counted by the pattern pass, $T$ the length of its tape, and $S = \lceil d/16 \rceil$ its sweeps, with $d$ its colors when the coloring passes its guard and its variables otherwise. The element takes edge pushing when $P < S\,T$, else coloring when it passed the guard, else the dense sweeps on its exact pattern. A push costs no more than one step of a 16-lane sweep on biyos's tapes, so $P$ and $S\,T$ are compared one for one. The arrow takes coloring, with about $4n$ pushes against one sweep over a tape of $2n$ steps. The subset element $|e^{x_0 + \dots + x_{63}} + \sum_i \sin x_i|$ over 200 variables takes edge pushing, with 2,281 pushes against 13 sweeps over 405 steps.
+
+Each choice is a debug message from module `expr`, with the text `element E takes M`. Its fields are diagnostic, not a contract, and may change in any release: `element`, `method`, `pushes`, `sweeps` and `length`, in that order. `element` numbers the elements once each root is split along its top-level sum, `method` is `dense`, `coloring` or `pushing`, and `sweeps` and `length` are $S$ and $T$. The pushed elements of an evaluation are timed together as the phase `pushing` of module `expr`, inside the phase that evaluates the Hessian.
 
 ## Hessian times a vector {#sec-hessian-product}
 

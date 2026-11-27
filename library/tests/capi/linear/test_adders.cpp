@@ -1,9 +1,9 @@
 #include "biyos/biyos.h"
 #include "capi/utils/entry.hpp"
+#include "counts.hpp"
 #include "handles.hpp"
 #include "model/compare/compare.hpp"
 #include "sample.hpp"
-#include "utils/counts.hpp"
 
 #include <gtest/gtest.h>
 
@@ -494,7 +494,7 @@ TEST(AdderTest, Lists)
     EXPECT_EQ(BIYOS_addrlintermsp(held, -1, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     EXPECT_EQ(BIYOS_addclintermsp(held, 1, nullptr, nullptr, nullptr, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'var': is null");
     EXPECT_EQ(BIYOS_addrlintermsp(held, 1, &minus, empty.data(), nullptr, nullptr),
               BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: function -1: unknown");

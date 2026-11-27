@@ -1,6 +1,6 @@
 #include "core/events/event.hpp"
 
-#include "core/error.hpp"
+#include "core/env/error.hpp"
 
 #include <algorithm>
 #include <array>

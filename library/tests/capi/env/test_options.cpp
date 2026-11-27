@@ -1,9 +1,9 @@
 #include "biyos/biyos.h"
 #include "capi/utils/entry.hpp"
-#include "core/env.hpp"
+#include "core/env/env.hpp"
+#include "core/env/version.hpp"
 #include "core/options/options.hpp"
 #include "core/timing/clock.hpp"
-#include "core/version.hpp"
 #include "handles.hpp"
 
 #include <gtest/gtest.h>

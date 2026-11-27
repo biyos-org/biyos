@@ -1,6 +1,6 @@
 #include "model/model.hpp"
 
-#include "core/error.hpp"
+#include "core/env/error.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 #include "core/text/text.hpp"
