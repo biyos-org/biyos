@@ -16,6 +16,7 @@ Curvature product_curvature(Real coefficient,
 Curvature quotient_curvature(Interval numerator,
                              Interval denominator,
                              std::span<Argument> arguments) noexcept;
+Curvature angle_curvature(Interval y, Interval x, std::span<Argument> arguments) noexcept;
 Curvature largest_curvature(const Operands &operands, std::span<Argument> arguments) noexcept;
 Curvature smallest_curvature(const Operands &operands, std::span<Argument> arguments) noexcept;
 

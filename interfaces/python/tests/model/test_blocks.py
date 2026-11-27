@@ -108,7 +108,7 @@ def test_foreign_view(env, model):
     other = biyos.Model(env)
     x = other.addvar(3)
     model.addvar(3)
-    entry = "an entry of idx is a variable of another model"
+    entry = "an entry of var is a variable of another model"
     with pytest.raises(ValueError, match=entry):
         model.setvarbnd([0, x[1]], [0.0, 0.0], [1.0, 1.0])
     with pytest.raises(ValueError, match=entry):
@@ -122,7 +122,7 @@ def test_foreign_block(env, model):
     other = biyos.Model(env)
     x = other.addvar(3)
     model.addvar(3)
-    block = "idx is a block of another model"
+    block = "var is a block of another model"
     with pytest.raises(ValueError, match=block):
         model.setvarbnd(x, None, [1.0] * 3)
     with pytest.raises(ValueError, match=block):
@@ -135,7 +135,7 @@ def test_closed_block(env, model):
     x = other.addvar(3)
     other.close()
     model.addvar(3)
-    with pytest.raises(ValueError, match="idx is a block of another"):
+    with pytest.raises(ValueError, match="var is a block of another"):
         model.setvarbnd(x, None, [1.0] * 3)
     assert model.getvar()[2] == [biyos.inf] * 3
 
@@ -214,7 +214,7 @@ def test_on(model):
     assert indices(y) == [1, 2, 3]
     copy.setvarbnd(y[1:], None, [5.0, 6.0])
     assert copy.getvar()[2] == [biyos.inf, biyos.inf, 5.0, 6.0]
-    with pytest.raises(ValueError, match="idx is a block of another"):
+    with pytest.raises(ValueError, match="var is a block of another"):
         model.setvarbnd(y, None, [1.0] * 3)
     assert model.getvar()[2] == [biyos.inf] * 4
     assert indices(x) == [1, 2, 3]

@@ -183,13 +183,18 @@ quartodoc:
           members: [__len__, __contains__, __iter__, __getitem__, "on"]
         - Complement
     - title: Expressions
-      desc: What arithmetic on variables builds, for addobj and addcon to take.
+      desc: What arithmetic and logic on variables build, for addobj and addcon to take.
       contents:
         - name: Expression
           include_inherited: true
-          members: [__add__, __sub__, __mul__, __truediv__, __pow__, __neg__, __abs__, __le__, __ge__, __eq__]
-        - Comparison
+          members: [__add__, __sub__, __mul__, __truediv__, __pow__, __neg__, __abs__, __le__, __ge__, __eq__, __lt__, __gt__, __ne__]
+        - name: Comparison
+          include_inherited: true
+          members: [lhs, rhs, sense, __and__, __or__, __invert__]
         - ComparisonSense
+        - name: Condition
+          include_inherited: true
+          members: [operator, operands, __and__, __or__, __invert__]
         - exp
         - log
         - sqrt

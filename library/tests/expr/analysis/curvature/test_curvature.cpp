@@ -375,7 +375,8 @@ TEST(CurvatureTest, Reclassified)
     const Offset angle = graph.add(Operator::Atan2, x);
     Shapes shapes(graph);
     shapes.classify(graph, enclosures(graph, Box{Interval(1.0, 1.0), Interval(2.0, 2.0), kZero}));
-    shapes.classify(graph, enclosures(graph, Box{Interval(-1.0, 1.0), Interval(2.0, 3.0), kZero}));
+    shapes.classify(graph,
+                    enclosures(graph, Box{Interval(-1.0, 1.0), Interval(-3.0, -2.0), kZero}));
     for (std::size_t k = 0; k < x.size(); ++k)
     {
         EXPECT_EQ(shapes.monotonicity(angle, k), Monotonicity::Unknown) << k;

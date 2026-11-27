@@ -140,7 +140,8 @@ Offset Model::member_begin(std::size_t sos) const noexcept
 
 std::vector<Index> Model::delete_special_ordered_sets(std::span<const Index> indices)
 {
-    std::vector<Index> map = renumbering(kNoun, n_special_ordered_sets(), indices);
+    std::vector<Index> map =
+        renumbering(Family::SpecialOrderedSet, n_special_ordered_sets(), indices);
     keep(special_ordered_set_kinds_, map);
     keep_parts(special_ordered_set_ends_, members_, map);
     renumber_names(Family::SpecialOrderedSet, map);
