@@ -1,13 +1,12 @@
 #pragma once
 
-#include "core/env/env.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/tolerances.hpp"
-#include "core/options/lookup.hpp"
 #include "expr/evaluation/derivatives/derivative.hpp"
 #include "expr/evaluation/derivatives/reverse.hpp"
 #include "expr/evaluation/derivatives/value.hpp"
 #include "expr/tape/tape.hpp"
+#include "reference.hpp"
 
 #include <cstddef>
 #include <limits>
@@ -16,12 +15,6 @@
 
 namespace biyos::test
 {
-
-inline Tolerances default_tolerances()
-{
-    Env env;
-    return Tolerances(Lookup(env.options()));
-}
 
 inline std::vector<Real> values_of(const Tape &tape, std::span<const Real> point)
 {
