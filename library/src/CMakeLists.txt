@@ -118,6 +118,7 @@ add_library(biyos_internal STATIC
     io/utils/leftovers.cpp
     io/utils/lines.cpp
     io/utils/records.cpp
+    io/utils/refuse.cpp
     io/utils/report.cpp
     model/compare/compare.cpp
     model/compare/fields.cpp
