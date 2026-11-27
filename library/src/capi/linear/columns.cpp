@@ -6,8 +6,8 @@
 #include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/timing/timer.hpp"
-#include "model/functions/transpose.hpp"
 #include "model/model.hpp"
+#include "model/parts/functions/transpose.hpp"
 
 #include <cstddef>
 

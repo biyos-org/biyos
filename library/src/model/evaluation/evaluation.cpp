@@ -1,20 +1,21 @@
 #include "model/evaluation/evaluation.hpp"
 
 #include "biyos/biyos.h"
-#include "core/check.hpp"
-#include "core/error.hpp"
+#include "core/env/check.hpp"
+#include "core/env/error.hpp"
 #include "core/events/stream.hpp"
 #include "core/numbers.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "core/options/lookup.hpp"
 #include "core/text/text.hpp"
 #include "core/timing/timer.hpp"
+#include "expr/evaluation/hessian/elements.hpp"
+#include "expr/evaluation/hessian/hessian.hpp"
+#include "expr/evaluation/threads/sweeps.hpp"
+#include "expr/evaluation/threads/team.hpp"
 #include "expr/forms/terms.hpp"
-#include "expr/hessian/elements.hpp"
-#include "expr/hessian/hessian.hpp"
 #include "expr/sparsity/reach.hpp"
 #include "expr/tape/tape.hpp"
-#include "expr/threads/sweeps.hpp"
-#include "expr/threads/team.hpp"
 #include "model/evaluation/callbacks.hpp"
 #include "model/evaluation/layout.hpp"
 #include "model/expressions/callbacks.hpp"
@@ -45,11 +46,12 @@ using evaluation::widest;
 namespace
 {
 
-constexpr std::size_t kSpans = 4;
+constexpr std::size_t kSpans = 5;
 
 Program program_of(const Model &model, Stream stream)
 {
-    const EntryTimer timer(stream, kModule, "evaluation");
+    TimingTree tree;
+    const Timer timer(stream, tree, kModule, "evaluation");
     std::vector<Index> rooted;
     std::vector<Offset> roots;
     const std::span<const Offset> all = model.roots(0, model.n_functions());
@@ -65,7 +67,7 @@ Program program_of(const Model &model, Stream stream)
     evaluation::Layout layout = layout_of(model, rooted, tape.pattern());
     std::vector<Real> linear = linear_of(model, layout);
     Entries entries = entries_of(model);
-    Hessian hessian(model.graph(), roots, entries.items);
+    Hessian hessian(model.graph(), roots, entries.items, {.stream = stream, .tree = tree});
     hessian.widen(model.n_variables());
     return Program{
         .rooted = std::move(rooted),
@@ -108,7 +110,7 @@ void Evaluation::values(const Lookup &lookup, std::span<const Real> x, std::span
     require(model_, Part::Function);
     fit(lookup);
     term_function(x, f);
-    forward(program_.tape, x, team_, pool_, values_);
+    forward(program_.tape, x, Tolerances(lookup), team_, pool_, values_);
     for (std::size_t e = 0; e < program_.rooted.size(); ++e)
     {
         f[to_size(program_.rooted[e])] += values_[e];
@@ -125,7 +127,7 @@ void Evaluation::jacobian(const Lookup &lookup, std::span<const Real> x, std::sp
     require(model_, Part::Jacobian);
     fit(lookup);
     term_jacobian(x, g);
-    biyos::jacobian(program_.tape, x, team_, pool_, values_, gradients_);
+    biyos::jacobian(program_.tape, x, Tolerances(lookup), team_, pool_, values_, gradients_);
     for (std::size_t p = 0; p < layout.slots.tape.size(); ++p)
     {
         g[to_size(layout.slots.tape[p])] += gradients_[p];

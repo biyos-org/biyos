@@ -313,6 +313,8 @@ TEST(PiecewiseTest, Unknown)
     EXPECT_EQ(env.message(), "invalid argument: pwl -1: unknown");
     EXPECT_EQ(BIYOS_getnpwlptrg(model.get(), -1, 0, &nnz), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: pwl -1: unknown");
+    EXPECT_EQ(BIYOS_getnpwlptsp(model.get(), 1, nullptr, &nnz), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env.message(), "invalid argument: argument 'pwl': is null");
     EXPECT_EQ(nnz, 7);
     EXPECT_EQ(BIYOS_getnpwlptrg(model.get(), 0, 1, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'nnz': is null");

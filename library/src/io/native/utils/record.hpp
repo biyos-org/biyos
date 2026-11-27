@@ -1,9 +1,9 @@
 #pragma once
 
 #include "core/numbers.hpp"
-#include "io/lines.hpp"
 #include "io/native/utils/words.hpp"
-#include "io/records.hpp"
+#include "io/utils/lines.hpp"
+#include "io/utils/records.hpp"
 
 #include <algorithm>
 #include <array>

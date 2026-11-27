@@ -1,7 +1,11 @@
 add_library(biyos_internal STATIC
-    core/check.cpp
-    core/env.cpp
-    core/error.cpp
+    core/env/check.cpp
+    core/env/env.cpp
+    core/env/error.cpp
+    core/env/pool.cpp
+    core/env/status.cpp
+    core/env/thread.cpp
+    core/env/version.cpp
     core/events/deliveries.cpp
     core/events/event.cpp
     core/events/events.cpp
@@ -18,28 +22,45 @@ add_library(biyos_internal STATIC
     core/options/table.cpp
     core/options/text.cpp
     core/options/value.cpp
-    core/pool/pool.cpp
-    core/status.cpp
     core/text/bignum.cpp
     core/text/chars.cpp
     core/text/strings.cpp
     core/text/utf8.cpp
-    core/thread.cpp
     core/timing/clock.cpp
     core/timing/deadline.cpp
     core/timing/timer.cpp
-    core/version.cpp
-    expr/curvature/arithmetic.cpp
-    expr/curvature/bends.cpp
-    expr/curvature/curvature.cpp
-    expr/curvature/exponents.cpp
-    expr/curvature/segments.cpp
-    expr/curvature/shape.cpp
-    expr/curvature/waves.cpp
-    expr/derivatives/derivative.cpp
-    expr/derivatives/partials.cpp
-    expr/derivatives/reverse.cpp
-    expr/derivatives/value.cpp
+    expr/analysis/curvature/arithmetic.cpp
+    expr/analysis/curvature/bends.cpp
+    expr/analysis/curvature/curvature.cpp
+    expr/analysis/curvature/exponents.cpp
+    expr/analysis/curvature/logic.cpp
+    expr/analysis/curvature/segments.cpp
+    expr/analysis/curvature/shape.cpp
+    expr/analysis/curvature/waves.cpp
+    expr/analysis/intervals/elementary.cpp
+    expr/analysis/intervals/enclosure.cpp
+    expr/analysis/intervals/interval.cpp
+    expr/analysis/intervals/logic.cpp
+    expr/analysis/intervals/periodic.cpp
+    expr/analysis/intervals/piecewise.cpp
+    expr/analysis/intervals/powers.cpp
+    expr/analysis/intervals/rounding.cpp
+    expr/evaluation/derivatives/derivative.cpp
+    expr/evaluation/derivatives/partials.cpp
+    expr/evaluation/derivatives/reverse.cpp
+    expr/evaluation/derivatives/value.cpp
+    expr/evaluation/hessian/coloring.cpp
+    expr/evaluation/hessian/elements.cpp
+    expr/evaluation/hessian/hessian.cpp
+    expr/evaluation/hessian/pattern.cpp
+    expr/evaluation/hessian/pushing/lists.cpp
+    expr/evaluation/hessian/pushing/push.cpp
+    expr/evaluation/hessian/pushing/walk.cpp
+    expr/evaluation/hessian/sweep.cpp
+    expr/evaluation/hessian/tangents.cpp
+    expr/evaluation/threads/levels.cpp
+    expr/evaluation/threads/sweeps.cpp
+    expr/evaluation/threads/team.cpp
     expr/forms/canonical.cpp
     expr/forms/terms.cpp
     expr/graph/builder.cpp
@@ -50,17 +71,7 @@ add_library(biyos_internal STATIC
     expr/graph/points.cpp
     expr/graph/sharing.cpp
     expr/graph/uses.cpp
-    expr/hessian/elements.cpp
-    expr/hessian/hessian.cpp
-    expr/hessian/sweep.cpp
-    expr/hessian/tangents.cpp
-    expr/intervals/elementary.cpp
-    expr/intervals/enclosure.cpp
-    expr/intervals/interval.cpp
-    expr/intervals/periodic.cpp
-    expr/intervals/piecewise.cpp
-    expr/intervals/powers.cpp
-    expr/intervals/rounding.cpp
+    expr/sparsity/joiner.cpp
     expr/sparsity/memo.cpp
     expr/sparsity/radix.cpp
     expr/sparsity/reach.cpp
@@ -69,11 +80,6 @@ add_library(biyos_internal STATIC
     expr/tape/plan.cpp
     expr/tape/reads.cpp
     expr/tape/tape.cpp
-    expr/threads/levels.cpp
-    expr/threads/sweeps.cpp
-    expr/threads/team.cpp
-    io/codes.cpp
-    io/directory.cpp
     io/draft/column_shape.cpp
     io/draft/draft.cpp
     io/draft/labels.cpp
@@ -82,8 +88,6 @@ add_library(biyos_internal STATIC
     io/draft/structure.cpp
     io/draft/support.cpp
     io/files.cpp
-    io/leftovers.cpp
-    io/lines.cpp
     io/mps/mps.cpp
     io/mps/print.cpp
     io/mps/readers/bounds.cpp
@@ -94,13 +98,28 @@ add_library(biyos_internal STATIC
     io/mps/readers/values.cpp
     io/mps/readers/vectors.cpp
     io/mps/sections.cpp
-    io/nl/bodies.cpp
-    io/nl/expressions.cpp
     io/nl/header.cpp
     io/nl/nl.cpp
     io/nl/operators.cpp
-    io/nl/pieces.cpp
+    io/nl/reader/bodies.cpp
+    io/nl/reader/complements.cpp
+    io/nl/reader/expressions.cpp
+    io/nl/reader/pieces.cpp
+    io/nl/reader/sets.cpp
+    io/nl/reader/suffixes.cpp
+    io/nl/source/binary.cpp
+    io/nl/source/bounds.cpp
+    io/nl/source/source.cpp
+    io/nl/source/text.cpp
     io/nl/tokens.cpp
+    io/nl/writer/defined.cpp
+    io/nl/writer/entries.cpp
+    io/nl/writer/layout.cpp
+    io/nl/writer/printer.cpp
+    io/nl/writer/refusals.cpp
+    io/nl/writer/sets.cpp
+    io/nl/writer/usage.cpp
+    io/nl/writer/writer.cpp
     io/native/native.cpp
     io/native/parts.cpp
     io/native/print.cpp
@@ -113,18 +132,18 @@ add_library(biyos_internal STATIC
     io/native/writers/attributes.cpp
     io/native/writers/functions.cpp
     io/native/writers/records.cpp
-    io/records.cpp
-    io/report.cpp
-    model/attributes/names.cpp
-    model/attributes/naming.cpp
-    model/attributes/records.cpp
-    model/attributes/tolerances.cpp
+    io/utils/codes.cpp
+    io/utils/directory.cpp
+    io/utils/leftovers.cpp
+    io/utils/lines.cpp
+    io/utils/records.cpp
+    io/utils/refuse.cpp
+    io/utils/report.cpp
     model/compare/compare.cpp
     model/compare/fields.cpp
     model/compare/match.cpp
     model/compare/records.cpp
     model/compare/tables.cpp
-    model/compressed.cpp
     model/evaluation/callbacks.cpp
     model/evaluation/evaluation.cpp
     model/evaluation/hessian.cpp
@@ -135,23 +154,28 @@ add_library(biyos_internal STATIC
     model/expressions/patterns.cpp
     model/expressions/postfix.cpp
     model/expressions/users.cpp
-    model/functions/attach.cpp
-    model/functions/functions.cpp
-    model/functions/merge.cpp
-    model/functions/pairs.cpp
-    model/functions/quadratic.cpp
-    model/functions/terms.cpp
-    model/functions/transpose.cpp
     model/model.cpp
-    model/records/complements.cpp
-    model/records/cones.cpp
-    model/records/constraints.cpp
-    model/records/indicators.cpp
-    model/records/objectives.cpp
-    model/records/special_ordered_sets.cpp
-    model/records/variables.cpp
+    model/parts/attributes/names.cpp
+    model/parts/attributes/naming.cpp
+    model/parts/attributes/records.cpp
+    model/parts/attributes/tolerances.cpp
+    model/parts/functions/attach.cpp
+    model/parts/functions/functions.cpp
+    model/parts/functions/merge.cpp
+    model/parts/functions/pairs.cpp
+    model/parts/functions/quadratic.cpp
+    model/parts/functions/terms.cpp
+    model/parts/functions/transpose.cpp
+    model/parts/records/complements.cpp
+    model/parts/records/cones.cpp
+    model/parts/records/constraints.cpp
+    model/parts/records/indicators.cpp
+    model/parts/records/objectives.cpp
+    model/parts/records/special_ordered_sets.cpp
+    model/parts/records/variables.cpp
     model/session/session.cpp
     model/utils/checks.cpp
+    model/utils/compressed.cpp
     model/utils/renumber.cpp)
 
 target_include_directories(biyos_internal PUBLIC

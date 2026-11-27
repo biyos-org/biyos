@@ -2,12 +2,13 @@
 
 #include "files.hpp"
 
-#include "core/env.hpp"
-#include "core/error.hpp"
+#include "core/env/env.hpp"
+#include "core/env/error.hpp"
 #include "core/events/event.hpp"
 #include "io/nl/nl.hpp"
 #include "model/model.hpp"
 
+#include <cstddef>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -16,14 +17,25 @@
 namespace biyos::test::nl
 {
 
+inline std::string located(std::string_view unit, std::size_t at, std::string_view message)
+{
+    return "file 't.nl' " + std::string(unit) + " " + std::to_string(at) + ": " +
+           std::string(message);
+}
+
 inline std::string bad(int line, std::string_view message)
 {
-    return "bad file: file 't.nl' line " + std::to_string(line) + ": " + std::string(message);
+    return "bad file: " + located("line", static_cast<std::size_t>(line), message);
+}
+
+inline std::string bad_at(std::size_t at, std::string_view message)
+{
+    return "bad file: " + located("byte", at, message);
 }
 
 inline std::string refused(int line, std::string_view message)
 {
-    return "unsupported: file 't.nl' line " + std::to_string(line) + ": " + std::string(message);
+    return "unsupported: " + located("line", static_cast<std::size_t>(line), message);
 }
 
 inline Model read_text(Env &env, std::string_view text)

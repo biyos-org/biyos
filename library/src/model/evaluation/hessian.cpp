@@ -1,8 +1,9 @@
 #include "model/evaluation/evaluation.hpp"
 
-#include "core/check.hpp"
+#include "core/env/check.hpp"
 #include "core/events/stream.hpp"
 #include "core/numbers.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "core/options/lookup.hpp"
 #include "core/timing/timer.hpp"
 #include "expr/forms/terms.hpp"
@@ -49,7 +50,7 @@ void Evaluation::hessian(const Lookup &lookup, const Point &point, std::span<Rea
     check("h", h.size(), hessian_pattern().rows.size());
     require(model_, Part::Hessian);
     fit(lookup);
-    program_.hessian.values(point.x, weights_, h, pool_);
+    program_.hessian.values(point.x, weights_, Tolerances(lookup), h, pool_, {stream_, tree_});
     term_hessian(point.w, h);
     evaluate_hessian(Checker(stream_, lookup, kModule), point, h);
 }
@@ -63,7 +64,7 @@ void Evaluation::product(const Lookup &lookup, const Point &point, std::span<Rea
     check("hv", hv.size(), point.x.size());
     require_products(model_);
     fit(lookup);
-    program_.hessian.product(point.x, weights_, point.v, hv, pool_);
+    program_.hessian.product(point.x, weights_, point.v, Tolerances(lookup), hv, pool_);
     term_hessian_product(point, hv);
     evaluate_hessian_product(Checker(stream_, lookup, kModule), point, hv);
 }

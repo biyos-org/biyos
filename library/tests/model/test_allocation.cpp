@@ -1,15 +1,15 @@
 #include "allocations.hpp"
 #include "biyos/biyos.h"
-#include "core/env.hpp"
-#include "core/error.hpp"
+#include "core/env/env.hpp"
+#include "core/env/error.hpp"
 #include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "delivery.hpp"
 #include "expr/graph/graph.hpp"
-#include "model/attributes/records.hpp"
 #include "model/compare/compare.hpp"
 #include "model/expressions/postfix.hpp"
 #include "model/model.hpp"
+#include "model/parts/attributes/records.hpp"
 #include "model/session/session.hpp"
 
 #include <gtest/gtest.h>

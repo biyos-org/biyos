@@ -1,6 +1,6 @@
 #include "expr/graph/builder.hpp"
 
-#include "core/error.hpp"
+#include "core/env/error.hpp"
 #include "core/memory/room.hpp"
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"

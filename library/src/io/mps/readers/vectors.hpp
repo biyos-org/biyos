@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/events/stream.hpp"
-#include "io/lines.hpp"
+#include "io/utils/lines.hpp"
 
 #include <functional>
 #include <optional>

@@ -1,14 +1,17 @@
 #include "reference.hpp"
 
 #include "core/numbers.hpp"
+#include "core/numeric/tolerances.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "expr/graph/points.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <limits>
 #include <span>
+#include <vector>
 
 namespace
 {
@@ -18,6 +21,8 @@ using biyos::Offset;
 using biyos::Operator;
 using biyos::Real;
 using biyos::to_size;
+using biyos::Tolerances;
+using biyos::test::children_of;
 
 constexpr Real kUndefined = std::numeric_limits<Real>::quiet_NaN();
 
@@ -33,6 +38,11 @@ bool is_zero(Real value)
     return std::fpclassify(value) == FP_ZERO;
 }
 
+bool is_nan(Real value)
+{
+    return std::isnan(value);
+}
+
 Real first(const Frame &frame, Offset node)
 {
     return frame.values[to_size(frame.graph.children(node)[0])];
@@ -41,6 +51,11 @@ Real first(const Frame &frame, Offset node)
 Real second(const Frame &frame, Offset node)
 {
     return frame.values[to_size(frame.graph.children(node)[1])];
+}
+
+Real third(const Frame &frame, Offset node)
+{
+    return frame.values[to_size(frame.graph.children(node)[2])];
 }
 
 Real sum_of(const Frame &frame, Offset node)
@@ -95,6 +110,12 @@ Real smallest(const Frame &frame, Offset node)
     return best;
 }
 
+Real connective_of(const Frame &frame, Offset node)
+{
+    const auto stored = [&frame](Offset child) { return frame.values[to_size(child)]; };
+    return biyos::test::connective(frame.graph.op(node), children_of(frame.graph, node, stored));
+}
+
 Real quotient(Real left, Real right)
 {
     return is_zero(right) ? kUndefined : left / right;
@@ -129,6 +150,82 @@ Real sign_power(Real value, Real exponent)
 Real angle(Real y, Real x)
 {
     return std::atan2(y + 0.0, x + 0.0);
+}
+
+bool holds(Operator op, Real a, Real b)
+{
+    static const Tolerances tolerances = biyos::test::default_tolerances();
+    const bool near = tolerances.approx_equal(a, b);
+    switch (op)
+    {
+    case Operator::LessEqual:
+        return a < b || near;
+    case Operator::GreaterEqual:
+        return b < a || near;
+    case Operator::Equal:
+        return near;
+    case Operator::Less:
+        return a < b && !near;
+    case Operator::Greater:
+        return b < a && !near;
+    case Operator::NotEqual:
+        return !near;
+    case Operator::Constant:
+    case Operator::Variable:
+    case Operator::Sum:
+    case Operator::Product:
+    case Operator::Negation:
+    case Operator::Division:
+    case Operator::ConstantPower:
+    case Operator::Power:
+    case Operator::Exp:
+    case Operator::Log:
+    case Operator::Sqrt:
+    case Operator::Sin:
+    case Operator::Cos:
+    case Operator::Tan:
+    case Operator::Abs:
+    case Operator::Max:
+    case Operator::Min:
+    case Operator::Asin:
+    case Operator::Acos:
+    case Operator::Atan:
+    case Operator::Sinh:
+    case Operator::Cosh:
+    case Operator::Tanh:
+    case Operator::Asinh:
+    case Operator::Acosh:
+    case Operator::Atanh:
+    case Operator::Entropy:
+    case Operator::SignPower:
+    case Operator::Erf:
+    case Operator::PiecewiseLinear:
+    case Operator::Atan2:
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
+    case Operator::If:
+        break;
+    }
+    return false;
+}
+
+bool truth(Real value)
+{
+    return value > 0.0;
+}
+
+bool decides(Operator op, std::span<const Real> conditions)
+{
+    if (op == Operator::And)
+    {
+        return std::ranges::all_of(conditions, truth);
+    }
+    if (op == Operator::Or)
+    {
+        return std::ranges::any_of(conditions, truth);
+    }
+    return std::ranges::none_of(conditions, truth);
 }
 
 Real unary(Operator op, Real value)
@@ -185,6 +282,16 @@ Real unary(Operator op, Real value)
     case Operator::SignPower:
     case Operator::PiecewiseLinear:
     case Operator::Atan2:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
+    case Operator::If:
         break;
     }
     return kUndefined;
@@ -240,10 +347,50 @@ Real value_of(const Frame &frame, Offset node)
                                first(frame, node));
     case Operator::Atan2:
         return angle(first(frame, node), second(frame, node));
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
+        return biyos::test::comparison(graph.op(node), first(frame, node), second(frame, node));
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
+        return connective_of(frame, node);
+    case Operator::If:
+        return biyos::test::select(first(frame, node), second(frame, node), third(frame, node));
     }
     return kUndefined;
 }
 
+}
+
+Real biyos::test::comparison(Operator op, Real a, Real b)
+{
+    if (std::isnan(a) || std::isnan(b))
+    {
+        return kUndefined;
+    }
+    return holds(op, a, b) ? 1.0 : 0.0;
+}
+
+Real biyos::test::connective(Operator op, std::span<const Real> conditions)
+{
+    if (std::ranges::any_of(conditions, is_nan))
+    {
+        return kUndefined;
+    }
+    return decides(op, conditions) ? 1.0 : 0.0;
+}
+
+Real biyos::test::select(Real condition, Real then, Real otherwise)
+{
+    if (std::isnan(condition))
+    {
+        return kUndefined;
+    }
+    return is_zero(condition) ? otherwise : then;
 }
 
 void biyos::test::evaluate(const Graph &graph, std::span<const Real> point, std::span<Real> values)

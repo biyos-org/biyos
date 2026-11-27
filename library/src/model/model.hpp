@@ -6,9 +6,9 @@
 #include "expr/forms/terms.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/uses.hpp"
-#include "model/attributes/names.hpp"
-#include "model/attributes/records.hpp"
 #include "model/expressions/callbacks.hpp"
+#include "model/parts/attributes/names.hpp"
+#include "model/parts/attributes/records.hpp"
 
 #include <array>
 #include <cstddef>
@@ -159,6 +159,7 @@ inline constexpr std::array kFamilies{
 };
 
 std::string_view noun_of(Family family) noexcept;
+std::string_view word_of(Family family) noexcept;
 
 inline constexpr Offset kNoRoot = -1;
 

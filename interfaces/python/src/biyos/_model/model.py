@@ -92,9 +92,15 @@ from biyos._model.blocks import (
     index_of,
 )
 from biyos._model.callbacks import Callbacks, checked, data_at
-from biyos._model.expression import Comparison, Expression, Operand
+from biyos._model.expression import (
+    Comparison,
+    Condition,
+    Expression,
+    Logical,
+    Operand,
+)
 from biyos._model.operators import Operator, node_values, postfix_values
-from biyos._model.postfix import attached, given
+from biyos._model.postfix import Made, attached, expression_of, given
 
 
 class VariableKind(IntEnum):
@@ -200,7 +206,7 @@ class FileFormat(IntEnum):
     FIXED_MPS
         Fixed MPS, for linear and mixed-integer models. Read only.
     NL
-        Text NL, for nonlinear models. Read only.
+        NL, text or binary, for nonlinear models. Written as text.
     BYS
         The biyos format, which holds every part of a model but its
         callbacks and its options.
@@ -325,6 +331,14 @@ def _total(counts: Array[c_offset] | None) -> Offset:
     if counts is None:
         return 0
     return sum(counts)
+
+
+def _bounded(con: Logical, made: Made) -> tuple[Operand, Real, Real]:
+    if isinstance(con, Comparison):
+        con._refuse_open()
+        return con._body, con._lb, con._ub
+    assert isinstance(con, Condition)
+    return expression_of(con, made), 1.0, 1.0
 
 
 class Model:
@@ -2698,7 +2712,8 @@ class Model:
         fun: Sequence[Index | Function]
         | Functions
         | Comparison
-        | Sequence[Comparison],
+        | Condition
+        | Sequence[Comparison | Condition],
         lb: Sequence[Real] | None = None,
         ub: Sequence[Real] | None = None,
     ) -> Constraints:
@@ -2706,18 +2721,22 @@ class Model:
 
         A comparison, or a list of them, adds a function for each, holding
         the expression its constraint bounds, and takes its bounds from the
-        comparison. Every expression goes to the model in one ``addexpr``
-        call, then ``attachexpr`` splits off its constant, linear and
-        quadratic terms. When the model refuses a later step, the nodes and
-        functions already added stay in it.
+        comparison. A condition is a logical constraint: its function holds
+        the condition, valued 0 or 1, with bounds 1 and 1. Every expression
+        goes to the model in one ``addexpr`` call, then ``attachexpr``
+        splits off its constant, linear and quadratic terms. When the model
+        refuses a later step, the nodes and functions already added stay in
+        it.
 
         Parameters
         ----------
         fun
-            The function each new constraint bounds, or comparisons such as
-            ``x[0] * x[1] <= 3``.
+            The function each new constraint bounds, or comparisons and
+            conditions such as ``x[0] * x[1] <= 3`` and
+            ``(x[0] <= 1) | (x[1] >= 2)``.
         lb, ub
-            The bounds of each, unbounded by default. None with comparisons.
+            The bounds of each, unbounded by default. None with comparisons
+            and conditions.
 
         Returns
         -------
@@ -2728,16 +2747,18 @@ class Model:
         ------
         TypeError
             When ``lb`` or ``ub`` comes with comparisons, or a list mixes
-            comparisons with other values.
+            comparisons and conditions with other values.
         ValueError
             When an expression holds a variable of another model, or one
-            made before a deletion from the model.
+            made before a deletion from the model, a comparison alone is
+            ``<``, ``>`` or ``!=``, or a comparison in a condition has an
+            infinite bound.
 
         See Also
         --------
         BIYOS_addcon
         """
-        cons = given(fun, Comparison, "a comparison")
+        cons = given(fun, Logical, "a comparison or a condition")
         if cons is not None:
             return self._compared(cons, lb, ub)
         funs = cast("Sequence[Index | Function] | Functions", fun)
@@ -3189,7 +3210,7 @@ class Model:
             doubles("coef", coef, n),
         )
         if trees is not None:
-            funs = attached(self, trees)
+            funs = attached(self, trees, {})
         idx = indices_of(self, Functions, "fun", funs, n)
         return self._added(Objectives, lib.BIYOS_addobj, n, idx, *arrays)
 
@@ -5621,15 +5642,16 @@ class Model:
 
     def _compared(
         self,
-        cons: list[Comparison],
+        cons: list[Logical],
         lb: Sequence[Real] | None,
         ub: Sequence[Real] | None,
     ) -> Constraints:
         if lb is not None or ub is not None:
             raise TypeError("lb and ub come from the comparisons")
-        funs = attached(self, [con._body for con in cons])
-        lower = [con._lb for con in cons]
-        upper = [con._ub for con in cons]
+        made: Made = {}
+        rows = [_bounded(con, made) for con in cons]
+        bodies, lower, upper = zip(*rows)
+        funs = attached(self, bodies, made)
         return self.addcon(funs, lower, upper)
 
     def _peer(self, name: str, value: object) -> "Model":

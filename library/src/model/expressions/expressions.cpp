@@ -1,14 +1,14 @@
 #include "model/model.hpp"
 
-#include "core/error.hpp"
+#include "core/env/error.hpp"
 #include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "expr/graph/graph.hpp"
-#include "model/compressed.hpp"
 #include "model/expressions/nodes.hpp"
 #include "model/expressions/postfix.hpp"
 #include "model/utils/checks.hpp"
+#include "model/utils/compressed.hpp"
 #include "model/utils/rollback.hpp"
 
 #include <cstddef>

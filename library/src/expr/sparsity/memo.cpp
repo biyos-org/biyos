@@ -1,11 +1,13 @@
 #include "expr/sparsity/memo.hpp"
 
 #include "core/numbers.hpp"
+#include "expr/sparsity/joiner.hpp"
 #include "expr/sparsity/reach.hpp"
-#include "expr/tape/plan.hpp"
 
 #include <algorithm>
+#include <bit>
 #include <cstddef>
+#include <functional>
 #include <ranges>
 #include <span>
 #include <vector>
@@ -56,49 +58,39 @@ void pack(std::vector<Offset> &cells, std::span<const Range> items)
     }
 }
 
-void unpack(std::span<const Offset> cells, std::vector<Index> &items)
+template <typename Item> Item decode(std::span<const Offset> cells);
+
+template <> Index decode<Index>(std::span<const Offset> cells)
 {
-    for (const Offset cell : cells)
+    return static_cast<Index>(cells[0]);
+}
+
+template <> Range decode<Range>(std::span<const Offset> cells)
+{
+    return {.begin = cells[0], .end = cells[1]};
+}
+
+template <typename Item, typename Sink> void unpack(std::span<const Offset> cells, Sink &sink)
+{
+    for (std::size_t k = cells.size(); k > 0; k -= kWidth<Item>)
     {
-        items.push_back(static_cast<Index>(cell));
+        sink.push_back(decode<Item>(cells.subspan(k - kWidth<Item>)));
     }
 }
 
-void unpack(std::span<const Offset> cells, std::vector<Range> &items)
+template <typename Item, typename Sink>
+void hand(std::span<const Offset> cells, Bits mask, std::span<Sink> sinks)
 {
-    for (std::size_t k = 0; k < cells.size(); k += kWidth<Range>)
+    if (cells.empty())
     {
-        items.push_back({.begin = cells[k], .end = cells[k + 1]});
+        return;
+    }
+    for (Bits rest = mask; rest != 0; rest &= rest - 1)
+    {
+        unpack<Item>(cells, sinks[static_cast<std::size_t>(std::countr_zero(rest))]);
     }
 }
 
-}
-
-void settle(std::vector<Index> &items, std::vector<Index> &into)
-{
-    std::ranges::sort(items);
-    const auto last = std::ranges::unique(items).begin();
-    into.insert(into.end(), items.begin(), last);
-}
-
-void settle(std::vector<Range> &items, std::vector<Range> &into)
-{
-    std::ranges::sort(items, {}, &Range::begin);
-    join(items, into);
-}
-
-void join(std::span<const Range> items, std::vector<Range> &into)
-{
-    const std::size_t start = into.size();
-    for (const Range &item : items)
-    {
-        if (into.size() > start && item.begin <= into.back().end)
-        {
-            into.back().end = (std::max)(into.back().end, item.end);
-            continue;
-        }
-        into.push_back(item);
-    }
 }
 
 template <typename Item>
@@ -119,24 +111,27 @@ Offset Memos<Item>::keep(std::span<const Item> own, std::span<const Offset> link
     return store(own, links);
 }
 
-template <typename Item>
-void Memos<Item>::gather(std::span<const Offset> memos, std::vector<Item> &items)
+template <typename Item> void Memos<Item>::seed(std::span<const Offset> memos, std::size_t lane)
 {
-    ++walk_;
-    append(stack_, memos);
-    while (!stack_.empty())
+    const Bits bit = Bits{1} << lane;
+    for (const Offset memo : memos | std::views::reverse)
     {
-        const Offset next = stack_.back();
-        stack_.pop_back();
-        Offset &stamp = cells_[to_size(next) + kStamp];
-        if (stamp == walk_)
+        if (mark(memo, bit))
         {
-            continue;
+            seeds_.push_back(memo);
         }
-        stamp = walk_;
-        unpack(item_cells(next), items);
-        append(stack_, links_of(next));
     }
+}
+
+template <typename Item> template <typename Sink> void Memos<Item>::walk(std::span<Sink> sinks)
+{
+    order();
+    while (taken_ < seeds_.size() || !heap_.empty())
+    {
+        take(next(), sinks);
+    }
+    seeds_.clear();
+    taken_ = 0;
 }
 
 template <typename Item>
@@ -160,7 +155,7 @@ Offset Memos<Item>::flatten(std::span<const Item> own, std::span<const Offset> l
     pieces_.assign(own.begin(), own.end());
     for (const Offset link : links)
     {
-        unpack(item_cells(link), pieces_);
+        unpack<Item>(item_cells(link), pieces_);
     }
     settled_.clear();
     settle(pieces_, settled_);
@@ -188,7 +183,6 @@ Offset Memos<Item>::store(std::span<const Item> own, std::span<const Offset> lin
 {
     const std::size_t start = cells_.size();
     cells_.resize(start + kHeader);
-    cells_[start + kStamp] = kUnset;
     cells_[start + kItems] = to_offset(own.size());
     cells_[start + kLinks] = to_offset(links.size());
     pack(cells_, own);
@@ -217,7 +211,60 @@ template <typename Item> std::span<const Offset> Memos<Item>::links_of(Offset me
     return std::span(cells_).subspan(start, link_count(memo));
 }
 
+template <typename Item> Offset &Memos<Item>::stamp(Offset memo) noexcept
+{
+    return cells_[to_size(memo) + kStamp];
+}
+
+template <typename Item> bool Memos<Item>::mark(Offset memo, Bits mask)
+{
+    Offset &cell = stamp(memo);
+    const bool fresh = cell == 0;
+    cell = static_cast<Offset>(static_cast<Bits>(cell) | mask);
+    return fresh;
+}
+
+template <typename Item> void Memos<Item>::order()
+{
+    if (!std::ranges::is_sorted(seeds_, std::ranges::greater{}))
+    {
+        std::ranges::sort(seeds_, std::ranges::greater{});
+    }
+}
+
+template <typename Item> Offset Memos<Item>::next()
+{
+    if (heap_.empty() || (taken_ < seeds_.size() && seeds_[taken_] > heap_.front()))
+    {
+        return seeds_[taken_++];
+    }
+    std::ranges::pop_heap(heap_);
+    const Offset memo = heap_.back();
+    heap_.pop_back();
+    return memo;
+}
+
+template <typename Item>
+template <typename Sink>
+void Memos<Item>::take(Offset memo, std::span<Sink> sinks)
+{
+    Offset &cell = stamp(memo);
+    const auto mask = static_cast<Bits>(cell);
+    cell = 0;
+    hand<Item>(item_cells(memo), mask, sinks);
+    for (const Offset link : links_of(memo))
+    {
+        if (mark(link, mask))
+        {
+            heap_.push_back(link);
+            std::ranges::push_heap(heap_);
+        }
+    }
+}
+
 template class Memos<Index>;
 template class Memos<Range>;
+template void Memos<Index>::walk(std::span<std::vector<Index>> sinks);
+template void Memos<Range>::walk(std::span<Joiner> sinks);
 
 }

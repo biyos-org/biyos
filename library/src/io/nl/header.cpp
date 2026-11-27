@@ -2,16 +2,18 @@
 
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
-#include "io/lines.hpp"
 #include "io/nl/tokens.hpp"
-#include "io/records.hpp"
-#include "io/report.hpp"
+#include "io/utils/lines.hpp"
+#include "io/utils/records.hpp"
+#include "io/utils/report.hpp"
 #include "model/model.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cstddef>
 #include <numeric>
+#include <string>
+#include <string_view>
 #include <vector>
 
 namespace biyos::nl
@@ -22,12 +24,18 @@ namespace
 
 constexpr std::size_t kRows = 9;
 constexpr std::size_t kSizes = 0;
+constexpr std::size_t kComplements = 1;
 constexpr std::size_t kNonlinear = 3;
 constexpr std::size_t kArcs = 4;
 constexpr std::size_t kDiscrete = 5;
 constexpr std::size_t kCommon = 8;
 constexpr std::size_t kColumns = 5;
+constexpr std::size_t kArith = 2;
 constexpr Offset kLineBytes = 2;
+constexpr Offset kRecordByte = 1;
+constexpr Index kLittle = 1;
+constexpr Index kBig = 2;
+constexpr std::string_view kOtherFormats = "hzBGHZ";
 constexpr std::array<std::size_t, kRows> kWidths{5, 2, 2, 3, 4, 5, 2, 2, 5};
 
 using Rows = std::array<std::array<Index, kColumns>, kRows>;
@@ -52,21 +60,52 @@ struct Block
     VariableKind kind;
 };
 
-void read_first(Lines &lines)
+char read_first(Lines &lines)
 {
     if (!advance(lines))
     {
         bad_file(lines, "is empty");
     }
-    const Entry entry(lines);
-    if (entry.key() == 'b')
+    const char format = Entry(lines).key();
+    if (kOtherFormats.find(format) != std::string_view::npos)
     {
-        unsupported(lines, "binary NL");
+        unsupported(lines, "NL format " + quote(std::string(1, format)));
     }
-    if (entry.key() != 'g')
+    if (format != 'g' && format != 'b')
     {
-        bad_file(lines, "the file does not start with 'g'");
+        bad_file(lines, "the file does not start with 'g' or 'b'");
     }
+    return format;
+}
+
+Encoding encoding_of(const Lines &lines, char format, Index arith)
+{
+    if (format == 'g')
+    {
+        return Encoding::Text;
+    }
+    if (arith == kLittle)
+    {
+        return Encoding::Little;
+    }
+    if (arith == kBig)
+    {
+        return Encoding::Big;
+    }
+    unsupported(lines, "arithmetic kind " + text_of(arith));
+}
+
+Offset record_bytes(Encoding encoding) noexcept
+{
+    switch (encoding)
+    {
+    case Encoding::Text:
+        return kLineBytes;
+    case Encoding::Little:
+    case Encoding::Big:
+        return kRecordByte;
+    }
+    return kRecordByte;
 }
 
 std::array<Index, kColumns> read_row(Lines &lines, std::size_t width)
@@ -160,11 +199,22 @@ void check_functions(const Lines &lines, const Rows &rows)
     }
 }
 
-void check_room(const Lines &lines, const Rows &rows, Index defined, Offset bytes)
+Index complements_of(const Lines &lines, const Rows &rows)
+{
+    const std::array<Index, kColumns> &counts = rows[kComplements];
+    const Offset complements = Offset{counts[2]} + counts[3];
+    if (complements > rows[kSizes][1])
+    {
+        bad_file(lines, "the header counts more complements than constraints");
+    }
+    return static_cast<Index>(complements);
+}
+
+void check_room(const Lines &lines, const Rows &rows, Index defined, Offset room)
 {
     const std::array<Index, kColumns> &sizes = rows[kSizes];
     const Offset records = Offset{sizes[0]} + sizes[1] + sizes[2] + defined;
-    if (records > bytes / kLineBytes)
+    if (records > room)
     {
         bad_file(lines, "the header counts more records than the file holds");
     }
@@ -174,12 +224,13 @@ void check_room(const Lines &lines, const Rows &rows, Index defined, Offset byte
 
 Header read_header(Lines &lines, Offset bytes)
 {
-    read_first(lines);
+    const char format = read_first(lines);
     Rows rows{};
     for (std::size_t k = 0; k < kRows; ++k)
     {
         rows[k] = read_row(lines, kWidths[k]);
     }
+    const Encoding encoding = encoding_of(lines, format, rows[kArcs][kArith]);
     const Layout layout = layout_of(rows);
     const Index variables = rows[kSizes][0];
     if (!adds_up(layout, variables))
@@ -188,13 +239,16 @@ Header read_header(Lines &lines, Offset bytes)
     }
     check_functions(lines, rows);
     const Index defined = defined_of(lines, rows);
-    check_room(lines, rows, defined, bytes);
+    const Index complements = complements_of(lines, rows);
+    check_room(lines, rows, defined, bytes / record_bytes(encoding));
     return {
         .variables = variables,
         .constraints = rows[kSizes][1],
         .objectives = rows[kSizes][2],
         .defined = defined,
+        .complements = complements,
         .kinds = kinds_of(layout, variables),
+        .encoding = encoding,
     };
 }
 

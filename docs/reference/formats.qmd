@@ -1,6 +1,6 @@
 # File formats {#sec-formats}
 
-`BIYOS_readmdl` and `Model.read` read a model from a file in the format the caller names, and `BIYOS_writemdl` and `Model.write` write one. This chapter gives the rules of each format as the reader applies them, then the rules of the writer. A file that breaks one gives `BIYOS_ERR_BADFILE`, a section or segment the reader does not handle gives `BIYOS_ERR_UNSUPPORTED`, each oddity the reader reads past is a warning event from module `io`, with the fields `file` and `line`, and each part it skips is an info event with the same fields.
+`BIYOS_readmdl` and `Model.read` read a model from a file in the format the caller names, and `BIYOS_writemdl` and `Model.write` write one. This chapter gives the rules of each format as the reader applies them, then the rules of the writer. A file that breaks one gives `BIYOS_ERR_BADFILE`, a section or segment the reader does not handle gives `BIYOS_ERR_UNSUPPORTED`, each oddity the reader reads past is a warning event from module `io`, with the fields `file` and `line`, and each part it skips is an info event with the same fields. In the binary part of an NL file, `byte` takes the place of `line`.
 
 ## Free MPS
 
@@ -160,9 +160,9 @@ A section line is read as in free MPS, with the model name the rest of the `NAME
 | Tabs | A tab is one column. |
 | Long lines | Field 6 runs to the end of the line, so text after it, such as a card number in columns 73 to 80, makes its value unreadable. |
 
-## Text NL
+## NL
 
-`BIYOS_FILEFMT_NL` reads the text form of NL, the format AMPL writes for a solver. The rules below are those of Gay's description of the format [@gay2005]. Where it says nothing, biyos sets its own rule, given in [Choices](#sec-nl-choices). The format is read only: `BIYOS_writemdl` refuses it with `BIYOS_ERR_UNSUPPORTED`.
+`BIYOS_FILEFMT_NL` reads NL, the format AMPL writes for a solver, in its text and its binary form. The rules below are those of Gay's description of the format [@gay2005], and for what it leaves out of the binary form, those of the NL reader of AMPL's MP library [@amplmp2026]. Where it says nothing, biyos sets its own rule, given in [Choices](#sec-nl-choices). The writer writes the text form, by the rules in [Writing](#sec-nl-writing).
 
 ### Lines
 
@@ -170,7 +170,13 @@ The first field of a line is a letter, often followed by a number in the same fi
 
 ### Header
 
-The file starts with ten lines. The first starts with `g`; a file that starts with `b` is binary NL, refused with `BIYOS_ERR_UNSUPPORTED`. The next nine hold counts in the order Gay gives, the second line starting with the numbers of variables, constraints and objectives. The counts fix the kind of each variable from its place in the order of variables in Gay's tables [@gay2017], and every variable they do not mark integer or binary is continuous.
+The file starts with ten lines. The first starts with `g` for text or `b` for binary. The other forms AMPL writes, `h` and `z` for large files and `B`, `G`, `H` and `Z` for debugging, are refused with `BIYOS_ERR_UNSUPPORTED`. The next nine hold counts in the order Gay gives, the second line starting with the numbers of variables, constraints and objectives. The counts fix the kind of each variable from its place in the order of variables in Gay's tables [@gay2017], and every variable they do not mark integer or binary is continuous.
+
+### Binary
+
+The header of a binary file is the same ten lines of text. The third count of its sixth line, `arith`, gives the byte order of what follows: `1` little-endian, `2` big-endian. Any other value is refused with `BIYOS_ERR_UNSUPPORTED`, `0` among them.
+
+After the header, the file holds the same items as text with no white space and no newlines. A letter, such as a segment key, the key of an expression item or a bound code, is one byte, a bound code being the ASCII digit. An integer is four bytes in two's complement, a number eight bytes in IEEE double precision, and a name a four byte length followed by its bytes. A constant may be `s`, followed by a two byte integer, or `l`, followed by a four byte integer, as well as `n`. A file that ends inside an item gives `BIYOS_ERR_BADFILE`, and a message names the byte where the item starts, counted from 0 at the start of the file.
 
 ### Segments
 
@@ -188,9 +194,9 @@ After the header, each segment starts with a letter. They may come in any order,
 | `G` | The linear terms of an objective. |
 | `x` | A starting point, skipped with an info event. |
 | `d` | Dual guesses, skipped with an info event. |
-| `S` | A suffix, skipped with an info event naming it. The suffixes `sosno` and `ref`, which give special ordered sets, are refused with `BIYOS_ERR_UNSUPPORTED`. |
+| `S` | A suffix, skipped with an info event naming it, but for the integer suffix `sosno` and the suffix `ref` on variables, which give special ordered sets [@gay2017]. Each nonzero value of `sosno` is a set, of type 1 when it is positive and 2 when negative, and `ref` gives the weight of each member. A real `sosno` is refused with `BIYOS_ERR_UNSUPPORTED`. |
 
-A bound line starts with a code: `0` gives a lower and an upper bound, `1` an upper bound, `2` a lower bound, `3` neither and `4` one value for both. Code `5`, a complementarity, is refused with `BIYOS_ERR_UNSUPPORTED`, as are the segments `F` (imported functions) and `L` (logical constraints).
+A bound line starts with a code: `0` gives a lower and an upper bound, `1` an upper bound, `2` a lower bound, `3` neither and `4` one value for both. In `r`, code `5` with two integers $k$ and $i$ pairs the constraint with variable $i$, from 1, as a complement: its function becomes the second function of the complement, the first is the variable alone, and the bounds are those of the variable, which keeps them. $k$ is 1 when the lower bound is finite, 2 when the upper one is, 3 when both are and 0 when neither is. Code `5` in `b` is refused with `BIYOS_ERR_BADFILE`, and the segments `F` (imported functions) and `L` (logical constraints) with `BIYOS_ERR_UNSUPPORTED`.
 
 ### Expressions
 
@@ -206,16 +212,17 @@ An expression is written in prefix order, one item a line: `n` and a number for 
 | `neg`, `abs`, `min`, `max` | The same operator. |
 | `sqrt`, `exp`, `log`, `log10` | The same function, `log10` as the natural logarithm times $\log_{10} e$. |
 | `sin`, `cos`, `tan`, `asin`, `acos`, `atan` | The same function. |
+| `atan2` | The same function, its first operand $y$ in $\operatorname{atan2}(y, x)$. |
 | `sinh`, `cosh`, `tanh`, `asinh`, `acosh`, `atanh` | The same function. |
 | `plterm` | A piecewise linear function of one variable. |
 
-Every other operator, among them `atan2`, the comparisons, the logical operators, `if`, `floor`, `ceil` and `round`, is refused with `BIYOS_ERR_UNSUPPORTED`, as are imported functions (`f`) and strings (`h`).
+Every other operator, among them the comparisons, the logical operators, `if`, `floor`, `ceil` and `round`, is refused with `BIYOS_ERR_UNSUPPORTED`, as are imported functions (`f`) and strings (`h`).
 
 ### Choices {#sec-nl-choices}
 
 | Case | biyos's rule |
 |---|---|
-| Header counts | A file must hold at least two bytes for each variable, constraint, objective and defined variable the header counts, so a short file cannot make the reader allocate for a large model. |
+| Header counts | A file must hold at least two bytes for each variable, constraint, objective and defined variable the header counts, one byte in binary, so a short file cannot make the reader allocate for a large model. |
 | Several objectives | Each is read, with its sense, and its priority is its place in the file. |
 | Names | NL holds none; names in separate files are not read. |
 | A linear term with coefficient 0 | Kept as a term of the function. |
@@ -223,6 +230,34 @@ Every other operator, among them `atan2`, the comparisons, the logical operators
 | `plterm` | Slopes and breakpoints become the points of a piecewise linear function that is 0 at 0, as in AMPL, with one more point beyond the first and the last breakpoint so that the end slopes hold. Breakpoints that do not increase are refused. |
 | Kinds of variables | The variables used nonlinearly in objectives alone number the second count of the fifth header line less the first, the integer ones among them included. |
 | A binary variable | Bounds outside 0 and 1 are refused. |
+| A complementarity | A code $k$ that does not match the bounds of its variable is refused with `BIYOS_ERR_BADFILE`, and a variable paired twice with `BIYOS_ERR_UNSUPPORTED`, as the writer refuses it. The linear and nonlinear complements of the third header line must add up to the rows code `5` pairs, and to no more than the constraints, or the file is refused with `BIYOS_ERR_BADFILE`. Complements follow the constraints in the order of their rows. |
+| Special ordered sets | Sets are in the order of the absolute value of `sosno`, a positive value before its negative, and members in the order of variables. A set with no member in `ref`, each set when `ref` is absent, has the weights 1, 2, 3 in member order, as `BIYOS_addsos` gives with no weights; in any other set a member `ref` does not list has weight 0. Weights repeated in a set are refused with `BIYOS_ERR_UNSUPPORTED`, as a model cannot hold them. `ref` without `sosno`, and either suffix on constraints, objectives or the problem, is skipped with an info event. |
+
+### Writing {#sec-nl-writing}
+
+`BIYOS_FILEFMT_NL` writes the text form, with no comments, which the reader above reads back. The file is made or replaced. Numbers are written in the shortest decimal or exponential form that reads back to the same double, and an infinite bound is a bound code, never a number.
+
+A model read from NL reads back the same, every number bit for bit, when the `J` and `G` segments of its file list each variable that the expressions of their record use, it holds no constant of $-0$, which reads back as 0, and its complements follow the constraints of their group of rows. Any other model reads back with the changes the table gives, which `difference` reports, and reads back the same when written a second time. Among those changes, complements come back in the order of their rows, the function of each one's variable renumbered after every other function, and the members of each set in the order the variables are written.
+
+| Part | Written as |
+|---|---|
+| Header | `g3 1 1 0`, then the counts of Gay's header. The counts of network constraints and variables, imported functions and name lengths are 0, and the line of `arith` and `flags` is `0 0 0 1`, as in Gay's example. |
+| Order of variables | Gay's order [@gay2017]: the variables used nonlinearly in constraints and objectives, then in constraints alone, then in objectives alone, the continuous ones before the integer ones in each, then the linear continuous, binary and integer ones, each group in model order. A binary variable used nonlinearly is written as an integer one with its own bounds. |
+| Order of constraints | The constraints whose function has quadratic terms or an expression, then the others, each group in model order, and in each group the constraints before the complements. |
+| Complements | A row of the second function, with the line `5` of $k$ and the variable in `r`. The third header line then holds the six counts of the AMPL MP library [@amplmp2026]: those of nonlinear constraints and objectives, linear and nonlinear complements, complements with both bounds finite, and complements with a finite lower bound other than 0. |
+| Special ordered sets | An `S0` segment `sosno` at the end of the file gives each member the number of its set, from 1 and negative for type 2. An `S4` segment `ref` follows with every weight, 0 included. |
+| Objectives | In model order, each with its sense. Every objective up to the last nonlinear one counts as nonlinear in the header. |
+| Bounds | `r` and `b` give each constraint and variable a bound code, in the order above: `4` when the bounds are equal, `3` when both are infinite, `1` or `2` when one is, else `0`. |
+| Linear terms | A `J` or `G` segment for each record, with each linear term of its function, then a term of coefficient 0 for each variable its expression uses and no linear term holds. `k` counts the `J` entries of each variable. |
+| Expressions | A `C` or `O` segment for each record. A function with no constant and no quadratic terms whose expression is not a sum, or is one written as `plus`, `sum` or `minus`, is its expression alone. Any other is a sum of its constant, one product for each quadratic term, its coefficient a factor when it is not 1, then the expression, written out as its terms when it is a sum with no constant. The reader splits such a sum back into the same parts, and keeps the expression alone whole. |
+| Operators | A sum of two or more terms with no constant and weights of 1 is `plus` or `sum`, one of two terms with weights 1 and $-1$ `minus`, any other a `plus` or `sum` of its constant, when it is not 0, and its terms, each weight a factor when it is not 1. A product is a chain of `mult`, its coefficient a factor when it is not 1. A constant power is `pow` with a number. A product of $\log_{10} e$ and a logarithm is `log10`. Every other operator the reader reads is written as the code it reads. |
+| Piecewise linear functions | `plterm` with the slopes and the inner breakpoints of the points, plus the value at 0 when it is not 0. The reader rebuilds the points from the slopes, so points whose slopes are not exact in floating point read back moved by a rounding. |
+| Defined variables | A node used by several parents, the operand of a piecewise linear function, the constant exponent of a power, and a sum that is not `plus`, `sum` or `minus` and whose terms are variables, or variables then one term of weight 1 with no constant, each written once as a `V` segment and named again. Such a sum has its variables as the linear terms of the segment, the form in which the reader reads a defined variable back. Those used by several records come first, the others just before the segment of their record, with the third integer Gay gives. |
+| Functions | A function several records use is written once for each, and reads back as that many functions. A function no record uses is left out, with an info event from module `io`, with the field `file`, naming it. |
+
+The writer refuses with `BIYOS_ERR_UNSUPPORTED`, naming the first record in the way: a callback, a cone or an indicator; a complement whose first function is not one variable with coefficient 1, whose bounds are not those of that variable, whose variable is free, or whose variable another complement holds; an empty special ordered set, or a variable in two sets; a semi-continuous or semi-integer variable; an objective with a weight other than 1; an expression that holds `BIYOS_OP_ENT`, `BIYOS_OP_SPOW`, `BIYOS_OP_ERF`, `BIYOS_OP_ATAN2`, a comparison, `BIYOS_OP_AND`, `BIYOS_OP_OR`, `BIYOS_OP_NOT` or `BIYOS_OP_IF`.
+
+A path that cannot be opened or written gives `BIYOS_ERR_FILEIO`. Each part the format cannot hold is left out with one warning event from module `io`, with the field `file`, sent once the file is written: the tolerances of variables and constraints, the tolerances and the priority of each objective, and the model's options, as for MPS; then the binary variables written as integers, and the names. Hooks are not part of the problem and are left out with no event.
 
 ## Native {#sec-native}
 

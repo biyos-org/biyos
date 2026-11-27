@@ -1,9 +1,9 @@
 #include "io/native/utils/body.hpp"
 
 #include "core/numbers.hpp"
-#include "io/lines.hpp"
 #include "io/native/utils/record.hpp"
-#include "io/report.hpp"
+#include "io/utils/lines.hpp"
+#include "io/utils/report.hpp"
 
 #include <string>
 #include <utility>

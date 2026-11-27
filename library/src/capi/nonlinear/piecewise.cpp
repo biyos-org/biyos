@@ -3,7 +3,7 @@
 #include "capi/model/selection.hpp"
 #include "capi/utils/arrays.hpp"
 #include "capi/utils/entry.hpp"
-#include "core/error.hpp"
+#include "core/env/error.hpp"
 #include "core/numbers.hpp"
 #include "model/model.hpp"
 #include "model/utils/checks.hpp"
@@ -44,6 +44,7 @@ namespace
 {
 
 constexpr std::string_view kNoun = "pwl";
+constexpr std::string_view kWord = "pwl";
 
 struct Outputs
 {
@@ -109,7 +110,7 @@ template <typename Selection>
 void n_points(const Session &session, Selection selection, BIYOS_offset *nnz)
 {
     const Model &model = session.model();
-    const auto pwls = selected(kNoun, held(model), selection);
+    const auto pwls = selected(kNoun, kWord, held(model), selection);
     check_known(kNoun, held(model), pwls);
     const std::size_t count = count_of(model, pwls);
     *require(nnz, "nnz") = to_offset(count);
@@ -122,7 +123,7 @@ void get_pwls(const Session &session,
               const Outputs &out)
 {
     const Model &model = session.model();
-    const auto pwls = selected(kNoun, held(model), selection);
+    const auto pwls = selected(kNoun, kWord, held(model), selection);
     check_known(kNoun, held(model), pwls);
     const auto &points = model.graph().points();
     const Gathered<Real> xs =

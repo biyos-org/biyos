@@ -1,8 +1,8 @@
 #pragma once
 
 #include "core/numbers.hpp"
-#include "io/lines.hpp"
 #include "io/native/utils/record.hpp"
+#include "io/utils/lines.hpp"
 
 #include <string>
 

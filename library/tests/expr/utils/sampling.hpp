@@ -1,9 +1,9 @@
 #pragma once
 
 #include "core/numbers.hpp"
+#include "expr/analysis/intervals/interval.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
-#include "expr/intervals/interval.hpp"
 
 #include <array>
 #include <cstddef>

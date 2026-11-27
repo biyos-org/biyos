@@ -1,8 +1,8 @@
 #include "core/events/hooks.hpp"
 
-#include "core/error.hpp"
+#include "core/env/error.hpp"
+#include "core/env/thread.hpp"
 #include "core/memory/depth.hpp"
-#include "core/thread.hpp"
 
 #include <algorithm>
 #include <atomic>

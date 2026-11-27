@@ -1,13 +1,15 @@
-#include "core/env.hpp"
+#include "core/env/env.hpp"
 #include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/tolerances.hpp"
 #include "core/options/lookup.hpp"
 #include "core/options/options.hpp"
 #include "core/options/settings.hpp"
+#include "reference.hpp"
 
 #include <gtest/gtest.h>
 
+#include <array>
 #include <cmath>
 #include <limits>
 
@@ -21,6 +23,7 @@ using biyos::Options;
 using biyos::Real;
 using biyos::Settings;
 using biyos::Tolerances;
+using biyos::test::tolerances_of;
 
 constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr Real kNan = std::numeric_limits<Real>::quiet_NaN();
@@ -30,15 +33,6 @@ Tolerances defaults()
 {
     Env env;
     return Tolerances(Lookup(Options(env)));
-}
-
-Tolerances relative(Real rel)
-{
-    Env env;
-    Options options(env);
-    options.set_double(Option::FeasAbs, 0.0);
-    options.set_double(Option::FeasRel, rel);
-    return Tolerances(Lookup(options));
 }
 
 Tolerances uniform(Real value)
@@ -166,6 +160,11 @@ TEST(ToleranceTest, NanFails)
         EXPECT_FALSE(tolerances.approx_equal(0.0, kNan));
         EXPECT_FALSE(tolerances.approx_equal(kNan, kInfinity));
         EXPECT_FALSE(tolerances.approx_equal(-kInfinity, kNan));
+        EXPECT_FALSE(tolerances.at_most(kNan, kNan));
+        EXPECT_FALSE(tolerances.at_most(kNan, 0.0));
+        EXPECT_FALSE(tolerances.at_most(0.0, kNan));
+        EXPECT_FALSE(tolerances.at_most(kNan, kInfinity));
+        EXPECT_FALSE(tolerances.at_most(-kInfinity, kNan));
         for (const Real bound : {-kInfinity, 0.0, kInfinity})
         {
             EXPECT_FALSE(tolerances.satisfies_lower(kNan, bound));
@@ -175,6 +174,78 @@ TEST(ToleranceTest, NanFails)
         EXPECT_FALSE(tolerances.satisfies_upper(0.0, kNan));
         EXPECT_FALSE(tolerances.is_integral(kNan));
     }
+}
+
+TEST(ToleranceTest, AtMost)
+{
+    const Tolerances tolerances = defaults();
+    EXPECT_TRUE(tolerances.at_most(1.0, 2.0));
+    EXPECT_FALSE(tolerances.at_most(2.0, 1.0));
+    EXPECT_TRUE(tolerances.at_most(-1.0, -1.0));
+    EXPECT_TRUE(tolerances.at_most(5e-7, 0.0));
+    EXPECT_TRUE(tolerances.at_most(1e-6, 0.0));
+    EXPECT_FALSE(tolerances.at_most(std::nextafter(1e-6, 1.0), 0.0));
+    EXPECT_TRUE(tolerances.at_most(0.0, -1e-6));
+    EXPECT_FALSE(tolerances.at_most(0.0, -2e-6));
+    EXPECT_TRUE(tolerances.at_most(1e9 + 500.0, 1e9));
+    EXPECT_FALSE(tolerances.at_most(1e9 + 2000.0, 1e9));
+    EXPECT_TRUE(tolerances.at_most(-1e9, -1e9 - 500.0));
+    EXPECT_FALSE(tolerances.at_most(-1e9, -1e9 - 2000.0));
+
+    for (const Real x : {-kInfinity, -kLargest, 0.0, kLargest, kInfinity})
+    {
+        EXPECT_TRUE(tolerances.at_most(-kInfinity, x));
+        EXPECT_TRUE(tolerances.at_most(x, kInfinity));
+    }
+    EXPECT_FALSE(tolerances.at_most(kInfinity, kLargest));
+    EXPECT_FALSE(tolerances.at_most(-kLargest, -kInfinity));
+    EXPECT_FALSE(uniform(kInfinity).at_most(kInfinity, 0.0));
+
+    const Tolerances exact = uniform(0.0);
+    EXPECT_TRUE(exact.at_most(1.0, 1.0));
+    EXPECT_FALSE(exact.at_most(std::nextafter(1.0, 2.0), 1.0));
+}
+
+TEST(ToleranceTest, Looser)
+{
+    const std::array grid{
+        -1e9,
+        -2.0,
+        -1.8,
+        -1.0,
+        -0.5,
+        -1e-6,
+        0.0,
+        1e-6,
+        0.5,
+        1.0,
+        1.4,
+        1.8,
+        2.0,
+        1e9,
+    };
+    for (const Tolerances &tolerances : {defaults(), uniform(0.1), tolerances_of(0.0, 0.5)})
+    {
+        for (const Real x : grid)
+        {
+            for (const Real bound : grid)
+            {
+                if (tolerances.satisfies_upper(x, bound))
+                {
+                    EXPECT_TRUE(tolerances.at_most(x, bound)) << x << " below " << bound;
+                }
+                if (tolerances.satisfies_lower(x, bound))
+                {
+                    EXPECT_TRUE(tolerances.at_most(bound, x)) << x << " above " << bound;
+                }
+            }
+        }
+    }
+    const Tolerances coarse = tolerances_of(0.0, 0.5);
+    EXPECT_FALSE(coarse.satisfies_upper(1.8, 1.0));
+    EXPECT_TRUE(coarse.at_most(1.8, 1.0));
+    EXPECT_FALSE(coarse.satisfies_lower(-1.8, -1.0));
+    EXPECT_TRUE(coarse.at_most(-1.0, -1.8));
 }
 
 TEST(ToleranceTest, ReadsOptions)
@@ -206,7 +277,7 @@ TEST(ToleranceTest, ReadsOptions)
 
 TEST(ToleranceTest, Scale)
 {
-    const Tolerances fine = relative(1e-3);
+    const Tolerances fine = tolerances_of(0.0, 1e-3);
     EXPECT_TRUE(fine.approx_equal(0.0, 5e-4));
     EXPECT_TRUE(fine.approx_equal(5e-4, 0.0));
     EXPECT_FALSE(fine.approx_equal(0.0, 2e-3));
@@ -215,7 +286,7 @@ TEST(ToleranceTest, Scale)
     EXPECT_TRUE(fine.satisfies_upper(5e-4, 0.0));
     EXPECT_FALSE(fine.satisfies_upper(2e-3, 0.0));
 
-    const Tolerances coarse = relative(0.5);
+    const Tolerances coarse = tolerances_of(0.0, 0.5);
     EXPECT_TRUE(coarse.approx_equal(1.0, 1.9));
     EXPECT_TRUE(coarse.approx_equal(1.9, 1.0));
     EXPECT_FALSE(coarse.approx_equal(1.0, 2.1));
@@ -227,13 +298,13 @@ TEST(ToleranceTest, Scale)
 
 TEST(ToleranceTest, Overflow)
 {
-    const Tolerances wide = relative(1.5);
+    const Tolerances wide = tolerances_of(0.0, 1.5);
     EXPECT_FALSE(wide.approx_equal(kLargest, -kLargest));
     EXPECT_FALSE(wide.satisfies_lower(-kLargest, kLargest));
     EXPECT_FALSE(wide.satisfies_upper(kLargest, -kLargest));
     EXPECT_TRUE(wide.approx_equal(kLargest, kLargest / 4));
 
-    const Tolerances wider = relative(2.5);
+    const Tolerances wider = tolerances_of(0.0, 2.5);
     EXPECT_TRUE(wider.approx_equal(kLargest, -kLargest));
     EXPECT_TRUE(wider.satisfies_lower(-kLargest, kLargest));
     EXPECT_TRUE(wider.satisfies_upper(kLargest, -kLargest));

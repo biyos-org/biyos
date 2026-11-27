@@ -1,9 +1,9 @@
 #pragma once
 
 #include "core/numbers.hpp"
-#include "expr/curvature/shape.hpp"
+#include "expr/analysis/curvature/shape.hpp"
+#include "expr/analysis/intervals/interval.hpp"
 #include "expr/graph/graph.hpp"
-#include "expr/intervals/interval.hpp"
 #include "sampling.hpp"
 
 #include <ostream>

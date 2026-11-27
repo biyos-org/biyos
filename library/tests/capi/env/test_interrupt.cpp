@@ -1,10 +1,10 @@
 #include "biyos/biyos.h"
 #include "capi/utils/entry.hpp"
-#include "core/env.hpp"
+#include "core/env/env.hpp"
+#include "core/env/status.hpp"
 #include "core/events/events.hpp"
 #include "core/events/stream.hpp"
 #include "core/options/lookup.hpp"
-#include "core/status.hpp"
 #include "core/timing/deadline.hpp"
 #include "handles.hpp"
 

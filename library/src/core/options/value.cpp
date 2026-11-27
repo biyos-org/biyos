@@ -1,11 +1,11 @@
 #include "core/options/value.hpp"
 
-#include "core/error.hpp"
+#include "core/env/error.hpp"
+#include "core/env/version.hpp"
 #include "core/numbers.hpp"
 #include "core/options/table.hpp"
 #include "core/options/text.hpp"
 #include "core/text/text.hpp"
-#include "core/version.hpp"
 
 #include <algorithm>
 #include <cstddef>
