@@ -52,21 +52,19 @@ Item = TypeVar("Item", bound=View, covariant=True)
 Items = TypeVar("Items", bound="Block[View]")
 Self = TypeVar("Self", bound="Block[View]")
 One: TypeAlias = Index | Item
+Indices: TypeAlias = "range | memoryview[int]"
 Many: TypeAlias = Sequence[One[Item]] | Items
 Selection: TypeAlias = One[Item] | Many[Item, Items]
 
 
 class Block(Generic[Item]):
-    __slots__ = ("_gen", "_model", "_start", "_stop")
+    __slots__ = ("_gen", "_idx", "_model")
     _element: type[Item]
     _held: Callable[["Model"], Index]
 
-    def __init__(
-        self, mdl: "Model", start: Index, stop: Index, gen: int
-    ) -> None:
+    def __init__(self, mdl: "Model", idx: Indices, gen: int) -> None:
         self._model = mdl
-        self._start = start
-        self._stop = stop
+        self._idx = idx
         self._gen = gen
 
     def __len__(self) -> Index:
@@ -83,7 +81,7 @@ class Block(Generic[Item]):
             When the model has had a deletion since the block was made.
         """
         self._check()
-        return self._stop - self._start
+        return len(self._idx)
 
     def __contains__(self, item: object) -> bool:
         """Return whether a view names one of the block's items.
@@ -112,7 +110,7 @@ class Block(Generic[Item]):
         ):
             return False
         _current(item._model, item._gen, item._noun)
-        return self._start <= item._idx < self._stop
+        return item._idx in self._idx
 
     def __iter__(self) -> Iterator[Item]:
         """Iterate over the items of the block, each as a view.
@@ -128,7 +126,7 @@ class Block(Generic[Item]):
             When the model has had a deletion since the block was made.
         """
         self._check()
-        return map(self._view, self._range())
+        return map(self._view, self._idx)
 
     @overload
     def __getitem__(self, key: SupportsIndex) -> Item: ...
@@ -165,13 +163,13 @@ class Block(Generic[Item]):
         self._check()
         if isinstance(key, slice):
             return self._slice(key)
-        return self._view(self._start + self._position(key))
+        return self._view(self._idx[self._position(key)])
 
     def on(self: Self, mdl: "Model") -> Self:
         """Return the block's items in another model.
 
-        The block keeps its first index and count, so it names the items
-        under the same indices in ``mdl``, such as those of a copy.
+        The block keeps its indices, so it names the items under the same
+        indices in ``mdl``, such as those of a copy.
 
         Parameters
         ----------
@@ -195,36 +193,57 @@ class Block(Generic[Item]):
         self._check()
         mdl = self._model._peer("mdl", mdl)
         held = self._held(mdl)
-        if held < self._stop:
+        needs = self._needs()
+        if held < needs:
             noun = self._element._noun
-            needs = f"{held}, the block needs {self._stop}"
-            raise ValueError(f"mdl holds too few {noun}s: {needs}")
-        return type(self)(mdl, self._start, self._stop, mdl._gen)
+            found = f"{held}, the block needs {needs}"
+            raise ValueError(f"mdl holds too few {noun}s: {found}")
+        return type(self)(mdl, self._idx, mdl._gen)
+
+    def indices(self) -> list[Index]:
+        """Return the indices of the block's items.
+
+        Returns
+        -------
+        indices
+            A new list of the indices, in order. Changing it leaves the
+            block as it was.
+
+        Raises
+        ------
+        ValueError
+            When the model has had a deletion since the block was made.
+        """
+        self._check()
+        if isinstance(self._idx, range):
+            return list(self._idx)
+        return self._idx.tolist()
 
     def _check(self) -> None:
         _current(self._model, self._gen, "block")
 
-    def _range(self) -> range:
-        return range(self._start, self._stop)
+    def _needs(self) -> Index:
+        if isinstance(self._idx, range):
+            return self._idx.stop
+        return max(self._idx, default=-1) + 1
 
     def _view(self, idx: Index) -> Item:
         return self._element(self._model, idx, self._gen)
 
     def _position(self, key: SupportsIndex) -> Index:
         number = whole("index", key)
-        n = self._stop - self._start
+        n = len(self._idx)
         position = number + n if number < 0 else number
         if not 0 <= position < n:
             raise IndexError(f"index {number} is outside a block of {n}")
         return position
 
     def _slice(self: Self, key: slice) -> Self:
-        start, stop, step = key.indices(self._stop - self._start)
+        start, stop, step = key.indices(len(self._idx))
         if step != 1:
             raise ValueError(f"slice step must be 1, not {step}")
-        first = self._start + start
-        last = self._start + max(stop, start)
-        return type(self)(self._model, first, last, self._gen)
+        idx = self._idx[start : max(stop, start)]
+        return type(self)(self._model, idx, self._gen)
 
 
 class Variable(View, Operand):
@@ -268,15 +287,16 @@ class Variable(View, Operand):
 
 
 class Variables(Block[Variable]):
-    """Consecutive variables of a model, as ``Model.addvar`` returns.
+    """Variables of a model, as ``Model.addvar`` returns.
 
-    A block holds its model, its first index and its count, so it costs the
-    same at any size. ``len`` gives the count, and iterating gives each
-    variable in order as a ``Variable``, so a block passes wherever its model
-    takes indices of variables. Any other model refuses it as indices, and
-    ``on`` gives the block of the same indices in another model, such as a
-    copy. A block made before a deletion from its model raises ``ValueError``
-    when used, as its indices may name other variables.
+    A block holds its model and its indices: a range, as an adder gives, which
+    costs the same at any size, or a list of indices. ``len`` gives the count,
+    and iterating gives each variable in order as a ``Variable``, so a block
+    passes wherever its model takes indices of variables. Any other model
+    refuses it as indices, and ``on`` gives the block of the same indices in
+    another model, such as a copy. ``indices`` gives the indices as a new list.
+    A block made before a deletion from its model raises ``ValueError`` when
+    used, as its indices may name other variables.
     """
 
     __slots__ = ()
@@ -300,15 +320,16 @@ class Function(View):
 
 
 class Functions(Block[Function]):
-    """Consecutive functions of a model, as ``Model.addfun`` returns.
+    """Functions of a model, as ``Model.addfun`` returns.
 
-    A block holds its model, its first index and its count, so it costs the
-    same at any size. ``len`` gives the count, and iterating gives each
-    function in order as a ``Function``, so a block passes wherever its model
-    takes indices of functions. Any other model refuses it as indices, and
-    ``on`` gives the block of the same indices in another model, such as a
-    copy. A block made before a deletion from its model raises ``ValueError``
-    when used, as its indices may name other functions.
+    A block holds its model and its indices: a range, as an adder gives, which
+    costs the same at any size, or a list of indices. ``len`` gives the count,
+    and iterating gives each function in order as a ``Function``, so a block
+    passes wherever its model takes indices of functions. Any other model
+    refuses it as indices, and ``on`` gives the block of the same indices in
+    another model, such as a copy. ``indices`` gives the indices as a new list.
+    A block made before a deletion from its model raises ``ValueError`` when
+    used, as its indices may name other functions.
     """
 
     __slots__ = ()
@@ -332,15 +353,16 @@ class Constraint(View):
 
 
 class Constraints(Block[Constraint]):
-    """Consecutive constraints, as ``Model.addcon`` returns.
+    """Constraints of a model, as ``Model.addcon`` returns.
 
-    A block holds its model, its first index and its count, so it costs the
-    same at any size. ``len`` gives the count, and iterating gives each
-    constraint in order as a ``Constraint``, so a block passes wherever its
-    model takes indices of constraints. Any other model refuses it as
-    indices, and ``on`` gives the block of the same indices in another model,
-    such as a copy. A block made before a deletion from its model raises
-    ``ValueError`` when used, as its indices may name other constraints.
+    A block holds its model and its indices: a range, as an adder gives, which
+    costs the same at any size, or a list of indices. ``len`` gives the count,
+    and iterating gives each constraint in order as a ``Constraint``, so a
+    block passes wherever its model takes indices of constraints. Any other
+    model refuses it as indices, and ``on`` gives the block of the same indices
+    in another model, such as a copy. ``indices`` gives the indices as a new
+    list. A block made before a deletion from its model raises ``ValueError``
+    when used, as its indices may name other constraints.
     """
 
     __slots__ = ()
@@ -364,15 +386,16 @@ class Objective(View):
 
 
 class Objectives(Block[Objective]):
-    """Consecutive objectives, as ``Model.addobj`` returns.
+    """Objectives of a model, as ``Model.addobj`` returns.
 
-    A block holds its model, its first index and its count, so it costs the
-    same at any size. ``len`` gives the count, and iterating gives each
-    objective in order as an ``Objective``, so a block passes wherever its
-    model takes indices of objectives. Any other model refuses it as indices,
-    and ``on`` gives the block of the same indices in another model, such as
-    a copy. A block made before a deletion from its model raises
-    ``ValueError`` when used, as its indices may name other objectives.
+    A block holds its model and its indices: a range, as an adder gives, which
+    costs the same at any size, or a list of indices. ``len`` gives the count,
+    and iterating gives each objective in order as an ``Objective``, so a block
+    passes wherever its model takes indices of objectives. Any other model
+    refuses it as indices, and ``on`` gives the block of the same indices in
+    another model, such as a copy. ``indices`` gives the indices as a new list.
+    A block made before a deletion from its model raises ``ValueError`` when
+    used, as its indices may name other objectives.
     """
 
     __slots__ = ()
@@ -396,15 +419,16 @@ class Indicator(View):
 
 
 class Indicators(Block[Indicator]):
-    """Consecutive indicators, as ``Model.addind`` returns.
+    """Indicators of a model, as ``Model.addind`` returns.
 
-    A block holds its model, its first index and its count, so it costs the
-    same at any size. ``len`` gives the count, and iterating gives each
-    indicator in order as an ``Indicator``, so a block passes wherever its
-    model takes indices of indicators. Any other model refuses it as indices,
-    and ``on`` gives the block of the same indices in another model, such as
-    a copy. A block made before a deletion from its model raises
-    ``ValueError`` when used, as its indices may name other indicators.
+    A block holds its model and its indices: a range, as an adder gives, which
+    costs the same at any size, or a list of indices. ``len`` gives the count,
+    and iterating gives each indicator in order as an ``Indicator``, so a block
+    passes wherever its model takes indices of indicators. Any other model
+    refuses it as indices, and ``on`` gives the block of the same indices in
+    another model, such as a copy. ``indices`` gives the indices as a new list.
+    A block made before a deletion from its model raises ``ValueError`` when
+    used, as its indices may name other indicators.
     """
 
     __slots__ = ()
@@ -429,15 +453,16 @@ class SpecialOrderedSet(View):
 
 
 class SpecialOrderedSets(Block[SpecialOrderedSet]):
-    """Consecutive special ordered sets, as ``Model.addsos`` returns.
+    """Special ordered sets of a model, as ``Model.addsos`` returns.
 
-    A block holds its model, its first index and its count, so it costs the
-    same at any size. ``len`` gives the count, and iterating gives each set
-    in order as a ``SpecialOrderedSet``, so a block passes wherever its
-    model takes indices of sets. Any other model refuses it as indices, and
-    ``on`` gives the block of the same indices in another model, such as a
-    copy. A block made before a deletion from its model raises
-    ``ValueError`` when used, as its indices may name other sets.
+    A block holds its model and its indices: a range, as an adder gives, which
+    costs the same at any size, or a list of indices. ``len`` gives the count,
+    and iterating gives each set in order as a ``SpecialOrderedSet``, so a
+    block passes wherever its model takes indices of sets. Any other model
+    refuses it as indices, and ``on`` gives the block of the same indices in
+    another model, such as a copy. ``indices`` gives the indices as a new list.
+    A block made before a deletion from its model raises ``ValueError`` when
+    used, as its indices may name other sets.
     """
 
     __slots__ = ()
@@ -462,15 +487,16 @@ class PiecewiseLinear(View):
 
 
 class PiecewiseLinears(Block[PiecewiseLinear]):
-    """Consecutive piecewise linear functions, as ``Model.addpwl`` returns.
+    """Piecewise linear functions of a model, as ``Model.addpwl`` returns.
 
-    A block holds its model, its first index and its count, so it costs the
-    same at any size. ``len`` gives the count, and iterating gives each pwl
-    in order as a ``PiecewiseLinear``, so a block passes wherever its model
-    takes indices of pwls. Any other model refuses it as indices, and ``on``
-    gives the block of the same indices in another model, such as a copy. A
-    block made before a deletion from its model raises ``ValueError`` when
-    used, as do the blocks of every family.
+    A block holds its model and its indices: a range, as an adder gives, which
+    costs the same at any size, or a list of indices. ``len`` gives the count,
+    and iterating gives each pwl in order as a ``PiecewiseLinear``, so a block
+    passes wherever its model takes indices of pwls. Any other model refuses it
+    as indices, and ``on`` gives the block of the same indices in another
+    model, such as a copy. ``indices`` gives the indices as a new list. A block
+    made before a deletion from its model raises ``ValueError`` when used, as
+    do the blocks of every family.
     """
 
     __slots__ = ()
@@ -494,15 +520,16 @@ class Cone(View):
 
 
 class Cones(Block[Cone]):
-    """Consecutive cones, as ``Model.addcone`` returns.
+    """Cones of a model, as ``Model.addcone`` returns.
 
-    A block holds its model, its first index and its count, so it costs the
-    same at any size. ``len`` gives the count, and iterating gives each cone
-    in order as a ``Cone``, so a block passes wherever its model takes
-    indices of cones. Any other model refuses it as indices, and ``on`` gives
-    the block of the same indices in another model, such as a copy. A block
-    made before a deletion from its model raises ``ValueError`` when used, as
-    its indices may name other cones.
+    A block holds its model and its indices: a range, as an adder gives, which
+    costs the same at any size, or a list of indices. ``len`` gives the count,
+    and iterating gives each cone in order as a ``Cone``, so a block passes
+    wherever its model takes indices of cones. Any other model refuses it as
+    indices, and ``on`` gives the block of the same indices in another model,
+    such as a copy. ``indices`` gives the indices as a new list. A block made
+    before a deletion from its model raises ``ValueError`` when used, as its
+    indices may name other cones.
     """
 
     __slots__ = ()
@@ -526,15 +553,16 @@ class Complement(View):
 
 
 class Complements(Block[Complement]):
-    """Consecutive complements, as ``Model.addccon`` returns.
+    """Complements of a model, as ``Model.addccon`` returns.
 
-    A block holds its model, its first index and its count, so it costs the
-    same at any size. ``len`` gives the count, and iterating gives each
-    complement in order as a ``Complement``, so a block passes wherever its
-    model takes indices of complements. Any other model refuses it as
-    indices, and ``on`` gives the block of the same indices in another model,
-    such as a copy. A block made before a deletion from its model raises
-    ``ValueError`` when used, as its indices may name other complements.
+    A block holds its model and its indices: a range, as an adder gives, which
+    costs the same at any size, or a list of indices. ``len`` gives the count,
+    and iterating gives each complement in order as a ``Complement``, so a
+    block passes wherever its model takes indices of complements. Any other
+    model refuses it as indices, and ``on`` gives the block of the same indices
+    in another model, such as a copy. ``indices`` gives the indices as a new
+    list. A block made before a deletion from its model raises ``ValueError``
+    when used, as its indices may name other complements.
     """
 
     __slots__ = ()
@@ -568,9 +596,9 @@ def index_of(
     return integer(name, value)
 
 
-def range_of(
+def idx_of(
     model: "Model", family: type[Block[View]], name: str, block: Block[View]
-) -> range:
+) -> Indices:
     if not isinstance(block, family):
         found = block._element._noun
         noun = family._element._noun
@@ -578,4 +606,4 @@ def range_of(
     if block._model is not model:
         raise ValueError(f"{name} is a block of another model")
     block._check()
-    return block._range()
+    return block._idx

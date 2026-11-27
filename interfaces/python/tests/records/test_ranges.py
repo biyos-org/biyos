@@ -1,3 +1,4 @@
+from ctypes import addressof, sizeof
 from functools import partial
 
 import pytest
@@ -10,6 +11,8 @@ from biyos import (
     VariableKind,
 )
 from biyos._capi import lib
+from biyos._convert.numbers import c_index
+from listed import listed
 from refusal import refusal
 
 PAIRS = [
@@ -54,6 +57,27 @@ FORMS = {
     "range": "rg",
     "list": "sp",
     "stepped": "sp",
+    "view": "sp",
+    "slice": "sp",
+}
+
+RECORDS = {
+    "stepped": [1, 3],
+    "view": [3, 1],
+    "slice": [2, 1],
+}
+
+OFFSETS = {
+    "view": 0,
+    "slice": 1,
+}
+
+FAMILIES = ["var", "fun", "con", "obj", "ind", "sos", "cone", "ccon"]
+
+BUFFERED = {
+    "setvarbnd": ([0.0, 0.0], [1.0, 1.0]),
+    "getvarbnd": (),
+    "delvarname": (),
 }
 
 
@@ -95,7 +119,16 @@ def trace(monkeypatch, seen, call):
         monkeypatch.setattr(lib, name, spy)
 
 
+def kept(passed, function, *arguments):
+    passed.append(arguments[2])
+    return function(*arguments)
+
+
 def selection(block, kind):
+    if kind == "view":
+        return listed(block._model, type(block), [3, 1])
+    if kind == "slice":
+        return listed(block._model, type(block), [0, 2, 1, 3])[1:3]
     if kind == "block":
         return block[1:3]
     if kind == "range":
@@ -111,7 +144,7 @@ def read(model, call, idx):
 
 
 def records(kind):
-    return [1, 3] if kind == "stepped" else [1, 2]
+    return RECORDS.get(kind, [1, 2])
 
 
 @pytest.mark.parametrize("family, call, values", PAIRS)
@@ -128,9 +161,7 @@ def test_forms(blocks, monkeypatch, family, call, values, kind):
     assert read(model, call, records(kind)) == values
 
 
-@pytest.mark.parametrize(
-    "family", ["var", "fun", "con", "obj", "ind", "sos", "cone", "ccon"]
-)
+@pytest.mark.parametrize("family", FAMILIES)
 @pytest.mark.parametrize("kind", FORMS)
 def test_delete(blocks, monkeypatch, family, kind):
     model, found = blocks
@@ -190,3 +221,33 @@ def test_start(blocks):
     model, _ = blocks
     with pytest.raises(OverflowError, match="the start of idx: 1099511627776"):
         model.getvarknd(range(2**40, 2**40 + 1))
+
+
+@pytest.mark.parametrize(
+    "family", ["var", "con", "obj", "ind", "sos", "cone", "ccon"]
+)
+@pytest.mark.parametrize("kind", OFFSETS)
+def test_records(blocks, monkeypatch, family, kind):
+    model, found = blocks
+    copy = model.copy()
+    seen = []
+    trace(monkeypatch, seen, f"del{family}")
+    deleted = getattr(model, f"del{family}")(selection(found[family], kind))
+    assert deleted == getattr(copy, f"del{family}")(records(kind))
+    assert seen == ["sp"] * 2
+    copy.close()
+
+
+@pytest.mark.parametrize("call", BUFFERED)
+@pytest.mark.parametrize("kind", OFFSETS)
+def test_buffer(blocks, monkeypatch, call, kind):
+    model, found = blocks
+    idx = selection(found["var"], kind)
+    passed = []
+    name = f"BIYOS_{call}sp"
+    spy = partial(kept, passed, getattr(lib, name))
+    monkeypatch.setattr(lib, name, spy)
+    getattr(model, call)(idx, *BUFFERED[call])
+    start, _ = idx._idx.obj.buffer_info()
+    assert len(passed) == 1
+    assert addressof(passed[0]) == start + OFFSETS[kind] * sizeof(c_index)
