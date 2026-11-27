@@ -66,6 +66,7 @@ constexpr std::array kOps{
     Op{.code = BIYOS_OP_LOG, .children = 1, .values = 0},
     Op{.code = BIYOS_OP_CPOW, .children = 1, .values = 1},
     Op{.code = BIYOS_OP_DIV, .children = 2, .values = 0},
+    Op{.code = BIYOS_OP_ATAN2, .children = 2, .values = 0},
     Op{.code = BIYOS_OP_PROD, .children = 2, .values = 1},
     Op{.code = BIYOS_OP_SUM, .children = 2, .values = 3},
 };
