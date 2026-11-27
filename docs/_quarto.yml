@@ -188,9 +188,13 @@ quartodoc:
         - name: Expression
           include_inherited: true
           members: [__add__, __sub__, __mul__, __truediv__, __pow__, __neg__, __abs__, __le__, __ge__, __eq__, __lt__, __gt__, __ne__]
-        - Comparison
+        - name: Comparison
+          include_inherited: true
+          members: [lhs, rhs, sense, __and__, __or__, __invert__]
         - ComparisonSense
-        - Condition
+        - name: Condition
+          include_inherited: true
+          members: [operator, operands, __and__, __or__, __invert__]
         - exp
         - log
         - sqrt
