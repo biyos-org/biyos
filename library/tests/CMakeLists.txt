@@ -123,28 +123,28 @@ biyos_add_test(test_model
     model/evaluation/test_mixed.cpp
     model/evaluation/test_numbering.cpp
     model/evaluation/test_threads.cpp
-    model/functions/test_callbacks.cpp
-    model/functions/test_encoding.cpp
-    model/functions/test_expressions.cpp
-    model/functions/test_functions.cpp
-    model/functions/test_piecewise.cpp
-    model/functions/test_quadratic.cpp
-    model/functions/test_transpose.cpp
-    model/records/test_complements.cpp
-    model/records/test_cones.cpp
-    model/records/test_constraints.cpp
-    model/records/test_indicators.cpp
-    model/records/test_objectives.cpp
-    model/records/test_special_ordered_sets.cpp
-    model/records/test_variables.cpp
+    model/parts/functions/test_callbacks.cpp
+    model/parts/functions/test_encoding.cpp
+    model/parts/functions/test_expressions.cpp
+    model/parts/functions/test_functions.cpp
+    model/parts/functions/test_piecewise.cpp
+    model/parts/functions/test_quadratic.cpp
+    model/parts/functions/test_transpose.cpp
+    model/parts/records/test_complements.cpp
+    model/parts/records/test_cones.cpp
+    model/parts/records/test_constraints.cpp
+    model/parts/records/test_indicators.cpp
+    model/parts/records/test_objectives.cpp
+    model/parts/records/test_special_ordered_sets.cpp
+    model/parts/records/test_variables.cpp
+    model/parts/test_tolerances.cpp
     model/session/test_routes.cpp
     model/session/test_session.cpp
     model/session/test_stream.cpp
     model/session/test_timer.cpp
     model/session/test_warnings.cpp
-    model/test_gather.cpp
-    model/test_tolerances.cpp)
-target_include_directories(test_model PRIVATE core/utils model)
+    model/test_gather.cpp)
+target_include_directories(test_model PRIVATE core/utils model/utils)
 target_link_libraries(test_model PRIVATE biyos_internal)
 
 biyos_add_test(test_io
@@ -164,7 +164,7 @@ biyos_add_test(test_io
     io/nl/test_nl.cpp
     io/nl/test_refusals.cpp
     io/test_lines.cpp)
-target_include_directories(test_io PRIVATE io/mps/utils io/native/utils io/nl/utils model)
+target_include_directories(test_io PRIVATE io/mps/utils io/native/utils io/nl/utils model/utils)
 target_link_libraries(test_io PRIVATE biyos_internal)
 
 biyos_add_test(test_capi
