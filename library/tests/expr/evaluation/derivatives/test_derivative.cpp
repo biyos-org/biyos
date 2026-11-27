@@ -701,6 +701,18 @@ TEST(DerivativeTest, ZeroAdjoint)
     expect_entries(jacobian_of(tape, std::vector{0.0, 2.0}), steep);
 }
 
+TEST(DerivativeTest, ZeroBound)
+{
+    Graph graph;
+    const Offset x = graph.add_variable(0);
+    const Offset y = graph.add_variable(1);
+    const Offset root = unary(graph, Operator::Sqrt, binary(graph, Operator::LessEqual, x, y));
+    const std::vector<Offset> roots{unary(graph, Operator::Cosh, root)};
+    const Tape tape(graph, roots);
+    const std::vector<Real> point{2.0, 1.0};
+    expect_rule(graph, roots, point, dense(tape, jacobian_of(tape, point), point.size()));
+}
+
 TEST(DerivativeTest, NanValues)
 {
     Graph graph;
