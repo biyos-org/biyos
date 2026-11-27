@@ -34,12 +34,12 @@ using biyos::widen_down;
 using biyos::widen_up;
 using biyos::test::exact;
 using biyos::test::holds;
+using biyos::test::kHalfPiUp;
+using biyos::test::kPiUp;
 using biyos::test::within;
 
 constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
 constexpr Real kLargest = (std::numeric_limits<Real>::max)();
-constexpr Real kHalfPiUp = 0x1.921fb54442d19p+0;
-constexpr Real kPiUp = 0x1.921fb54442d19p+1;
 constexpr Real kInverseE = 0x1.78b56362cef38p-2;
 constexpr int kWide = 2 * kLibmSteps;
 constexpr Interval kAll = Interval::entire();
