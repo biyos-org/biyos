@@ -73,16 +73,31 @@ set_tests_properties(NameTest.LocalBuffer PROPERTIES
     PASS_REGULAR_EXPRESSION "constant expression")
 
 biyos_add_test(test_expr
-    expr/curvature/draws.cpp
-    expr/curvature/test_bends.cpp
-    expr/curvature/test_curvature.cpp
-    expr/curvature/test_segments.cpp
-    expr/curvature/test_waves.cpp
-    expr/derivatives/test_angle.cpp
-    expr/derivatives/test_derivative.cpp
-    expr/derivatives/test_lanes.cpp
-    expr/derivatives/test_memo.cpp
-    expr/derivatives/test_partials.cpp
+    expr/analysis/curvature/draws.cpp
+    expr/analysis/curvature/test_bends.cpp
+    expr/analysis/curvature/test_curvature.cpp
+    expr/analysis/curvature/test_segments.cpp
+    expr/analysis/curvature/test_waves.cpp
+    expr/analysis/intervals/test_enclosure.cpp
+    expr/analysis/intervals/test_interval.cpp
+    expr/analysis/intervals/test_piecewise.cpp
+    expr/evaluation/derivatives/test_angle.cpp
+    expr/evaluation/derivatives/test_derivative.cpp
+    expr/evaluation/derivatives/test_lanes.cpp
+    expr/evaluation/derivatives/test_memo.cpp
+    expr/evaluation/derivatives/test_partials.cpp
+    expr/evaluation/hessian/test_elements.cpp
+    expr/evaluation/hessian/test_hessian.cpp
+    expr/evaluation/hessian/test_tangents.cpp
+    expr/evaluation/threads/test_levels.cpp
+    expr/evaluation/threads/test_threads.cpp
+    expr/evaluation/values/test_arithmetic.cpp
+    expr/evaluation/values/test_elementary.cpp
+    expr/evaluation/values/test_exponents.cpp
+    expr/evaluation/values/test_periodic.cpp
+    expr/evaluation/values/test_piecewise.cpp
+    expr/evaluation/values/test_powers.cpp
+    expr/evaluation/values/test_value.cpp
     expr/forms/test_canonical.cpp
     expr/forms/test_terms.cpp
     expr/graph/test_builder.cpp
@@ -93,24 +108,9 @@ biyos_add_test(test_expr
     expr/graph/test_sharing.cpp
     expr/graph/test_tape.cpp
     expr/graph/test_uses.cpp
-    expr/hessian/test_elements.cpp
-    expr/hessian/test_hessian.cpp
-    expr/hessian/test_tangents.cpp
-    expr/intervals/test_enclosure.cpp
-    expr/intervals/test_interval.cpp
-    expr/intervals/test_piecewise.cpp
-    expr/threads/test_levels.cpp
-    expr/threads/test_threads.cpp
     expr/utils/chords.cpp
     expr/utils/reference.cpp
-    expr/utils/sampling.cpp
-    expr/values/test_arithmetic.cpp
-    expr/values/test_elementary.cpp
-    expr/values/test_exponents.cpp
-    expr/values/test_periodic.cpp
-    expr/values/test_piecewise.cpp
-    expr/values/test_powers.cpp
-    expr/values/test_value.cpp)
+    expr/utils/sampling.cpp)
 target_include_directories(test_expr PRIVATE expr/utils)
 target_link_libraries(test_expr PRIVATE biyos_internal)
 
