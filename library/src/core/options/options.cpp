@@ -1,12 +1,12 @@
 #include "core/options/options.hpp"
 
-#include "core/error.hpp"
+#include "core/env/error.hpp"
+#include "core/env/version.hpp"
 #include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/options/checks.hpp"
 #include "core/options/table.hpp"
 #include "core/options/value.hpp"
-#include "core/version.hpp"
 
 #include <cstddef>
 #include <span>

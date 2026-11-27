@@ -1,6 +1,6 @@
 #include "io/report.hpp"
 
-#include "core/error.hpp"
+#include "core/env/error.hpp"
 #include "core/events/event.hpp"
 #include "core/events/stream.hpp"
 #include "core/text/text.hpp"

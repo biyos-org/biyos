@@ -1,7 +1,7 @@
 #include "expr/threads/sweeps.hpp"
 
+#include "core/env/pool.hpp"
 #include "core/numbers.hpp"
-#include "core/pool/pool.hpp"
 #include "expr/derivatives/derivative.hpp"
 #include "expr/derivatives/reverse.hpp"
 #include "expr/derivatives/value.hpp"

@@ -1,11 +1,11 @@
 #include "expr/hessian/hessian.hpp"
 
-#include "core/error.hpp"
+#include "core/env/error.hpp"
+#include "core/env/pool.hpp"
 #include "core/memory/resize.hpp"
 #include "core/memory/slice.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/zero.hpp"
-#include "core/pool/pool.hpp"
 #include "core/text/text.hpp"
 #include "expr/derivatives/value.hpp"
 #include "expr/graph/graph.hpp"

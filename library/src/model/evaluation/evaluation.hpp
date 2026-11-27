@@ -1,11 +1,11 @@
 #pragma once
 
 #include "biyos/biyos.h"
-#include "core/check.hpp"
+#include "core/env/check.hpp"
+#include "core/env/pool.hpp"
 #include "core/events/stream.hpp"
 #include "core/numbers.hpp"
 #include "core/options/lookup.hpp"
-#include "core/pool/pool.hpp"
 #include "core/timing/timer.hpp"
 #include "expr/hessian/elements.hpp"
 #include "expr/hessian/hessian.hpp"

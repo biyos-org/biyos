@@ -2,8 +2,8 @@
 #include "reading.hpp"
 #include "samples.hpp"
 
-#include "core/env.hpp"
-#include "core/error.hpp"
+#include "core/env/env.hpp"
+#include "core/env/error.hpp"
 #include "io/files.hpp"
 #include "model/compare/compare.hpp"
 #include "model/model.hpp"

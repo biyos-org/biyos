@@ -1,6 +1,6 @@
 #include "expr/tape/layout.hpp"
 
-#include "core/error.hpp"
+#include "core/env/error.hpp"
 #include "core/numbers.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/tape/plan.hpp"

@@ -1,7 +1,7 @@
 #pragma once
 
+#include "core/env/pool.hpp"
 #include "core/numbers.hpp"
-#include "core/pool/pool.hpp"
 #include "expr/tape/tape.hpp"
 #include "expr/threads/team.hpp"
 

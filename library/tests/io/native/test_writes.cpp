@@ -1,8 +1,8 @@
 #include "sample.hpp"
 #include "texts.hpp"
 
-#include "core/env.hpp"
-#include "core/error.hpp"
+#include "core/env/env.hpp"
+#include "core/env/error.hpp"
 #include "core/events/event.hpp"
 #include "core/events/stream.hpp"
 #include "core/options/options.hpp"

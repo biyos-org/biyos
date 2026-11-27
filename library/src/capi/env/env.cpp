@@ -3,8 +3,8 @@
 #include "capi/utils/codes.hpp"
 #include "capi/utils/entry.hpp"
 #include "capi/utils/firewall.hpp"
-#include "core/env.hpp"
-#include "core/error.hpp"
+#include "core/env/env.hpp"
+#include "core/env/error.hpp"
 
 #include <cstddef>
 #include <string>

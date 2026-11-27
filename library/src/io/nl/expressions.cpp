@@ -1,6 +1,6 @@
 #include "io/nl/expressions.hpp"
 
-#include "core/error.hpp"
+#include "core/env/error.hpp"
 #include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"
 #include "expr/graph/node.hpp"

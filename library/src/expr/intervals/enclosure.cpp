@@ -1,6 +1,6 @@
 #include "expr/intervals/enclosure.hpp"
 
-#include "core/error.hpp"
+#include "core/env/error.hpp"
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "expr/graph/graph.hpp"

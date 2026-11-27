@@ -1,10 +1,10 @@
 #include "core/options/table.hpp"
 
-#include "core/error.hpp"
+#include "core/env/error.hpp"
+#include "core/env/version.hpp"
 #include "core/numeric/limits.hpp"
 #include "core/options/checks.hpp"
 #include "core/text/text.hpp"
-#include "core/version.hpp"
 
 #include <array>
 #include <cstddef>

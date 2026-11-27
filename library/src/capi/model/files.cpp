@@ -1,7 +1,7 @@
 #include "biyos/biyos.h"
 
 #include "capi/utils/entry.hpp"
-#include "core/env.hpp"
+#include "core/env/env.hpp"
 #include "core/events/stream.hpp"
 #include "io/files.hpp"
 

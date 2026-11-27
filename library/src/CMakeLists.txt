@@ -1,7 +1,11 @@
 add_library(biyos_internal STATIC
-    core/check.cpp
-    core/env.cpp
-    core/error.cpp
+    core/env/check.cpp
+    core/env/env.cpp
+    core/env/error.cpp
+    core/env/pool.cpp
+    core/env/status.cpp
+    core/env/thread.cpp
+    core/env/version.cpp
     core/events/deliveries.cpp
     core/events/event.cpp
     core/events/events.cpp
@@ -18,17 +22,13 @@ add_library(biyos_internal STATIC
     core/options/table.cpp
     core/options/text.cpp
     core/options/value.cpp
-    core/pool/pool.cpp
-    core/status.cpp
     core/text/bignum.cpp
     core/text/chars.cpp
     core/text/strings.cpp
     core/text/utf8.cpp
-    core/thread.cpp
     core/timing/clock.cpp
     core/timing/deadline.cpp
     core/timing/timer.cpp
-    core/version.cpp
     expr/curvature/arithmetic.cpp
     expr/curvature/bends.cpp
     expr/curvature/curvature.cpp

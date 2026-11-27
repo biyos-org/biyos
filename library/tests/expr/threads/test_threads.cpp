@@ -1,7 +1,7 @@
+#include "core/env/pool.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/identical.hpp"
 #include "core/numeric/zero.hpp"
-#include "core/pool/pool.hpp"
 #include "expr/derivatives/reverse.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"

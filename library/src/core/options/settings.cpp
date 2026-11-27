@@ -1,6 +1,6 @@
 #include "core/options/settings.hpp"
 
-#include "core/error.hpp"
+#include "core/env/error.hpp"
 #include "core/numbers.hpp"
 #include "core/options/table.hpp"
 #include "core/options/text.hpp"

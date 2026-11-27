@@ -1,6 +1,6 @@
 #include "io/native/native.hpp"
 
-#include "core/error.hpp"
+#include "core/env/error.hpp"
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
 #include "io/lines.hpp"

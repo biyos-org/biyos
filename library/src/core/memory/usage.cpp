@@ -1,6 +1,6 @@
 #include "core/memory/usage.hpp"
 
-#include "core/thread.hpp"
+#include "core/env/thread.hpp"
 
 namespace biyos
 {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/error.hpp"
+#include "core/env/error.hpp"
 #include "core/events/stream.hpp"
 #include "io/lines.hpp"
 

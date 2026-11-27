@@ -1,7 +1,7 @@
 #pragma once
 
+#include "core/env/pool.hpp"
 #include "core/numbers.hpp"
-#include "core/pool/pool.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/hessian/elements.hpp"
 #include "expr/hessian/sweep.hpp"

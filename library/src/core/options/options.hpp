@@ -1,10 +1,10 @@
 #pragma once
 
 #include "biyos/biyos.h"
+#include "core/env/version.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/limits.hpp"
 #include "core/text/strings.hpp"
-#include "core/version.hpp"
 
 #include <cstdint>
 #include <limits>
