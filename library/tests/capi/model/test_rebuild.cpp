@@ -34,6 +34,7 @@ using biyos::test::kVariableTolerances;
 using biyos::test::Model;
 using biyos::test::operator_code;
 using biyos::test::operator_count;
+using biyos::test::takes_condition;
 using biyos::test::ToleranceCalls;
 
 using Counter = BIYOS_status (*)(const BIYOS_model *, BIYOS_index *);
@@ -236,10 +237,9 @@ void put_tree(Writer &writer, int depth)
     }
     const int code = random_code(writer.engine);
     const int n = arity(writer.engine, code);
-    const bool conditions = arity_of(static_cast<Operator>(code)).conditions;
     for (int k = 0; k < n; ++k)
     {
-        if (conditions)
+        if (takes_condition(static_cast<Operator>(code), k))
         {
             put_condition(writer, depth - 1);
         }

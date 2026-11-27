@@ -40,6 +40,7 @@ using biyos::test::Arity;
 using biyos::test::arity_of;
 using biyos::test::operator_code;
 using biyos::test::operator_count;
+using biyos::test::takes_condition;
 
 using Engine = std::mt19937;
 
@@ -183,12 +184,11 @@ void add_random(Model &model, Engine &engine)
         return;
     }
     const int n = arity(engine, code);
-    const bool conditions = arity_of(static_cast<Operator>(code)).conditions;
     std::vector<Offset> children;
     for (int k = 0; k < n; ++k)
     {
-        children.push_back(conditions ? random_condition(engine, model)
-                                      : random_child(engine, model));
+        const bool logic = takes_condition(static_cast<Operator>(code), k);
+        children.push_back(logic ? random_condition(engine, model) : random_child(engine, model));
     }
     add(model, code, children, values(engine, code, n));
 }
