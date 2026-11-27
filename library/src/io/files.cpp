@@ -148,7 +148,7 @@ void write_file(Stream stream,
     }
     const Draft draft = draft_of(model);
     print_file(file, path, [&draft](std::ostream &output) { print_mps(draft, output); });
-    warn_leftovers(stream, model, settings, file);
+    warn_leftovers(stream, model, settings, file, "free MPS");
 }
 
 }
