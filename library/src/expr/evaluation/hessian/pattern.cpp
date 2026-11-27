@@ -56,6 +56,12 @@ Pusher::Rule Pusher::rule_of(const Instruction &instruction) noexcept
     switch (instruction.op)
     {
     case Operator::Constant:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
         return {.form = Form::Constant, .curve = Curve::None};
     case Operator::Variable:
         return {.form = Form::Variable, .curve = Curve::None};

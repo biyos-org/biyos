@@ -191,6 +191,12 @@ inline std::vector<Offset> every_operator(Graph &graph)
         unary(graph, Operator::Erf, z),
         piecewise(graph, pwl, y),
         binary(graph, Operator::Atan2, z, x),
+        binary(graph, Operator::LessEqual, x, y),
+        binary(graph, Operator::GreaterEqual, x, y),
+        binary(graph, Operator::Equal, x, x),
+        binary(graph, Operator::Less, z, x),
+        binary(graph, Operator::Greater, z, x),
+        binary(graph, Operator::NotEqual, y, z),
     };
 }
 

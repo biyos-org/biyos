@@ -132,6 +132,12 @@ Curvature outer_of(const Graph &graph,
     case Operator::PiecewiseLinear:
         return unary(segments(piecewise_linear_of(graph, node), operands[0]), arguments);
     case Operator::Atan2:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
         return unknown(arguments);
     }
     return Curvature::Unknown;

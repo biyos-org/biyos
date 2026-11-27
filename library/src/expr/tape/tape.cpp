@@ -74,6 +74,12 @@ Form form_of(Operator op) noexcept
     case Operator::SignPower:
     case Operator::Erf:
     case Operator::Atan2:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
         return Form::Direct;
     case Operator::PiecewiseLinear:
         return Form::Table;

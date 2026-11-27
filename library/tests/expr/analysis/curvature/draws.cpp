@@ -76,6 +76,12 @@ std::size_t arity_of(Operator op, Engine &engine)
     case Operator::Division:
     case Operator::Power:
     case Operator::Atan2:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
         return 2;
     case Operator::Negation:
     case Operator::ConstantPower:

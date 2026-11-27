@@ -45,6 +45,12 @@ enum class Operator : std::uint8_t
     Erf = BIYOS_OP_ERF,
     PiecewiseLinear = BIYOS_OP_PWL,
     Atan2 = BIYOS_OP_ATAN2,
+    LessEqual = BIYOS_OP_LE,
+    GreaterEqual = BIYOS_OP_GE,
+    Equal = BIYOS_OP_EQ,
+    Less = BIYOS_OP_LT,
+    Greater = BIYOS_OP_GT,
+    NotEqual = BIYOS_OP_NE,
 };
 
 enum class Payload

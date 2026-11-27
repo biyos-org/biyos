@@ -56,6 +56,12 @@ OPERATORS = {
     "BIYOS_OP_KEEP": biyos.Operator.KEEP,
     "BIYOS_OP_REF": biyos.Operator.REFERENCE,
     "BIYOS_OP_ATAN2": biyos.Operator.ATAN2,
+    "BIYOS_OP_LE": biyos.Operator.LESS_EQUAL,
+    "BIYOS_OP_GE": biyos.Operator.GREATER_EQUAL,
+    "BIYOS_OP_EQ": biyos.Operator.EQUAL,
+    "BIYOS_OP_LT": biyos.Operator.LESS,
+    "BIYOS_OP_GT": biyos.Operator.GREATER,
+    "BIYOS_OP_NE": biyos.Operator.NOT_EQUAL,
 }
 
 FORMATS = {
