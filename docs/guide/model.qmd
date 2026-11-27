@@ -143,6 +143,8 @@ A constraint $l \le f_k(x) \le u$ bounds one function of the table. `BIYOS_addco
 
 Constraint 1 has equal bounds, which makes it the equality $f_1(x) = 0$. A constraint whose bounds are both infinite is free. The bounds follow the rule of a continuous variable's: an infinite bound leaves its side open, and a lower bound of `BIYOS_INF`, an upper bound of `-BIYOS_INF` and NaN are refused. A null `lb` or `ub` leaves that side of every new constraint unbounded. `BIYOS_setconbndsp` changes the bounds and keeps the function, and `BIYOS_getconbndsp` reads the bounds of a list of constraints.
 
+A condition (a comparison or a `BIYOS_OP_AND`, `BIYOS_OP_OR` or `BIYOS_OP_NOT` node) is 1 where it holds and 0 elsewhere. A function whose expression is a condition, with no constant and no terms, makes a logical constraint with bounds 1 and 1: the condition holds.
+
 `BIYOS_setconnamesp` names constraints, and `BIYOS_getconidx` finds them by name ([Names](#sec-model-names)).
 
 ## Objectives {#sec-model-objectives}

@@ -10,7 +10,15 @@ from biyos._model.blocks import (
     Variables,
     index_of,
 )
-from biyos._model.expression import Expression, Operand, Piecewise
+from biyos._model.expression import (
+    Comparison,
+    Condition,
+    Expression,
+    Logical,
+    Operand,
+    Operation,
+    Piecewise,
+)
 from biyos._model.operators import Operator
 
 if TYPE_CHECKING:
@@ -155,6 +163,25 @@ def attached(model: "Model", trees: Sequence[Operand]) -> Functions:
     funs = model.addfun(len(trees))
     model.attachexpr(funs, nodes)
     return funs
+
+
+def expression_of(top: Condition, made: dict[int, Expression]) -> Expression:
+    stack: list[tuple[Logical, bool]] = [(top, False)]
+    while stack:
+        item, ready = stack.pop()
+        if id(item) in made:
+            continue
+        if isinstance(item, Comparison):
+            made[id(item)] = item._node()
+            continue
+        assert isinstance(item, Condition)
+        if ready:
+            args = tuple(made[id(arg)] for arg in item._args)
+            made[id(item)] = Operation(item._op, args, ())
+        else:
+            stack.append((item, True))
+            stack.extend((arg, False) for arg in item._args)
+    return made[id(top)]
 
 
 def given(value: object, kind: type[Given], noun: str) -> list[Given] | None:

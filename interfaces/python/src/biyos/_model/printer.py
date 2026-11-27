@@ -13,8 +13,10 @@ class _Node(Protocol):
 
 Piece = str | tuple[object, int]
 Form = Callable[[_Node, "_Row"], list[Piece]]
+Place = Callable[[object, int], list[Piece]]
 
 _SUM, _PRODUCT, _UNARY, _POWER, _ATOM = range(1, 6)
+_ANY, _ALL, _NOT = range(1, 4)
 _PLUS = " + "
 _MINUS = " - "
 _SIGN = "-"
@@ -30,6 +32,14 @@ class _Row(NamedTuple):
 
 
 def printed(tree: object) -> str:
+    return _walked(tree, _placed)
+
+
+def printed_condition(tree: object) -> str:
+    return _walked(tree, _logic)
+
+
+def _walked(tree: object, place: Place) -> str:
     out: list[str] = []
     stack: list[Piece] = [(tree, 0)]
     while stack:
@@ -37,7 +47,7 @@ def printed(tree: object) -> str:
         if isinstance(item, str):
             out.append(item)
         else:
-            stack.extend(reversed(_placed(*item)))
+            stack.extend(reversed(place(*item)))
     return "".join(out)
 
 
@@ -48,6 +58,16 @@ def _placed(item: object, need: int) -> list[Piece]:
     row = _ROWS[node._op]
     pieces = row.form(node, row)
     if _level(node) < need:
+        return ["(", *pieces, ")"]
+    return pieces
+
+
+def _logic(item: object, need: int) -> list[Piece]:
+    if not _node(item):
+        return ["(", repr(item), ")"]
+    row = _LOGIC[item._op]
+    pieces = row.form(item, row)
+    if row.level < need:
         return ["(", *pieces, ")"]
     return pieces
 
@@ -245,4 +265,10 @@ _ROWS = {
     Operator.OR: _Row(_written, "or"),
     Operator.NOT: _Row(_written, "not"),
     Operator.IF: _Row(_written, "if"),
+}
+
+_LOGIC = {
+    Operator.OR: _Row(_infix, " | ", _ANY, _ANY, _ALL),
+    Operator.AND: _Row(_infix, " & ", _ALL, _ALL, _NOT),
+    Operator.NOT: _Row(_prefix, "~", _NOT, right=_NOT),
 }

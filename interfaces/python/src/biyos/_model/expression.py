@@ -1,13 +1,13 @@
 from collections.abc import Sequence
 from enum import Enum
 from math import isinf, isnan
-from typing import Any, SupportsIndex, TypeGuard
+from typing import Any, SupportsIndex, TypeGuard, cast
 
 from biyos._capi import inf
 from biyos._convert.integers import integer
 from biyos._convert.numbers import Index, Real
 from biyos._model.operators import Operator
-from biyos._model.printer import printed
+from biyos._model.printer import printed, printed_condition
 
 
 def _number(value: object) -> TypeGuard[int | Real]:
@@ -295,6 +295,50 @@ class Operand:
         """
         return _compared(self, other, ComparisonSense.GREATER_EQUAL)
 
+    def __lt__(self, other: "Term") -> "Comparison":
+        """Return the comparison that the operand is below another.
+
+        Parameters
+        ----------
+        other
+            An expression, a variable or a number.
+
+        Returns
+        -------
+        con
+            The comparison ``self < other``, which a condition takes.
+
+        Raises
+        ------
+        TypeError
+            When ``other`` is of another type.
+        ValueError
+            When ``other`` is NaN or infinite.
+        """
+        return _compared(self, other, ComparisonSense.LESS)
+
+    def __gt__(self, other: "Term") -> "Comparison":
+        """Return the comparison that the operand is above another.
+
+        Parameters
+        ----------
+        other
+            An expression, a variable or a number.
+
+        Returns
+        -------
+        con
+            The comparison ``self > other``, which a condition takes.
+
+        Raises
+        ------
+        TypeError
+            When ``other`` is of another type.
+        ValueError
+            When ``other`` is NaN or infinite.
+        """
+        return _compared(self, other, ComparisonSense.GREATER)
+
     def __eq__(self, other: object) -> Any:
         """Return the constraint that the operand equals another.
 
@@ -321,6 +365,32 @@ class Operand:
             return NotImplemented
         same = _same(self, other)
         return _compared(self, other, ComparisonSense.EQUAL, same)
+
+    def __ne__(self, other: object) -> Any:
+        """Return the comparison that the operand differs from another.
+
+        A value of another type differs from the operand, so ``!=`` gives
+        True for it, as Python does.
+
+        Parameters
+        ----------
+        other
+            An expression, a variable or a number.
+
+        Returns
+        -------
+        con
+            The comparison ``self != other``, which a condition takes.
+
+        Raises
+        ------
+        ValueError
+            When ``other`` is NaN or infinite.
+        """
+        if not _term(other):
+            return NotImplemented
+        same = _same(self, other)
+        return _compared(self, other, ComparisonSense.NOT_EQUAL, same)
 
     def _key(self) -> tuple[object, Index] | None:
         return None
@@ -384,6 +454,54 @@ class Piecewise(Expression):
         self._idx = idx
 
 
+class Logical:
+    __slots__ = ()
+
+    def __and__(self, other: "Comparison | Condition") -> "Condition":
+        """Return the condition that both hold.
+
+        Parameters
+        ----------
+        other
+            A comparison or a condition.
+
+        Returns
+        -------
+        cond
+            The condition ``self & other``.
+        """
+        if not isinstance(other, Logical):
+            return NotImplemented
+        return _joined(Operator.AND, self, other)
+
+    def __or__(self, other: "Comparison | Condition") -> "Condition":
+        """Return the condition that one or both hold.
+
+        Parameters
+        ----------
+        other
+            A comparison or a condition.
+
+        Returns
+        -------
+        cond
+            The condition ``self | other``.
+        """
+        if not isinstance(other, Logical):
+            return NotImplemented
+        return _joined(Operator.OR, self, other)
+
+    def __invert__(self) -> "Condition":
+        """Return the condition that this one does not hold.
+
+        Returns
+        -------
+        cond
+            The condition ``~self``.
+        """
+        return _joined(Operator.NOT, self)
+
+
 class ComparisonSense(Enum):
     """The senses of comparisons, each valued by its operator.
 
@@ -395,15 +513,24 @@ class ComparisonSense(Enum):
         The left side is at least the right side.
     EQUAL
         The two sides are equal.
+    LESS
+        The left side is below the right side.
+    GREATER
+        The left side is above the right side.
+    NOT_EQUAL
+        The two sides differ.
     """
 
     LESS_EQUAL = "<="
     GREATER_EQUAL = ">="
     EQUAL = "=="
+    LESS = "<"
+    GREATER = ">"
+    NOT_EQUAL = "!="
 
 
-class Comparison:
-    """A constraint written as a comparison of two operands.
+class Comparison(Logical):
+    """A comparison of two operands.
 
     ``<=``, ``>=`` and ``==`` between expressions, variables and numbers
     give a comparison, which ``Model.addcon`` takes. With an operand on each
@@ -414,8 +541,11 @@ class Comparison:
     number always lands in ``rhs``, since Python hands ``3 >= x`` to ``x``
     as ``x <= 3``. ``==`` between two variables is true when both name one
     variable of one model, so variables serve as keys of dictionaries and
-    sets. Any other comparison has no truth value: ``if x + 1 == y`` raises
-    ``TypeError``, and so does a chained ``0 <= x <= 1``.
+    sets, and ``!=`` between them is its negation. Any other comparison has
+    no truth value: ``if x + 1 == y`` raises ``TypeError``, and so does a
+    chained ``0 <= x <= 1``. ``<``, ``>`` and ``!=`` give comparisons only
+    a condition takes, since a constraint is closed: ``Model.addcon``
+    refuses ``x < 1`` and takes ``~(x >= 1)``.
     """
 
     __slots__ = ("_body", "_lb", "_lhs", "_rhs", "_same", "_sense", "_ub")
@@ -464,36 +594,126 @@ class Comparison:
         text
             The two sides around the operator.
         """
-        lhs = printed(self._lhs)
-        rhs = printed(_operand(self._rhs))
-        return f"{lhs} {self._sense.value} {rhs}"
+        return _formula(self._lhs, self._sense, self._rhs)
 
     def __bool__(self) -> bool:
-        """Return whether ``==`` names one variable twice.
+        """Return whether ``==`` or ``!=`` between two variables holds.
 
         Returns
         -------
         same
             For ``==`` between two variables, whether both name one variable
-            of one model.
+            of one model, and for ``!=`` whether they name two.
 
         Raises
         ------
         TypeError
-            For any other comparison, since it is a constraint, not a test.
+            For ``<=``, ``>=``, ``<`` and ``>``, and for ``==`` and ``!=``
+            with an expression or a number on a side, since such a
+            comparison is part of a model, not a test.
         """
         if self._same is None:
             raise TypeError(
                 "a comparison is a constraint and has no truth value"
             )
+        if self._sense is ComparisonSense.NOT_EQUAL:
+            return not self._same
         return self._same
+
+    def _refuse_open(self) -> None:
+        negated = _NEGATED.get(self._sense)
+        if negated is None:
+            return
+        condition = _formula(self._lhs, negated, self._rhs)
+        raise ValueError(
+            f"addcon refuses {self!r}, since a constraint is closed; "
+            f"~({condition}) adds it as a condition"
+        )
+
+    def _node(self) -> Expression:
+        if not isinstance(self._rhs, Operand) and isinf(self._rhs):
+            raise ValueError(f"a condition refuses the bound {self._rhs}")
+        operator = Operator[self._sense.name]
+        return Operation(operator, (self._lhs, _operand(self._rhs)), ())
+
+
+class Condition(Logical):
+    """A logical combination of comparisons.
+
+    ``&``, ``|`` and ``~`` on comparisons and conditions give a condition,
+    ``Operator.AND``, ``Operator.OR`` or ``Operator.NOT`` of its operands,
+    which ``Model.addcon`` takes as a constraint with bounds 1 and 1. Python
+    cannot overload ``and``, ``or`` and ``not``, and ``&`` and ``|`` bind
+    more tightly than a comparison, so each comparison takes parentheses:
+    ``(x <= 1) | (y >= 2)``. An expression has no ``&``, so ``x <= 1 & y``
+    raises ``TypeError``. A condition has no truth value, and ``repr``
+    writes it as a formula.
+    """
+
+    __slots__ = ("_args", "_op")
+
+    def __init__(
+        self, op: Operator, args: tuple["Comparison | Condition", ...]
+    ) -> None:
+        self._op = op
+        self._args = args
+
+    @property
+    def operator(self) -> Operator:
+        """The operator, ``AND``, ``OR`` or ``NOT``."""
+        return self._op
+
+    @property
+    def operands(self) -> tuple["Comparison | Condition", ...]:
+        """The comparisons and conditions the operator takes."""
+        return self._args
+
+    def __repr__(self) -> str:
+        """Return the condition as a formula.
+
+        Each comparison prints in parentheses, so
+        ``(x[0] <= 1) | (x[1] >= 2)`` reads back as itself.
+
+        Returns
+        -------
+        text
+            The operands around ``&`` and ``|``, or after ``~``.
+        """
+        return printed_condition(self)
+
+    def __bool__(self) -> bool:
+        """Refuse a truth value.
+
+        Raises
+        ------
+        TypeError
+            Always, since a condition is part of a model, not a test.
+        """
+        raise TypeError("a condition has no truth value")
 
 
 _SIDES = {
     ComparisonSense.LESS_EQUAL: (False, True),
     ComparisonSense.GREATER_EQUAL: (True, False),
     ComparisonSense.EQUAL: (True, True),
+    ComparisonSense.LESS: (False, True),
+    ComparisonSense.GREATER: (True, False),
+    ComparisonSense.NOT_EQUAL: (True, True),
 }
+
+_NEGATED = {
+    ComparisonSense.LESS: ComparisonSense.GREATER_EQUAL,
+    ComparisonSense.GREATER: ComparisonSense.LESS_EQUAL,
+    ComparisonSense.NOT_EQUAL: ComparisonSense.EQUAL,
+}
+
+
+def _joined(op: Operator, *args: Logical) -> Condition:
+    return Condition(op, cast("tuple[Comparison | Condition, ...]", args))
+
+
+def _formula(lhs: Operand, sense: ComparisonSense, rhs: Operand | Real) -> str:
+    return f"{printed(lhs)} {sense.value} {printed(_operand(rhs))}"
 
 
 def _constant(value: Real) -> Expression:
@@ -543,7 +763,8 @@ def _compared(
     if isinstance(right, Operand):
         body = _sum(left, right, -1.0)
     else:
-        bound = _bound(float(right), lower, upper)
+        finite = sense in _NEGATED
+        bound = _bound(float(right), lower or finite, upper or finite)
         rhs = bound
     lb = bound if lower else -inf
     ub = bound if upper else inf

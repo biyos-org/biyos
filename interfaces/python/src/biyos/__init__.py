@@ -28,6 +28,7 @@ from biyos._model.callbacks import CallbackRequest
 from biyos._model.expression import (
     Comparison,
     ComparisonSense,
+    Condition,
     Expression,
     acos,
     acosh,
@@ -74,6 +75,7 @@ __all__ = [
     "ComparisonSense",
     "Complement",
     "Complements",
+    "Condition",
     "Cone",
     "ConeKind",
     "Cones",
