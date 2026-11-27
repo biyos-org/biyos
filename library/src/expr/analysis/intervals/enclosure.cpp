@@ -133,12 +133,8 @@ Interval compared(const Pass &pass, Offset node, Comparison compare) noexcept
 
 Interval branches_of(const Pass &pass, Offset node) noexcept
 {
-    if (first(pass, node).is_empty())
-    {
-        return Interval::empty();
-    }
     const std::span<const Offset> children = pass.graph.children(node);
-    return hull(pass.nodes[to_size(children[1])], pass.nodes[to_size(children[2])]);
+    return taken(first(pass, node), second(pass, node), pass.nodes[to_size(children[2])]);
 }
 
 Interval enclosure(const Pass &pass, Offset node) noexcept

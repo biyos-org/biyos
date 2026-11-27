@@ -15,5 +15,6 @@ Interval less(const Tolerances &tolerances, Interval a, Interval b) noexcept;
 Interval greater(const Tolerances &tolerances, Interval a, Interval b) noexcept;
 Interval not_equal(const Tolerances &tolerances, Interval a, Interval b) noexcept;
 Interval complement(Interval condition) noexcept;
+Interval taken(Interval condition, Interval then, Interval otherwise) noexcept;
 
 }

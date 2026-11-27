@@ -83,4 +83,21 @@ Interval complement(Interval condition) noexcept
     return {1.0 - condition.upper(), 1.0 - condition.lower()};
 }
 
+Interval taken(Interval condition, Interval then, Interval otherwise) noexcept
+{
+    if (condition.is_empty())
+    {
+        return Interval::empty();
+    }
+    if (condition.lower() > 0.0)
+    {
+        return then;
+    }
+    if (condition.upper() <= 0.0)
+    {
+        return otherwise;
+    }
+    return hull(then, otherwise);
+}
+
 }

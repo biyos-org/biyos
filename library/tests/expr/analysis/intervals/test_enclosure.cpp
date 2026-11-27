@@ -377,7 +377,10 @@ TEST(IntervalTest, Branches)
         static_cast<std::size_t>(graph.add(Operator::If, std::array{below, x[1], x[2]}));
     const Interval held(1.0, 2.0);
     const Interval high(3.0, 4.0);
-    EXPECT_TRUE(exact(enclosures(graph, Box{held, high, Interval(-1.0, 0.0)})[node], -1.0, 4.0));
+    const Interval low(-1.0, 0.0);
+    EXPECT_TRUE(exact(enclosures(graph, Box{held, high, low})[node], 3.0, 4.0));
+    EXPECT_TRUE(exact(enclosures(graph, Box{high, held, low})[node], -1.0, 0.0));
+    EXPECT_TRUE(exact(enclosures(graph, Box{Interval(1.0, 4.0), high, low})[node], -1.0, 4.0));
     EXPECT_TRUE(enclosures(graph, Box{Interval::empty(), high, held})[node].is_empty());
     EXPECT_TRUE(exact(enclosures(graph, Box{held, high, Interval::empty()})[node], 3.0, 4.0));
     const Offset zero = graph.add(Operator::Constant, 0.0, {});

@@ -35,6 +35,7 @@ using biyos::Operator;
 using biyos::Option;
 using biyos::Options;
 using biyos::Real;
+using biyos::taken;
 using biyos::Tape;
 using biyos::Tolerances;
 using biyos::Workspace;
@@ -401,4 +402,24 @@ TEST(DecisionTest, SameSign)
     const Interval ten(10.0, 10.0);
     EXPECT_TRUE(exact(biyos::equal(tolerances, five, ten), 1.0, 1.0));
     EXPECT_TRUE(exact(biyos::not_equal(tolerances, five, ten), 0.0, 0.0));
+}
+
+TEST(DecisionTest, Taken)
+{
+    const Interval then(1.0, 2.0);
+    const Interval otherwise(-3.0, -2.0);
+    EXPECT_TRUE(exact(taken(Interval(1.0, 1.0), then, otherwise), 1.0, 2.0));
+    EXPECT_TRUE(exact(taken(Interval(0.0, 0.0), then, otherwise), -3.0, -2.0));
+    EXPECT_TRUE(exact(taken(Interval(0.0, 1.0), then, otherwise), -3.0, 2.0));
+    EXPECT_TRUE(taken(Interval::empty(), then, otherwise).is_empty());
+}
+
+TEST(DecisionTest, EmptyBranch)
+{
+    const Interval held(1.0, 2.0);
+    const Interval missed = Interval::empty();
+    EXPECT_TRUE(taken(Interval(1.0, 1.0), missed, held).is_empty());
+    EXPECT_TRUE(exact(taken(Interval(0.0, 0.0), missed, held), 1.0, 2.0));
+    EXPECT_TRUE(exact(taken(Interval(0.0, 1.0), missed, held), 1.0, 2.0));
+    EXPECT_TRUE(exact(taken(Interval(0.0, 1.0), held, missed), 1.0, 2.0));
 }
