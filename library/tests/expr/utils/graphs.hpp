@@ -256,7 +256,7 @@ inline Offset powered(Graph &graph, Random &random, Offset base)
 inline Offset grow(Graph &graph, Random &random)
 {
     const std::vector<Offset> children = picks(random, graph, 1 + random.below(4));
-    const std::size_t kind = random.below(8);
+    const std::size_t kind = random.below(9);
     const Real number = random.uniform(-2.0, 2.0);
     switch (kind)
     {
@@ -277,6 +277,11 @@ inline Offset grow(Graph &graph, Random &random)
         return graph.add(Operator::Product, number, children);
     case 6:
         return listed(graph, kListed[random.below(2)], children);
+    case 7:
+        return binary(graph,
+                      kComparisons[random.below(kComparisons.size())],
+                      children.front(),
+                      children.back());
     default:
         return piecewise(graph, static_cast<Offset>(random.below(kPiecewiseLinears)), children[0]);
     }
