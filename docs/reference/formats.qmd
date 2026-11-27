@@ -162,7 +162,7 @@ A section line is read as in free MPS, with the model name the rest of the `NAME
 
 ## NL
 
-`BIYOS_FILEFMT_NL` reads NL, the format AMPL writes for a solver, in its text and its binary form. The rules below are those of Gay's description of the format [@gay2005], and for what it leaves out of the binary form, those of the NL reader of AMPL's MP library [@amplmp2026]. Where it says nothing, biyos sets its own rule, given in [Choices](#sec-nl-choices). The format is read only: `BIYOS_writemdl` refuses it with `BIYOS_ERR_UNSUPPORTED`.
+`BIYOS_FILEFMT_NL` reads NL, the format AMPL writes for a solver, in its text and its binary form. The rules below are those of Gay's description of the format [@gay2005], and for what it leaves out of the binary form, those of the NL reader of AMPL's MP library [@amplmp2026]. Where it says nothing, biyos sets its own rule, given in [Choices](#sec-nl-choices). The writer writes the text form, by the rules in [Writing](#sec-nl-writing).
 
 ### Lines
 
@@ -229,6 +229,30 @@ Every other operator, among them `atan2`, the comparisons, the logical operators
 | `plterm` | Slopes and breakpoints become the points of a piecewise linear function that is 0 at 0, as in AMPL, with one more point beyond the first and the last breakpoint so that the end slopes hold. Breakpoints that do not increase are refused. |
 | Kinds of variables | The variables used nonlinearly in objectives alone number the second count of the fifth header line less the first, the integer ones among them included. |
 | A binary variable | Bounds outside 0 and 1 are refused. |
+
+### Writing {#sec-nl-writing}
+
+`BIYOS_FILEFMT_NL` writes the text form, with no comments, which the reader above reads back. The file is made or replaced. Numbers are written in the shortest decimal or exponential form that reads back to the same double, and an infinite bound is a bound code, never a number.
+
+A model read from NL reads back the same, every number bit for bit, when the `J` and `G` segments of its file list each variable that the expressions of their record use, and it holds no constant of $-0$, which reads back as 0. Any other model reads back with the changes the table gives, which `difference` reports, and reads back the same when written a second time.
+
+| Part | Written as |
+|---|---|
+| Header | `g3 1 1 0`, then the counts of Gay's header. The counts of network constraints and variables, imported functions and name lengths are 0, and the line of `arith` and `flags` is `0 0 0 1`, as in Gay's example. |
+| Order of variables | Gay's order [@gay2017]: the variables used nonlinearly in constraints and objectives, then in constraints alone, then in objectives alone, the continuous ones before the integer ones in each, then the linear continuous, binary and integer ones, each group in model order. A binary variable used nonlinearly is written as an integer one with its own bounds. |
+| Order of constraints | The constraints whose function has quadratic terms or an expression, then the others, each group in model order. |
+| Objectives | In model order, each with its sense. Every objective up to the last nonlinear one counts as nonlinear in the header. |
+| Bounds | `r` and `b` give each constraint and variable a bound code, in the order above: `4` when the bounds are equal, `3` when both are infinite, `1` or `2` when one is, else `0`. |
+| Linear terms | A `J` or `G` segment for each record, with each linear term of its function, then a term of coefficient 0 for each variable its expression uses and no linear term holds. `k` counts the `J` entries of each variable. |
+| Expressions | A `C` or `O` segment for each record. A function with no constant and no quadratic terms whose expression is not a sum, or is one written as `plus`, `sum` or `minus`, is its expression alone. Any other is a sum of its constant, one product for each quadratic term, its coefficient a factor when it is not 1, then the expression, written out as its terms when it is a sum with no constant. The reader splits such a sum back into the same parts, and keeps the expression alone whole. |
+| Operators | A sum of two or more terms with no constant and weights of 1 is `plus` or `sum`, one of two terms with weights 1 and $-1$ `minus`, any other a `plus` or `sum` of its constant, when it is not 0, and its terms, each weight a factor when it is not 1. A product is a chain of `mult`, its coefficient a factor when it is not 1. A constant power is `pow` with a number. A product of $\log_{10} e$ and a logarithm is `log10`. Every other operator the reader reads is written as the code it reads. |
+| Piecewise linear functions | `plterm` with the slopes and the inner breakpoints of the points, plus the value at 0 when it is not 0. The reader rebuilds the points from the slopes, so points whose slopes are not exact in floating point read back moved by a rounding. |
+| Defined variables | A node used by several parents, the operand of a piecewise linear function, the constant exponent of a power, and a sum that is not `plus`, `sum` or `minus` and whose terms are variables, or variables then one term of weight 1 with no constant, each written once as a `V` segment and named again. Such a sum has its variables as the linear terms of the segment, the form in which the reader reads a defined variable back. Those used by several records come first, the others just before the segment of their record, with the third integer Gay gives. |
+| Functions | A function several records use is written once for each, and reads back as that many functions. A function no record uses is left out, with an info event from module `io`, with the field `file`, naming it. |
+
+The writer refuses with `BIYOS_ERR_UNSUPPORTED`, naming the first record in the way: a callback, a cone, a complement, an indicator or a special ordered set; a semi-continuous or semi-integer variable; an objective with a weight other than 1; an expression that holds `BIYOS_OP_ENT`, `BIYOS_OP_SPOW`, `BIYOS_OP_ERF` or `BIYOS_OP_ATAN2`, the last because the reader refuses `atan2`.
+
+A path that cannot be opened or written gives `BIYOS_ERR_FILEIO`. Each part the format cannot hold is left out with one warning event from module `io`, with the field `file`, sent once the file is written: the tolerances of variables and constraints, the tolerances and the priority of each objective, and the model's options, as for MPS; then the binary variables written as integers, and the names. Hooks are not part of the problem and are left out with no event.
 
 ## Native {#sec-native}
 
