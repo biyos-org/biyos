@@ -106,7 +106,7 @@ def looked_up(model, short, names):
     n = len(names)
     texts = (c_char_p * n)(*[name.encode() for name in names])
     found = (c_index * n)()
-    call = getattr(lib, f"BIYOS_get{short}idx")
+    call = getattr(lib, f"BIYOS_find{short}")
     assert call(model._handle, n, texts, found) == 0
     return list(found)
 

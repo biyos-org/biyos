@@ -175,10 +175,10 @@ BIYOS_status BIYOS_getvarnamerg(const BIYOS_model *mdl,
     return guarded<get_names<Family::Variable, Range>>(mdl, Range{beg, end}, name);
 }
 
-BIYOS_status BIYOS_getvaridx(const BIYOS_model *mdl,
-                             BIYOS_index n,
-                             const char *const *name,
-                             BIYOS_index *var)
+BIYOS_status BIYOS_findvar(const BIYOS_model *mdl,
+                           BIYOS_index n,
+                           const char *const *name,
+                           BIYOS_index *var)
 {
     return guarded<get_indices<Family::Variable>>(mdl, n, name, var);
 }
@@ -225,10 +225,10 @@ BIYOS_status BIYOS_getfunnamerg(const BIYOS_model *mdl,
     return guarded<get_names<Family::Function, Range>>(mdl, Range{beg, end}, name);
 }
 
-BIYOS_status BIYOS_getfunidx(const BIYOS_model *mdl,
-                             BIYOS_index n,
-                             const char *const *name,
-                             BIYOS_index *fun)
+BIYOS_status BIYOS_findfun(const BIYOS_model *mdl,
+                           BIYOS_index n,
+                           const char *const *name,
+                           BIYOS_index *fun)
 {
     return guarded<get_indices<Family::Function>>(mdl, n, name, fun);
 }
@@ -275,10 +275,10 @@ BIYOS_status BIYOS_getconnamerg(const BIYOS_model *mdl,
     return guarded<get_names<Family::Constraint, Range>>(mdl, Range{beg, end}, name);
 }
 
-BIYOS_status BIYOS_getconidx(const BIYOS_model *mdl,
-                             BIYOS_index n,
-                             const char *const *name,
-                             BIYOS_index *con)
+BIYOS_status BIYOS_findcon(const BIYOS_model *mdl,
+                           BIYOS_index n,
+                           const char *const *name,
+                           BIYOS_index *con)
 {
     return guarded<get_indices<Family::Constraint>>(mdl, n, name, con);
 }
@@ -325,10 +325,10 @@ BIYOS_status BIYOS_getobjnamerg(const BIYOS_model *mdl,
     return guarded<get_names<Family::Objective, Range>>(mdl, Range{beg, end}, name);
 }
 
-BIYOS_status BIYOS_getobjidx(const BIYOS_model *mdl,
-                             BIYOS_index n,
-                             const char *const *name,
-                             BIYOS_index *obj)
+BIYOS_status BIYOS_findobj(const BIYOS_model *mdl,
+                           BIYOS_index n,
+                           const char *const *name,
+                           BIYOS_index *obj)
 {
     return guarded<get_indices<Family::Objective>>(mdl, n, name, obj);
 }
@@ -375,10 +375,10 @@ BIYOS_status BIYOS_getindnamerg(const BIYOS_model *mdl,
     return guarded<get_names<Family::Indicator, Range>>(mdl, Range{beg, end}, name);
 }
 
-BIYOS_status BIYOS_getindidx(const BIYOS_model *mdl,
-                             BIYOS_index n,
-                             const char *const *name,
-                             BIYOS_index *ind)
+BIYOS_status BIYOS_findind(const BIYOS_model *mdl,
+                           BIYOS_index n,
+                           const char *const *name,
+                           BIYOS_index *ind)
 {
     return guarded<get_indices<Family::Indicator>>(mdl, n, name, ind);
 }
@@ -425,10 +425,10 @@ BIYOS_status BIYOS_getsosnamerg(const BIYOS_model *mdl,
     return guarded<get_names<Family::SpecialOrderedSet, Range>>(mdl, Range{beg, end}, name);
 }
 
-BIYOS_status BIYOS_getsosidx(const BIYOS_model *mdl,
-                             BIYOS_index n,
-                             const char *const *name,
-                             BIYOS_index *sos)
+BIYOS_status BIYOS_findsos(const BIYOS_model *mdl,
+                           BIYOS_index n,
+                           const char *const *name,
+                           BIYOS_index *sos)
 {
     return guarded<get_indices<Family::SpecialOrderedSet>>(mdl, n, name, sos);
 }
@@ -475,10 +475,10 @@ BIYOS_status BIYOS_getconenamerg(const BIYOS_model *mdl,
     return guarded<get_names<Family::Cone, Range>>(mdl, Range{beg, end}, name);
 }
 
-BIYOS_status BIYOS_getconeidx(const BIYOS_model *mdl,
-                              BIYOS_index n,
-                              const char *const *name,
-                              BIYOS_index *cone)
+BIYOS_status BIYOS_findcone(const BIYOS_model *mdl,
+                            BIYOS_index n,
+                            const char *const *name,
+                            BIYOS_index *cone)
 {
     return guarded<get_indices<Family::Cone>>(mdl, n, name, cone);
 }
@@ -525,10 +525,10 @@ BIYOS_status BIYOS_getcconnamerg(const BIYOS_model *mdl,
     return guarded<get_names<Family::Complement, Range>>(mdl, Range{beg, end}, name);
 }
 
-BIYOS_status BIYOS_getcconidx(const BIYOS_model *mdl,
-                              BIYOS_index n,
-                              const char *const *name,
-                              BIYOS_index *ccon)
+BIYOS_status BIYOS_findccon(const BIYOS_model *mdl,
+                            BIYOS_index n,
+                            const char *const *name,
+                            BIYOS_index *ccon)
 {
     return guarded<get_indices<Family::Complement>>(mdl, n, name, ccon);
 }

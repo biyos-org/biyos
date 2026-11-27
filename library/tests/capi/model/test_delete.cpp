@@ -52,7 +52,7 @@ const std::array<Calls, 6> kCalls{{
         .listed = BIYOS_delconsp,
         .ranged = BIYOS_delconrg,
         .name = BIYOS_setconnamerg,
-        .find = BIYOS_getconidx,
+        .find = BIYOS_findcon,
     },
     {
         .noun = "objective",
@@ -60,7 +60,7 @@ const std::array<Calls, 6> kCalls{{
         .listed = BIYOS_delobjsp,
         .ranged = BIYOS_delobjrg,
         .name = BIYOS_setobjnamerg,
-        .find = BIYOS_getobjidx,
+        .find = BIYOS_findobj,
     },
     {
         .noun = "indicator",
@@ -68,7 +68,7 @@ const std::array<Calls, 6> kCalls{{
         .listed = BIYOS_delindsp,
         .ranged = BIYOS_delindrg,
         .name = BIYOS_setindnamerg,
-        .find = BIYOS_getindidx,
+        .find = BIYOS_findind,
     },
     {
         .noun = "set",
@@ -76,7 +76,7 @@ const std::array<Calls, 6> kCalls{{
         .listed = BIYOS_delsossp,
         .ranged = BIYOS_delsosrg,
         .name = BIYOS_setsosnamerg,
-        .find = BIYOS_getsosidx,
+        .find = BIYOS_findsos,
     },
     {
         .noun = "cone",
@@ -84,7 +84,7 @@ const std::array<Calls, 6> kCalls{{
         .listed = BIYOS_delconesp,
         .ranged = BIYOS_delconerg,
         .name = BIYOS_setconenamerg,
-        .find = BIYOS_getconeidx,
+        .find = BIYOS_findcone,
     },
     {
         .noun = "complement",
@@ -92,7 +92,7 @@ const std::array<Calls, 6> kCalls{{
         .listed = BIYOS_delcconsp,
         .ranged = BIYOS_delcconrg,
         .name = BIYOS_setcconnamerg,
-        .find = BIYOS_getcconidx,
+        .find = BIYOS_findccon,
     },
 }};
 
@@ -272,7 +272,7 @@ const Calls kFunctions{
     .listed = BIYOS_delfunsp,
     .ranged = BIYOS_delfunrg,
     .name = BIYOS_setfunnamerg,
-    .find = BIYOS_getfunidx,
+    .find = BIYOS_findfun,
 };
 
 void build_functions(const Model &model)
