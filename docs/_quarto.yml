@@ -217,6 +217,7 @@ quartodoc:
         - piecewise
         - max
         - min
+        - ifelse
     - title: Events
       desc: What a hook receives.
       contents: [Event, EventKind, EventLevel]
