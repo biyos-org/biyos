@@ -24,6 +24,7 @@ namespace
 
 constexpr std::size_t kRows = 9;
 constexpr std::size_t kSizes = 0;
+constexpr std::size_t kComplements = 1;
 constexpr std::size_t kNonlinear = 3;
 constexpr std::size_t kArcs = 4;
 constexpr std::size_t kDiscrete = 5;
@@ -198,6 +199,17 @@ void check_functions(const Lines &lines, const Rows &rows)
     }
 }
 
+Index complements_of(const Lines &lines, const Rows &rows)
+{
+    const std::array<Index, kColumns> &counts = rows[kComplements];
+    const Offset complements = Offset{counts[2]} + counts[3];
+    if (complements > rows[kSizes][1])
+    {
+        bad_file(lines, "the header counts more complements than constraints");
+    }
+    return static_cast<Index>(complements);
+}
+
 void check_room(const Lines &lines, const Rows &rows, Index defined, Offset room)
 {
     const std::array<Index, kColumns> &sizes = rows[kSizes];
@@ -227,12 +239,14 @@ Header read_header(Lines &lines, Offset bytes)
     }
     check_functions(lines, rows);
     const Index defined = defined_of(lines, rows);
+    const Index complements = complements_of(lines, rows);
     check_room(lines, rows, defined, bytes / record_bytes(encoding));
     return {
         .variables = variables,
         .constraints = rows[kSizes][1],
         .objectives = rows[kSizes][2],
         .defined = defined,
+        .complements = complements,
         .kinds = kinds_of(layout, variables),
         .encoding = encoding,
     };

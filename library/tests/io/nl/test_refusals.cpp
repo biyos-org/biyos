@@ -73,10 +73,6 @@ constexpr std::string_view kStringTail = R"(C0
 h3:abc
 )";
 
-constexpr std::string_view kComplementsTail = R"(r
-5 1 0
-)";
-
 constexpr std::string_view kSuffixesTail = R"(S0 1 zork
 0 2
 S5 1 scale
@@ -155,11 +151,6 @@ TEST(NlTest, Call)
 TEST(NlTest, String)
 {
     EXPECT_EQ(tiny_fault(kStringTail), refused(12, "strings"));
-}
-
-TEST(NlTest, Complements)
-{
-    EXPECT_EQ(tiny_fault(kComplementsTail), refused(12, "complementarity constraints"));
 }
 
 TEST(NlTest, Skipped)

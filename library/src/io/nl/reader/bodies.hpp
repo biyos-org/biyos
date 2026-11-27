@@ -21,7 +21,7 @@ class Bodies
     void set_body(Index function, const Operand &body);
     bool has_terms(Index function) const noexcept;
     void set_terms(Index function, std::vector<LinearTerm> terms);
-    void add_to(const Source &source, Model &model) const;
+    Index add_to(const Source &source, Model &model) const;
 
   private:
     std::vector<std::optional<Operand>> bodies_;
