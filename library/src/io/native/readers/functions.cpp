@@ -4,6 +4,7 @@
 #include "expr/forms/terms.hpp"
 #include "io/native/utils/body.hpp"
 #include "io/native/utils/record.hpp"
+#include "io/native/utils/words.hpp"
 #include "model/expressions/nodes.hpp"
 #include "model/expressions/postfix.hpp"
 #include "model/model.hpp"
@@ -86,7 +87,7 @@ struct Program
 
 void add_entry(Record record, Encoding &encoding)
 {
-    const int code = record.integer();
+    const int code = lookup(record, kOperatorWords, "an operator");
     const Offset argument = record.count();
     const Offset values = n_values(code, argument);
     encoding.codes.push_back(code);

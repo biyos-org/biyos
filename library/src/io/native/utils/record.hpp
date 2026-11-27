@@ -1,9 +1,11 @@
 #pragma once
 
 #include "core/numbers.hpp"
-#include "core/text/text.hpp"
 #include "io/lines.hpp"
+#include "io/native/utils/words.hpp"
+#include "io/records.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <optional>
@@ -36,18 +38,16 @@ class Record
     std::size_t next_ = 0;
 };
 
-template <typename Kind, std::size_t N>
-Kind kind_of(Record &record, const std::array<Kind, N> &kinds, std::string_view noun)
+template <typename Value, std::size_t N>
+Value lookup(Record &record, const std::array<Word<Value>, N> &words, std::string_view noun)
 {
-    const int code = record.integer();
-    for (const Kind kind : kinds)
+    const std::string_view text = record.word();
+    const auto found = std::ranges::find(words, text, &Word<Value>::text);
+    if (found == words.end())
     {
-        if (static_cast<int>(kind) == code)
-        {
-            return kind;
-        }
+        record.refuse(quote(text) + " is not " + std::string(noun));
     }
-    record.refuse(std::string(noun) + " " + text_of(code) + " is unknown");
+    return found->value;
 }
 
 }

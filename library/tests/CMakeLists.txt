@@ -158,6 +158,7 @@ biyos_add_test(test_io
     io/native/test_native.cpp
     io/native/test_random.cpp
     io/native/test_writes.cpp
+    io/native/test_words.cpp
     io/nl/test_faults.cpp
     io/nl/test_nl.cpp
     io/nl/test_refusals.cpp

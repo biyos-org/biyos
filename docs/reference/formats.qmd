@@ -236,7 +236,7 @@ A line is a record of fields separated by white space. Blank lines are skipped, 
 |---|---|
 | Number | Decimal or exponential, the sign optional, or exactly `inf` or `-inf`. The writer gives the shortest form that reads back to the same double. |
 | Index, count | A whole decimal number. Records and variables are counted from 0. |
-| Kind, sense, operator | The value of its `BIYOS_` constant, such as 2 for `BIYOS_VARKND_BIN`. |
+| Kind, sense, operator | The name of its `BIYOS_` constant after the group, in lowercase: `bin` for `BIYOS_VARKND_BIN`, `min` for `BIYOS_OBJSENSE_MIN`, `soc` for `BIYOS_CONEKND_SOC`, `sin` for `BIYOS_OP_SIN`. A number or a word of another group is refused, and so is `node`: a file is read into a new model, which holds no node to name. |
 | Name | One field. A blank, a control byte, the byte 7F and `\` are `\` and two uppercase hexadecimal digits, so `a b` is `a\20b`. Any other byte, those of UTF-8 among them, is itself. |
 
 ### Sections
@@ -251,7 +251,7 @@ A section is a header line, its word and a count, then that many records, each o
 | `LINEAR` | A function, a variable and its coefficient. |
 | `QUADRATIC` | A function, a row, a column and the coefficient of the pair. |
 | `PIECEWISE` | A pwl: the number of its points, then each point's $x$ and $y$. |
-| `EXPRESSIONS` | A function and the number of postfix entries of its expression, then one line for each entry: its code, its argument and the values its operator takes. |
+| `EXPRESSIONS` | A function and the number of postfix entries of its expression, then one line for each entry: its operator, its argument and the values the operator takes. |
 | `CONSTRAINTS` | A function, the lower bound and the upper bound. |
 | `OBJECTIVES` | A function, the sense, the priority, the weight, the absolute tolerance and the relative tolerance. |
 | `INDICATORS` | A binary variable, the value 0 or 1, a function, the lower bound and the upper bound. |
@@ -261,7 +261,7 @@ A section is a header line, its word and a count, then that many records, each o
 | `NAMES` | An index in the family and its name, the indices increasing. |
 | `TOLERANCES` | An index in the family, its absolute tolerance and its relative tolerance, `none` for a part left unset but not for both, the indices increasing. |
 
-The count of `LINEAR` and `QUADRATIC` is the number of terms; the terms of one function may come in any order. The postfix entries are those `BIYOS_addexpr` takes, the positions `BIYOS_OP_REF` names counted over the whole section. A pwl is named by its line in `PIECEWISE`, from 0. The writer writes only the expressions that functions hold, so nodes no function uses are left out, and a node used more than once is written once and named again.
+The count of `LINEAR` and `QUADRATIC` is the number of terms; the terms of one function may come in any order. The postfix entries are those `BIYOS_addexpr` takes, the positions `ref` names counted over the whole section. A pwl is named by its line in `PIECEWISE`, from 0. The writer writes only the expressions that functions hold, so nodes no function uses are left out, and a node used more than once is written once and named again.
 
 Each section is checked as the C API checks the same records. A record the model refuses gives `BIYOS_ERR_BADFILE` at the header line of its section, with the model's message.
 
@@ -273,15 +273,22 @@ The writer refuses a model with a callback with `BIYOS_ERR_UNSUPPORTED`, naming 
 BIYOS 1
 NAME small\20model
 VARIABLES 2
-1 0 inf
-2 0 1
-FUNCTIONS 1
+cont 0 inf
+bin 0 1
+FUNCTIONS 2
+0
 0
 LINEAR 2
 0 0 1
 0 1 2
+EXPRESSIONS 1
+1 2
+var 0
+exp 1
 CONSTRAINTS 1
 0 -inf 4
+OBJECTIVES 1
+1 min 0 1 0 0
 NAMES variable 1
 0 x
 END
