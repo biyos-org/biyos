@@ -4572,7 +4572,7 @@ class Model:
     @overload
     def setconetol(
         self,
-        idx: One[Cone],
+        cone: One[Cone],
         atol: Real | None = None,
         rtol: Real | None = None,
     ) -> None: ...
@@ -4580,14 +4580,14 @@ class Model:
     @overload
     def setconetol(
         self,
-        idx: Many[Cone, Cones],
+        cone: Many[Cone, Cones],
         atol: Sequence[Real] | None = None,
         rtol: Sequence[Real] | None = None,
     ) -> None: ...
 
     def setconetol(
         self,
-        idx: Selection[Cone, Cones],
+        cone: Selection[Cone, Cones],
         atol: Real | Sequence[Real] | None = None,
         rtol: Real | Sequence[Real] | None = None,
     ) -> None:
@@ -4600,7 +4600,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        cone
             The cones.
             An index or a view stands for one cone, and each other argument is
             then a scalar.
@@ -4613,7 +4613,7 @@ class Model:
         BIYOS_setconetolsp
         BIYOS_setconetolrg
         """
-        one, n, chosen = self._selected("BIYOS_setconetol", Cones, idx)
+        one, n, chosen = self._selected("BIYOS_setconetol", Cones, cone)
         arrays = (
             doubles("atol", atol, n, one),
             doubles("rtol", rtol, n, one),
@@ -4622,16 +4622,16 @@ class Model:
 
     @overload
     def getconetol(
-        self, idx: One[Cone]
+        self, cone: One[Cone]
     ) -> tuple[Real | None, Real | None]: ...
 
     @overload
     def getconetol(
-        self, idx: Many[Cone, Cones]
+        self, cone: Many[Cone, Cones]
     ) -> tuple[list[Real | None], list[Real | None]]: ...
 
     def getconetol(
-        self, idx: Selection[Cone, Cones]
+        self, cone: Selection[Cone, Cones]
     ) -> (
         tuple[Real | None, Real | None]
         | tuple[list[Real | None], list[Real | None]]
@@ -4640,7 +4640,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        cone
             The cones, in any order, any of them more than once.
             An index or a view stands for one cone, and each result is then a
             scalar.
@@ -4658,15 +4658,15 @@ class Model:
         BIYOS_getconetolrg
         """
         pair = (c_real, c_real)
-        atol, rtol = self._getlist("BIYOS_getconetol", Cones, idx, *pair)
+        atol, rtol = self._getlist("BIYOS_getconetol", Cones, cone, *pair)
         return _each(_or_none, atol), _each(_or_none, rtol)
 
-    def delconetol(self, idx: Selection[Cone, Cones]) -> None:
+    def delconetol(self, cone: Selection[Cone, Cones]) -> None:
         """Return cones to ``feastol_abs`` and ``feastol_rel``.
 
         Parameters
         ----------
-        idx
+        cone
             The cones that lose their tolerances.
             An index or a view stands for one cone.
 
@@ -4675,7 +4675,7 @@ class Model:
         BIYOS_delconetolsp
         BIYOS_delconetolrg
         """
-        rows = picked(self, Cones, idx)
+        rows = picked(self, Cones, cone)
         self._call(*self._chosen("BIYOS_delconetol", Cones, rows))
 
     def getncone(self) -> Index:
@@ -4695,13 +4695,13 @@ class Model:
         return count.value
 
     def getnconefun(
-        self, idx: Sequence[Index | Cone] | Cones | None = None
+        self, cone: Sequence[Index | Cone] | Cones | None = None
     ) -> Offset:
         """Count the members of cones.
 
         Parameters
         ----------
-        idx
+        cone
             The cones, in any order, any of them more than once; every cone
             by default.
 
@@ -4716,11 +4716,11 @@ class Model:
         BIYOS_getnconefunsp
         BIYOS_getnconefunrg
         """
-        every = range(self.getncone()) if idx is None else idx
+        every = range(self.getncone()) if cone is None else cone
         return self._count("BIYOS_getnconefun", Cones, every)
 
     def getcone(
-        self, idx: Sequence[Index | Cone] | Cones | None = None
+        self, cone: Sequence[Index | Cone] | Cones | None = None
     ) -> tuple[list[ConeKind], list[Offset], Functions]:
         """Read the kinds and members of cones.
 
@@ -4729,7 +4729,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        cone
             The cones, in any order, any of them more than once; every cone
             by default.
 
@@ -4748,7 +4748,7 @@ class Model:
         BIYOS_getconesp
         BIYOS_getconerg
         """
-        every = range(self.getncone()) if idx is None else idx
+        every = range(self.getncone()) if cone is None else cone
         size = self._count("BIYOS_getnconefun", Cones, every)
         chosen = self._chosen("BIYOS_getcone", Cones, every)
         kinds = (c_integer * len(every))()
@@ -4759,13 +4759,13 @@ class Model:
         return found, list(counts), Functions(self, members, self._gen)
 
     def getnconeprm(
-        self, idx: Sequence[Index | Cone] | Cones | None = None
+        self, cone: Sequence[Index | Cone] | Cones | None = None
     ) -> Offset:
         """Count the parameters of cones.
 
         Parameters
         ----------
-        idx
+        cone
             The cones, in any order, any of them more than once; every cone
             by default.
 
@@ -4780,17 +4780,17 @@ class Model:
         BIYOS_getnconeprmsp
         BIYOS_getnconeprmrg
         """
-        every = range(self.getncone()) if idx is None else idx
+        every = range(self.getncone()) if cone is None else cone
         return self._count("BIYOS_getnconeprm", Cones, every)
 
     def getconeprm(
-        self, idx: Sequence[Index | Cone] | Cones | None = None
+        self, cone: Sequence[Index | Cone] | Cones | None = None
     ) -> tuple[list[Offset], list[Real]]:
         """Read the parameters of cones.
 
         Parameters
         ----------
-        idx
+        cone
             The cones, in any order, any of them more than once; every cone
             by default.
 
@@ -4807,7 +4807,7 @@ class Model:
         BIYOS_getconeprmsp
         BIYOS_getconeprmrg
         """
-        every = range(self.getncone()) if idx is None else idx
+        every = range(self.getncone()) if cone is None else cone
         size = self._count("BIYOS_getnconeprm", Cones, every)
         chosen = self._chosen("BIYOS_getconeprm", Cones, every)
         counts = (c_offset * len(every))()
@@ -4816,48 +4816,48 @@ class Model:
         return list(counts), list(values)
 
     @overload
-    def setconename(self, idx: One[Cone], name: str) -> None: ...
+    def setconename(self, cone: One[Cone], name: str) -> None: ...
 
     @overload
     def setconename(
-        self, idx: Many[Cone, Cones], name: Sequence[str]
+        self, cone: Many[Cone, Cones], name: Sequence[str]
     ) -> None: ...
 
     def setconename(
-        self, idx: Selection[Cone, Cones], name: str | Sequence[str]
+        self, cone: Selection[Cone, Cones], name: str | Sequence[str]
     ) -> None:
         """Name cones of the model, as ``setvarname`` names variables.
 
         Parameters
         ----------
-        idx
+        cone
             The cones to name.
             An index or a view stands for one cone, and each other argument is
             then a scalar.
         name
-            The new name of each, as many as ``idx``.
+            The new name of each, as many as ``cone``.
 
         See Also
         --------
         BIYOS_setconenamesp
         BIYOS_setconenamerg
         """
-        self._setname("BIYOS_setconename", Cones, idx, name)
+        self._setname("BIYOS_setconename", Cones, cone, name)
 
     @overload
-    def getconename(self, idx: One[Cone]) -> str | None: ...
+    def getconename(self, cone: One[Cone]) -> str | None: ...
 
     @overload
-    def getconename(self, idx: Many[Cone, Cones]) -> list[str | None]: ...
+    def getconename(self, cone: Many[Cone, Cones]) -> list[str | None]: ...
 
     def getconename(
-        self, idx: Selection[Cone, Cones]
+        self, cone: Selection[Cone, Cones]
     ) -> str | None | list[str | None]:
         """Return the names of cones, as ``getvarname`` does.
 
         Parameters
         ----------
-        idx
+        cone
             The cones to read.
             An index or a view stands for one cone, and the result is then a
             scalar.
@@ -4872,7 +4872,7 @@ class Model:
         BIYOS_getconenamesp
         BIYOS_getconenamerg
         """
-        return self._getname("BIYOS_getconename", Cones, idx)
+        return self._getname("BIYOS_getconename", Cones, cone)
 
     def getconeidx(self, name: Sequence[str]) -> Cones:
         """Return the named cones, as ``getvaridx`` does.
@@ -4884,7 +4884,7 @@ class Model:
 
         Returns
         -------
-        idx
+        cone
             The cone that alone holds each name, as a ``Cones`` block.
 
         See Also
@@ -4893,12 +4893,12 @@ class Model:
         """
         return self._getidx(lib.BIYOS_getconeidx, Cones, name)
 
-    def delconename(self, idx: Selection[Cone, Cones]) -> None:
+    def delconename(self, cone: Selection[Cone, Cones]) -> None:
         """Remove the names of cones, as ``delvarname`` does.
 
         Parameters
         ----------
-        idx
+        cone
             The cones that lose their names.
             An index or a view stands for one cone.
 
@@ -4907,9 +4907,9 @@ class Model:
         BIYOS_delconenamesp
         BIYOS_delconenamerg
         """
-        self._delname("BIYOS_delconename", Cones, idx)
+        self._delname("BIYOS_delconename", Cones, cone)
 
-    def delcone(self, idx: Selection[Cone, Cones]) -> list[Index]:
+    def delcone(self, cone: Selection[Cone, Cones]) -> list[Index]:
         """Delete cones.
 
         The cones left keep their order and are numbered from 0 again. A
@@ -4919,7 +4919,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        cone
             The cones to delete, in any order, none of them twice.
             An index or a view stands for one cone.
 
@@ -4934,7 +4934,7 @@ class Model:
         BIYOS_delconesp
         BIYOS_delconerg
         """
-        return self._delete("BIYOS_delcone", Cones, idx)
+        return self._delete("BIYOS_delcone", Cones, cone)
 
     def addccon(
         self,
