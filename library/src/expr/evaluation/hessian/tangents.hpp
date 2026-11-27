@@ -13,7 +13,7 @@ namespace biyos
 struct Tangents
 {
     std::span<Real> slots;
-    std::span<Real> spare;
+    std::span<Real> running;
     std::span<Real> prefix;
     std::size_t lanes;
 };

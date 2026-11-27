@@ -102,7 +102,7 @@ Linear linear_at(const Graph &graph,
     const Frame frame = frame_of(block, point, workspace);
     const std::span<Real> all = region(block, std::span(workspace.partials), 1);
     Values slots(tape.width() * lanes, 0.0);
-    Values spare(lanes, 0.0);
+    Values running(lanes, 0.0);
     Values prefix(widest_product(tape), 0.0);
     const std::size_t last = block.instructions.size() - 1;
     for (std::size_t k = 0; k < last; ++k)
@@ -119,7 +119,7 @@ Linear linear_at(const Graph &graph,
     partials_of(instruction, frame, mine);
     partial_tangents(instruction,
                      frame,
-                     {.slots = slots, .spare = spare, .prefix = prefix, .lanes = lanes},
+                     {.slots = slots, .running = running, .prefix = prefix, .lanes = lanes},
                      mine,
                      out);
     return {{mine.begin(), mine.end()}, out};

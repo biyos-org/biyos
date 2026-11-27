@@ -81,7 +81,7 @@ void product(const Instruction &instruction,
              std::span<Real> out) noexcept
 {
     const std::span<const std::uint32_t> factors = listed(instruction, frame.operands);
-    Running running{.value = constant_of(instruction), .tangent = tangents.spare};
+    Running running{.value = constant_of(instruction), .tangent = tangents.running};
     std::ranges::fill(running.tangent, 0.0);
     for (std::size_t k = 0; k < factors.size(); ++k)
     {

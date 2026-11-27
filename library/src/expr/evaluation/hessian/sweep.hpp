@@ -18,7 +18,7 @@ struct Velocity
     std::vector<Real> slots;
     std::vector<Real> shared;
     std::vector<Real> partials;
-    std::vector<Real> spare;
+    std::vector<Real> running;
     std::vector<Real> prefix;
     std::vector<Real> result;
 };

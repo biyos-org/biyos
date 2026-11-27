@@ -81,7 +81,7 @@ Lift lift_of(const Block &block, std::span<const Real> point, Pass &pass) noexce
         .tangents =
             {
                 .slots = pass.velocity.slots,
-                .spare = pass.velocity.spare,
+                .running = pass.velocity.running,
                 .prefix = pass.velocity.prefix,
                 .lanes = lanes,
             },
@@ -503,7 +503,7 @@ void descend(const Tape &tape, Offset element, Pass &pass) noexcept
 
 Velocity::Velocity(const Tape &tape, std::size_t lanes)
     : slots(sized(tape.width(), lanes), 0.0), shared(sized(to_size(tape.pinned()), lanes), 0.0),
-      partials(sized(to_size(tape.partials()), lanes), 0.0), spare(lanes, 0.0),
+      partials(sized(to_size(tape.partials()), lanes), 0.0), running(lanes, 0.0),
       prefix(widest_product(tape), 0.0), result(lanes, 0.0)
 {
 }
