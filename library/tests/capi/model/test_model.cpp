@@ -465,9 +465,9 @@ TEST(CApiTest, NullSet)
         read_all(model),
         Columns{.kinds = {kinds[1], kinds[0]}, .lower = bounded.lower, .upper = bounded.upper});
     EXPECT_EQ(BIYOS_setvarbndsp(model.get(), 2, nullptr, lower, upper), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'var': is null");
     EXPECT_EQ(BIYOS_setvarkndsp(model.get(), 2, nullptr, kinds), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'var': is null");
     EXPECT_EQ(BIYOS_setvarbndsp(model.get(), 0, nullptr, nullptr, nullptr), BIYOS_OK);
     EXPECT_EQ(BIYOS_setvarkndsp(model.get(), 0, nullptr, nullptr), BIYOS_OK);
 }
@@ -585,9 +585,9 @@ TEST(CApiTest, VariableRefusals)
     EXPECT_EQ(BIYOS_getvarkndsp(held, -1, beyond, kinds), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     EXPECT_EQ(BIYOS_getvarbndsp(held, 1, nullptr, lower, upper), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'var': is null");
     EXPECT_EQ(BIYOS_getvarkndsp(held, 1, nullptr, kinds), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'var': is null");
     expect_doubles({lower[0], lower[1]}, {9.0, 9.0});
     expect_doubles({upper[0], upper[1]}, {9.0, 9.0});
     EXPECT_EQ(std::vector<BIYOS_int>({kinds[0], kinds[1]}), std::vector<BIYOS_int>({-1, -1}));

@@ -383,7 +383,7 @@ TEST(CApiTest, NullSetters)
     };
     expect_records(read_all(model), wanted);
     EXPECT_EQ(BIYOS_setobjsensesp(held, 2, nullptr, senses), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'obj': is null");
     EXPECT_EQ(BIYOS_setobjpriosp(held, 0, nullptr, nullptr), BIYOS_OK);
     expect_records(read_all(model), wanted);
 }
@@ -597,7 +597,7 @@ TEST(CApiTest, ObjectiveRefusals)
     expect_refused(env, held, 2, beyond, "invalid argument: objective 3: unknown");
     expect_refused(env, held, 2, negative, "invalid argument: objective -1: unknown");
     expect_refused(env, held, -1, beyond, "invalid argument: argument 'n': -1 is negative");
-    expect_refused(env, held, 1, nullptr, "invalid argument: argument 'idx': is null");
+    expect_refused(env, held, 1, nullptr, "invalid argument: argument 'obj': is null");
     const BIYOS_index indices[] = {1, 0};
     const int sense[] = {BIYOS_OBJSENSE_MAX, 0};
     const int priorities[] = {4, 5};
@@ -611,7 +611,7 @@ TEST(CApiTest, ObjectiveRefusals)
     EXPECT_EQ(BIYOS_setobjcoefsp(held, -1, indices, coefficients), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': -1 is negative");
     EXPECT_EQ(BIYOS_setobjtolsp(held, 1, nullptr, atol, rtol), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'obj': is null");
     EXPECT_EQ(BIYOS_setobjsensesp(held, 2, indices, sense), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: objective 0: sense 0 is unknown");
     EXPECT_EQ(BIYOS_setobjcoefsp(held, 2, indices, coefficients), BIYOS_ERR_BADARG);

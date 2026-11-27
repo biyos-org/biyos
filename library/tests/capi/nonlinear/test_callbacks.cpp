@@ -686,7 +686,7 @@ TEST(CallbackTest, DropRefused)
     EXPECT_EQ(failed(env, BIYOS_delcbsp(model.get(), -1, nullptr, nullptr)),
               kBad + "argument 'n': -1 is negative");
     EXPECT_EQ(failed(env, BIYOS_delcbsp(model.get(), 1, nullptr, nullptr)),
-              kBad + "argument 'idx': is null");
+              kBad + "argument 'cb': is null");
     EXPECT_EQ(range_refusal(env, model, 1, 4), kBad + "callback 3: unknown");
     EXPECT_EQ(range_refusal(env, model, 2, 1), kBad + "argument 'end': 1 is below 'beg' 2");
     EXPECT_EQ(range_refusal(env, model, -1, 1), kBad + "callback -1: unknown");
