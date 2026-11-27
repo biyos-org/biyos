@@ -241,4 +241,7 @@ _ROWS = {
     Operator.LESS: _Row(_written, "lt"),
     Operator.GREATER: _Row(_written, "gt"),
     Operator.NOT_EQUAL: _Row(_written, "ne"),
+    Operator.AND: _Row(_written, "and"),
+    Operator.OR: _Row(_written, "or"),
+    Operator.NOT: _Row(_written, "not"),
 }

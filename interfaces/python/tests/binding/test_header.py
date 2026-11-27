@@ -62,6 +62,9 @@ OPERATORS = {
     "BIYOS_OP_LT": biyos.Operator.LESS,
     "BIYOS_OP_GT": biyos.Operator.GREATER,
     "BIYOS_OP_NE": biyos.Operator.NOT_EQUAL,
+    "BIYOS_OP_AND": biyos.Operator.AND,
+    "BIYOS_OP_OR": biyos.Operator.OR,
+    "BIYOS_OP_NOT": biyos.Operator.NOT,
 }
 
 FORMATS = {

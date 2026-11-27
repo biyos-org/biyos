@@ -27,6 +27,8 @@ struct Shape
     Offset least;
     Offset most;
     bool positive = false;
+    bool condition = false;
+    bool connective = false;
 };
 
 [[noreturn]] void refuse(const std::string &reason)
@@ -80,16 +82,34 @@ std::optional<Shape> find_shape(Operator op) noexcept
     case Operator::Division:
     case Operator::Power:
     case Operator::Atan2:
+        return Shape{.payload = Payload::None, .least = 2, .most = 2};
     case Operator::LessEqual:
     case Operator::GreaterEqual:
     case Operator::Equal:
     case Operator::Less:
     case Operator::Greater:
     case Operator::NotEqual:
-        return Shape{.payload = Payload::None, .least = 2, .most = 2};
+        return Shape{.payload = Payload::None, .least = 2, .most = 2, .condition = true};
     case Operator::Max:
     case Operator::Min:
         return Shape{.payload = Payload::None, .least = 1, .most = kMany};
+    case Operator::And:
+    case Operator::Or:
+        return Shape{
+            .payload = Payload::None,
+            .least = 1,
+            .most = kMany,
+            .condition = true,
+            .connective = true,
+        };
+    case Operator::Not:
+        return Shape{
+            .payload = Payload::None,
+            .least = 1,
+            .most = 1,
+            .condition = true,
+            .connective = true,
+        };
     }
     return std::nullopt;
 }
@@ -179,6 +199,15 @@ void check_shape(Operator op, Payload payload, Offset children)
     {
         const std::string wanted = arity_text(shape);
         refuse(operator_name(op) + " takes " + wanted + ", not " + text_of(children));
+    }
+}
+
+void check_operand(Operator op, Offset child, Operator found)
+{
+    if (shape_of(op).connective && !shape_of(found).condition)
+    {
+        const std::string node = "node " + text_of(child);
+        refuse(operator_name(op) + " takes conditions: " + node + " is " + operator_name(found));
     }
 }
 

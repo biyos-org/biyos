@@ -219,6 +219,9 @@ void Decoder::build(Operator op, Offset argument)
     case Operator::Less:
     case Operator::Greater:
     case Operator::NotEqual:
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
         builder_.apply(op, argument);
         return;
     }

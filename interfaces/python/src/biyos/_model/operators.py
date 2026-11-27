@@ -10,12 +10,13 @@ class Operator(IntEnum):
     Each member is the C constant of the same number, ``CONSTANT`` for
     ``BIYOS_OP_CONST`` through ``ERF`` for ``BIYOS_OP_ERF``,
     ``PIECEWISE_LINEAR`` for ``BIYOS_OP_PWL``, ``ATAN2`` for
-    ``BIYOS_OP_ATAN2`` and ``LESS_EQUAL`` for ``BIYOS_OP_LE`` through
-    ``NOT_EQUAL`` for ``BIYOS_OP_NE``. ``NODE``, ``KEEP`` and ``REFERENCE``
-    are no operators and appear only in postfix. ``NODE`` names a node the
-    model holds, by its id. ``KEEP`` makes the operand before it a node of
-    its own, and ``REFERENCE`` names that node again by the position of the
-    ``KEEP`` entry.
+    ``BIYOS_OP_ATAN2``, ``LESS_EQUAL`` for ``BIYOS_OP_LE`` through
+    ``NOT_EQUAL`` for ``BIYOS_OP_NE`` and ``AND``, ``OR`` and ``NOT`` for
+    ``BIYOS_OP_AND`` through ``BIYOS_OP_NOT``. ``NODE``, ``KEEP`` and
+    ``REFERENCE`` are no operators and appear only in postfix. ``NODE``
+    names a node the model holds, by its id. ``KEEP`` makes the operand
+    before it a node of its own, and ``REFERENCE`` names that node again by
+    the position of the ``KEEP`` entry.
 
     See Also
     --------
@@ -62,6 +63,9 @@ class Operator(IntEnum):
     LESS = 38
     GREATER = 39
     NOT_EQUAL = 40
+    AND = 41
+    OR = 42
+    NOT = 43
 
 
 _ONE_VALUE = frozenset(

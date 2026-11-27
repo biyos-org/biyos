@@ -318,6 +318,28 @@ TEST(IntervalTest, EmptyChild)
     }
 }
 
+TEST(IntervalTest, Connectives)
+{
+    const Interval held(1.0, 2.0);
+    for (int code = BIYOS_OP_AND; code <= BIYOS_OP_NOT; ++code)
+    {
+        const auto op = static_cast<Operator>(code);
+        Graph graph;
+        const std::array x{graph.add_variable(0), graph.add_variable(1), graph.add_variable(2)};
+        const std::array conditions{graph.add(Operator::Less, std::span(x).first(2)),
+                                    graph.add(Operator::Greater, std::span(x).last(2))};
+        const std::span<const Offset> children =
+            op == Operator::Not ? std::span(conditions).first(1) : std::span(conditions);
+        const auto node = static_cast<std::size_t>(graph.add(op, children));
+        const Box apart{held, Interval(3.0, 4.0), held};
+        EXPECT_TRUE(exact(enclosures(graph, apart)[node], 0.0, 1.0)) << code;
+        const Box first{Interval::empty(), held, held};
+        EXPECT_TRUE(enclosures(graph, first)[node].is_empty()) << code;
+        const Box last{held, held, Interval::empty()};
+        EXPECT_EQ(enclosures(graph, last)[node].is_empty(), op != Operator::Not) << code;
+    }
+}
+
 TEST(IntervalTest, Comparisons)
 {
     const Interval held(1.0, 2.0);

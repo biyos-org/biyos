@@ -169,6 +169,8 @@ void step(const Instruction &instruction,
         spread_sum(instruction, partials, trail);
         return;
     case Operator::Product:
+    case Operator::And:
+    case Operator::Or:
         spread(listed(instruction, trail.operands), partials, trail);
         return;
     case Operator::Division:
@@ -205,6 +207,7 @@ void step(const Instruction &instruction,
     case Operator::SignPower:
     case Operator::Erf:
     case Operator::PiecewiseLinear:
+    case Operator::Not:
         add(slot(trail, instruction.first), partials, trail);
         return;
     case Operator::Max:

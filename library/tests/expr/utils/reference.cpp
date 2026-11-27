@@ -6,10 +6,12 @@
 #include "expr/graph/node.hpp"
 #include "expr/graph/points.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <limits>
 #include <span>
+#include <vector>
 
 namespace
 {
@@ -20,6 +22,7 @@ using biyos::Operator;
 using biyos::Real;
 using biyos::to_size;
 using biyos::Tolerances;
+using biyos::test::children_of;
 
 constexpr Real kUndefined = std::numeric_limits<Real>::quiet_NaN();
 
@@ -33,6 +36,11 @@ struct Frame
 bool is_zero(Real value)
 {
     return std::fpclassify(value) == FP_ZERO;
+}
+
+bool is_nan(Real value)
+{
+    return std::isnan(value);
 }
 
 Real first(const Frame &frame, Offset node)
@@ -95,6 +103,12 @@ Real smallest(const Frame &frame, Offset node)
         }
     }
     return best;
+}
+
+Real connective_of(const Frame &frame, Offset node)
+{
+    const auto stored = [&frame](Offset child) { return frame.values[to_size(child)]; };
+    return biyos::test::connective(frame.graph.op(node), children_of(frame.graph, node, stored));
 }
 
 Real quotient(Real left, Real right)
@@ -182,9 +196,30 @@ bool holds(Operator op, Real a, Real b)
     case Operator::Erf:
     case Operator::PiecewiseLinear:
     case Operator::Atan2:
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
         break;
     }
     return false;
+}
+
+bool truth(Real value)
+{
+    return value > 0.0;
+}
+
+bool decides(Operator op, std::span<const Real> conditions)
+{
+    if (op == Operator::And)
+    {
+        return std::ranges::all_of(conditions, truth);
+    }
+    if (op == Operator::Or)
+    {
+        return std::ranges::any_of(conditions, truth);
+    }
+    return std::ranges::none_of(conditions, truth);
 }
 
 Real unary(Operator op, Real value)
@@ -247,6 +282,9 @@ Real unary(Operator op, Real value)
     case Operator::Less:
     case Operator::Greater:
     case Operator::NotEqual:
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
         break;
     }
     return kUndefined;
@@ -309,6 +347,10 @@ Real value_of(const Frame &frame, Offset node)
     case Operator::Greater:
     case Operator::NotEqual:
         return biyos::test::comparison(graph.op(node), first(frame, node), second(frame, node));
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
+        return connective_of(frame, node);
     }
     return kUndefined;
 }
@@ -322,6 +364,15 @@ Real biyos::test::comparison(Operator op, Real a, Real b)
         return kUndefined;
     }
     return holds(op, a, b) ? 1.0 : 0.0;
+}
+
+Real biyos::test::connective(Operator op, std::span<const Real> conditions)
+{
+    if (std::ranges::any_of(conditions, is_nan))
+    {
+        return kUndefined;
+    }
+    return decides(op, conditions) ? 1.0 : 0.0;
 }
 
 void biyos::test::evaluate(const Graph &graph, std::span<const Real> point, std::span<Real> values)

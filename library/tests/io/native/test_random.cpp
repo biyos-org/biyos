@@ -58,6 +58,7 @@ struct Op
     int code;
     int children;
     int values;
+    bool conditions = false;
 };
 
 constexpr std::array kOps{
@@ -69,6 +70,9 @@ constexpr std::array kOps{
     Op{.code = BIYOS_OP_ATAN2, .children = 2, .values = 0},
     Op{.code = BIYOS_OP_LE, .children = 2, .values = 0},
     Op{.code = BIYOS_OP_NE, .children = 2, .values = 0},
+    Op{.code = BIYOS_OP_AND, .children = 2, .values = 0, .conditions = true},
+    Op{.code = BIYOS_OP_OR, .children = 2, .values = 0, .conditions = true},
+    Op{.code = BIYOS_OP_NOT, .children = 1, .values = 0, .conditions = true},
     Op{.code = BIYOS_OP_PROD, .children = 2, .values = 1},
     Op{.code = BIYOS_OP_SUM, .children = 2, .values = 3},
 };
@@ -175,14 +179,29 @@ void add_quadratic(Model &model, Engine &engine)
     model.add_quadratic_terms(functions, starts, terms);
 }
 
+Offset pick(Engine &engine, std::span<const Offset> nodes)
+{
+    return nodes[static_cast<std::size_t>(below(engine, static_cast<int>(nodes.size())))];
+}
+
+Offset operand(Model &model, Engine &engine, const Op &op, std::span<const Offset> nodes)
+{
+    const Offset first = pick(engine, nodes);
+    if (!op.conditions)
+    {
+        return first;
+    }
+    const std::array pair{first, pick(engine, nodes)};
+    return model.add_node(BIYOS_OP_LT, pair, {});
+}
+
 Offset node(Model &model, Engine &engine, std::span<const Offset> nodes)
 {
     const Op op = any(engine, kOps);
     std::vector<Offset> children;
     for (int k = 0; k < op.children; ++k)
     {
-        children.push_back(
-            nodes[static_cast<std::size_t>(below(engine, static_cast<int>(nodes.size())))]);
+        children.push_back(operand(model, engine, op, nodes));
     }
     std::vector<Real> values;
     for (int k = 0; k < op.values; ++k)

@@ -40,6 +40,7 @@ constexpr std::array kComparisons{
     Operator::Greater,
     Operator::NotEqual,
 };
+constexpr std::array kConnectives{Operator::And, Operator::Or, Operator::Not};
 constexpr std::array kExponents{2.0, 3.0, 0.5, -1.0, 1.5};
 constexpr std::array kKinks{-1.0, 0.25, 1.5};
 constexpr std::array kHeights{2.0, -0.5, 1.0};
@@ -158,6 +159,18 @@ inline Offset piecewise(Graph &graph, Offset pwl, Offset child)
     return graph.add_piecewise(pwl, std::span(&child, 1));
 }
 
+inline std::array<Offset, 3> connectives(Graph &graph, Offset x, Offset y, Offset z)
+{
+    const Offset below = binary(graph, Operator::Less, y, x);
+    const Offset above = binary(graph, Operator::Greater, x, z);
+    const std::array conditions{below, above};
+    return {
+        graph.add(Operator::And, conditions),
+        graph.add(Operator::Or, conditions),
+        unary(graph, Operator::Not, below),
+    };
+}
+
 inline std::vector<Offset> every_operator(Graph &graph)
 {
     const Offset x = graph.add_variable(0);
@@ -167,7 +180,7 @@ inline std::vector<Offset> every_operator(Graph &graph)
     const Offset pwl = graph.add_piecewise_linear(kKinks, kHeights);
     const std::array xy{x, y};
     const std::array xyz{x, y, z};
-    return {
+    std::vector<Offset> roots{
         constant(graph, 2.5),
         x,
         graph.add_sum(1.5, xy, std::array{2.0, -3.0}),
@@ -206,6 +219,9 @@ inline std::vector<Offset> every_operator(Graph &graph)
         binary(graph, Operator::Greater, z, x),
         binary(graph, Operator::NotEqual, y, z),
     };
+    const std::array logic = connectives(graph, x, y, z);
+    roots.insert(roots.end(), logic.begin(), logic.end());
+    return roots;
 }
 
 class Random

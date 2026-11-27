@@ -185,6 +185,9 @@ void motion(const Instruction &instruction,
     case Operator::Less:
     case Operator::Greater:
     case Operator::NotEqual:
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
         return;
     case Operator::Variable:
         std::ranges::copy(row(lift.seeds, place(instruction.payload), lanes), lift.result.begin());
@@ -423,6 +426,8 @@ void step(const Instruction &instruction,
         spread_sum(instruction, partials, trail);
         return;
     case Operator::Product:
+    case Operator::And:
+    case Operator::Or:
         spread(instruction, partials, curves, trail);
         return;
     case Operator::Division:
@@ -459,6 +464,7 @@ void step(const Instruction &instruction,
     case Operator::SignPower:
     case Operator::Erf:
     case Operator::PiecewiseLinear:
+    case Operator::Not:
         both(instruction.first, partials[0], curves, trail);
         return;
     case Operator::Max:

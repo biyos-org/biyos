@@ -1,6 +1,6 @@
 # The expression graph {#sec-graph}
 
-The expression $e$ of a function, the part of its nonlinear part $\varphi$ that biyos can read (@eq-nonlinear), is a node of the model's expression graph; callbacks supply the rest. This chapter defines the graph, its 37 operators and their domains, and the way an expression is split into the parts of a function.
+The expression $e$ of a function, the part of its nonlinear part $\varphi$ that biyos can read (@eq-nonlinear), is a node of the model's expression graph; callbacks supply the rest. This chapter defines the graph, its 40 operators and their domains, and the way an expression is split into the parts of a function.
 
 ## Nodes and sharing {#sec-graph-nodes}
 
@@ -14,7 +14,7 @@ Sums and products take any number of children. A sum $c + \sum_i a_i e_i$ carrie
 
 ## The operators {#sec-graph-operators}
 
-The graph has 37 operators. Each but the piecewise linear function and the comparisons is defined by the value `<cmath>` gives, and the domain of each is the set of arguments where that value is a real number:
+The graph has 40 operators. Each but the piecewise linear function, the comparisons and the logic operators is defined by the value `<cmath>` gives, and the domain of each is the set of arguments where that value is a real number:
 
 | Operator | Value | Domain |
 | ------------ | ------------------------ | ------------------------ |
@@ -47,12 +47,16 @@ The graph has 37 operators. Each but the piecewise linear function and the compa
 | at most, at least | $[e_1 \le e_2]$, $[e_1 \ge e_2]$ | everywhere |
 | equal | $[e_1 = e_2]$ | everywhere |
 | below, above, not equal | $[e_1 < e_2]$, $[e_1 > e_2]$, $[e_1 \ne e_2]$ | everywhere |
+| and, or | $[e_1 \land \dots \land e_n]$, $[e_1 \lor \dots \lor e_n]$ | everywhere |
+| not | $[\lnot e]$ | everywhere |
 
 Every constant, coefficient and exponent is finite. A pole lies outside the domain: $\log 0$, a division by zero, $0^{e_2}$ with $e_2 < 0$ and $\operatorname{artanh}(\pm 1)$ have no value. Outside its domain an operator gives the NaN or the infinity that `<cmath>` gives, and never stops the computation.
 
 The two-argument arc tangent is the angle of the point $(e_2, e_1)$, in $(-\pi, \pi]$. It takes a zero argument as $+0$ whatever its sign, so the angle is $\pi$ on the whole negative $e_2$ axis and 0 at the origin. Its partials are $e_2 / r^2$ and $-e_1 / r^2$ for $r = \operatorname{hypot}(e_1, e_2)$, computed as $(e_2 / r) / r$ and $-(e_1 / r) / r$ rather than through $r^2$, which overflows and underflows far sooner. At the origin, where the angle jumps, both are NaN.
 
 A comparison, written in brackets, is 1 where it holds and 0 where it does not, within the feasibility band of [the tolerances](#sec-options-tolerances). $e_1 \le e_2$ holds when $e_1$ is below $e_2$ or equal to it within `feastol_abs` and `feastol_rel`, $e_1 = e_2$ when the two are equal within them, and $e_1 \ge e_2$ is $e_2 \le e_1$. Each strict comparison is the negation of a wide one: $e_1 < e_2$ holds where $e_1 \ge e_2$ does not, $e_1 > e_2$ where $e_1 \le e_2$ does not, and $e_1 \ne e_2$ where $e_1 = e_2$ does not. Two values inside the band are thus equal, never one below the other. A comparison is NaN where either child is NaN. Its partials are 0 wherever it has a value, at the edges of the band too, where it jumps.
+
+A condition is a comparison or a logic operator, and the children of a logic operator are conditions: a node of any other operator is refused as one. $\land$ and $\lor$ take one or more children: $\land$ holds when every child holds, $\lor$ when one does, and $\lnot$ where its child does not. Each is NaN where a child is NaN, whatever the others give, and its partials are 0 wherever it has a value.
 
 Entropy and sign power could be written with the other operators, as a product with a logarithm and as a product of a sign and a power. They are operators of their own because each, taken whole, is a simple function with a known shape: entropy is convex on its domain, and sign power is increasing and continuous since its exponent is positive. Split into pieces, that shape is lost, and the bounds and relaxations built from the pieces are much weaker.
 
