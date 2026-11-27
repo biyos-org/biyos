@@ -130,10 +130,10 @@ BIYOS_status BIYOS_delfunrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, 
 
 BIYOS_status BIYOS_delconsp(BIYOS_model *mdl,
                             BIYOS_index n,
-                            const BIYOS_index *idx,
+                            const BIYOS_index *con,
                             BIYOS_index *map)
 {
-    return guarded<delete_constraints<List>>(mdl, List{n, idx}, map);
+    return guarded<delete_constraints<List>>(mdl, List{n, con}, map);
 }
 
 BIYOS_status BIYOS_delconrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_index *map)

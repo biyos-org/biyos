@@ -245,10 +245,10 @@ BIYOS_status BIYOS_delfunnamerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index e
 
 BIYOS_status BIYOS_setconnamesp(BIYOS_model *mdl,
                                 BIYOS_index n,
-                                const BIYOS_index *idx,
+                                const BIYOS_index *con,
                                 const char *const *name)
 {
-    return guarded<set_names<Family::Constraint, List>>(mdl, List{n, idx}, name);
+    return guarded<set_names<Family::Constraint, List>>(mdl, List{n, con}, name);
 }
 
 BIYOS_status BIYOS_setconnamerg(BIYOS_model *mdl,
@@ -261,10 +261,10 @@ BIYOS_status BIYOS_setconnamerg(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_getconnamesp(const BIYOS_model *mdl,
                                 BIYOS_index n,
-                                const BIYOS_index *idx,
+                                const BIYOS_index *con,
                                 const char **name)
 {
-    return guarded<get_names<Family::Constraint, List>>(mdl, List{n, idx}, name);
+    return guarded<get_names<Family::Constraint, List>>(mdl, List{n, con}, name);
 }
 
 BIYOS_status BIYOS_getconnamerg(const BIYOS_model *mdl,
@@ -278,14 +278,14 @@ BIYOS_status BIYOS_getconnamerg(const BIYOS_model *mdl,
 BIYOS_status BIYOS_getconidx(const BIYOS_model *mdl,
                              BIYOS_index n,
                              const char *const *name,
-                             BIYOS_index *idx)
+                             BIYOS_index *con)
 {
-    return guarded<get_indices<Family::Constraint>>(mdl, n, name, idx);
+    return guarded<get_indices<Family::Constraint>>(mdl, n, name, con);
 }
 
-BIYOS_status BIYOS_delconnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
+BIYOS_status BIYOS_delconnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *con)
 {
-    return guarded<delete_names<Family::Constraint, List>>(mdl, List{n, idx});
+    return guarded<delete_names<Family::Constraint, List>>(mdl, List{n, con});
 }
 
 BIYOS_status BIYOS_delconnamerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end)
