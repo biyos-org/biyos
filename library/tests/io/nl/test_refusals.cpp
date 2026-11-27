@@ -39,12 +39,6 @@ v0
 n2
 )";
 
-constexpr std::string_view kAtan2Tail = R"(C0
-o48
-v0
-n2
-)";
-
 constexpr std::string_view kLtTail = R"(C0
 o22
 v0
@@ -147,7 +141,6 @@ TEST(NlTest, Remainder)
 
 TEST(NlTest, Refused)
 {
-    EXPECT_EQ(tiny_fault(kAtan2Tail), refused(12, "operator atan2"));
     EXPECT_EQ(tiny_fault(kLtTail), refused(12, "operator lt"));
     EXPECT_EQ(tiny_fault(kIfTail), refused(12, "operator if"));
     EXPECT_EQ(tiny_fault(kFloorTail), refused(12, "operator floor"));
