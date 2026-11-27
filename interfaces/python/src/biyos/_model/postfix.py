@@ -165,8 +165,7 @@ def attached(model: "Model", trees: Sequence[Operand]) -> Functions:
     return funs
 
 
-def expression_of(top: Condition) -> Expression:
-    made: dict[int, Expression] = {}
+def expression_of(top: Condition, made: dict[int, Expression]) -> Expression:
     stack: list[tuple[Logical, bool]] = [(top, False)]
     while stack:
         item, ready = stack.pop()

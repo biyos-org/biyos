@@ -333,12 +333,14 @@ def _total(counts: Array[c_offset] | None) -> Offset:
     return sum(counts)
 
 
-def _bounded(con: Logical) -> tuple[Operand, Real, Real]:
+def _bounded(
+    con: Logical, made: dict[int, Expression]
+) -> tuple[Operand, Real, Real]:
     if isinstance(con, Comparison):
         con._refuse_open()
         return con._body, con._lb, con._ub
     assert isinstance(con, Condition)
-    return expression_of(con), 1.0, 1.0
+    return expression_of(con, made), 1.0, 1.0
 
 
 class Model:
@@ -5644,7 +5646,9 @@ class Model:
     ) -> Constraints:
         if lb is not None or ub is not None:
             raise TypeError("lb and ub come from the comparisons")
-        bodies, lower, upper = zip(*map(_bounded, cons))
+        made: dict[int, Expression] = {}
+        rows = [_bounded(con, made) for con in cons]
+        bodies, lower, upper = zip(*rows)
         funs = attached(self, bodies)
         return self.addcon(funs, lower, upper)
 

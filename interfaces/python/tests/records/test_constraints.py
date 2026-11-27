@@ -374,6 +374,15 @@ def test_repeated(model, x):
     assert code[-2:] == [Operator.NOT, Operator.OR]
 
 
+def test_shared_condition(model, x):
+    a = x[0] <= 1
+    d = a | (x[1] >= 2)
+    cons = model.addcon([d, d, ~a])
+    code = model.getexpr(model.getcon(cons)[0])[1]
+    assert code.count(Operator.LESS_EQUAL) == 1
+    assert code.count(Operator.OR) == 1
+
+
 def test_deep(model, x):
     cond = x[0] <= 0
     for _ in range(10**4):
