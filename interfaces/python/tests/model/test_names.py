@@ -78,13 +78,13 @@ def test_family(model, family):
     assert names_of(model, family) == [None, None, None]
     set_names([2, 0], ["z", ETE])
     assert names_of(model, family) == [ETE, None, "z"]
-    assert get_idx(["z"]) == [2]
-    assert get_idx([ETE, "z", ETE]) == [0, 2, 0]
-    assert type(get_idx(["z"])[0]) is int
+    assert get_idx(["z"]).indices() == [2]
+    assert get_idx([ETE, "z", ETE]).indices() == [0, 2, 0]
+    assert type(get_idx(["z"]).indices()[0]) is int
     assert get_name([2]) == ["z"]
     assert get_name([2, 1, 2]) == ["z", None, "z"]
     assert get_name([]) == []
-    assert get_idx([]) == []
+    assert get_idx([]).indices() == []
     for other in FAMILIES:
         if other != family:
             assert names_of(model, other) == [None, None, None]
@@ -94,7 +94,7 @@ def test_shared(model):
     for k, family in enumerate(FAMILIES):
         calls(model, family)[0]([k % 3], ["x"])
     for k, family in enumerate(FAMILIES):
-        assert calls(model, family)[2](["x"]) == [k % 3]
+        assert calls(model, family)[2](["x"]).indices() == [k % 3]
 
 
 def test_views(env, model):
@@ -139,7 +139,7 @@ def test_repeat(model, family):
     message = refusal(get_idx, ["d", "c"])
     assert message == f"invalid argument: {noun} 'c': names 2 {noun}s"
     del_names([1])
-    assert get_idx(["c", "d"]) == [2, 0]
+    assert get_idx(["c", "d"]).indices() == [2, 0]
 
 
 @pytest.mark.parametrize("family", FAMILIES)
@@ -156,7 +156,7 @@ def test_delete(model, family):
     message = refusal(get_idx, ["c", "a"])
     assert message == f"invalid argument: {noun} 'a': unknown"
     set_names([1], ["a"])
-    assert get_idx(["a"]) == [1]
+    assert get_idx(["a"]).indices() == [1]
 
 
 def test_rename(model):
@@ -168,7 +168,7 @@ def test_rename(model):
     assert names_of(model, "var") == ["b", "c", "a"]
     model.setvarname([2, 2], ["d", "e"])
     assert names_of(model, "var") == ["b", "c", "e"]
-    assert model.getvaridx(["b"]) == [0]
+    assert model.getvaridx(["b"]).indices() == [0]
     message = refusal(model.getvaridx, ["d"])
     assert message == "invalid argument: variable 'd': unknown"
 
@@ -250,7 +250,7 @@ def test_copy(env, model):
         assert names_of(model, family) == ["x", None, "z"]
     model.close()
     for family in FAMILIES:
-        assert calls(copy, family)[2](["x"]) == [1]
+        assert calls(copy, family)[2](["x"]).indices() == [1]
 
 
 def test_locked(env, model):
@@ -271,7 +271,7 @@ def test_locked(env, model):
         for family in FAMILIES:
             _, get_name, get_idx, _ = calls(model, family)
             seen.append(get_name([0]))
-            seen.append(get_idx(["x"]))
+            seen.append(get_idx(["x"]).indices())
 
     model.setname("plant")
     for family in FAMILIES:

@@ -2,7 +2,19 @@ from typing import TypeAlias
 
 from typing_extensions import assert_type
 
-from biyos import Functions, Model, ObjectiveSense, Variables, VariableKind
+from biyos import (
+    Complements,
+    Cones,
+    Constraints,
+    Functions,
+    Indicators,
+    Model,
+    Objectives,
+    ObjectiveSense,
+    SpecialOrderedSets,
+    Variables,
+    VariableKind,
+)
 
 one = 0
 flat = [0, 1]
@@ -292,3 +304,14 @@ def others(mdl: Model) -> None:
     mdl.setccontol(one, reals)  # type: ignore[call-overload]
     mdl.setccontol(flat, real)  # type: ignore[call-overload]
     mdl.setcconname(one, names)  # type: ignore[call-overload]
+
+
+def lookups(mdl: Model) -> None:
+    assert_type(mdl.getvaridx(names), Variables)
+    assert_type(mdl.getfunidx(names), Functions)
+    assert_type(mdl.getconidx(names), Constraints)
+    assert_type(mdl.getobjidx(names), Objectives)
+    assert_type(mdl.getindidx(names), Indicators)
+    assert_type(mdl.getsosidx(names), SpecialOrderedSets)
+    assert_type(mdl.getconeidx(names), Cones)
+    assert_type(mdl.getcconidx(names), Complements)

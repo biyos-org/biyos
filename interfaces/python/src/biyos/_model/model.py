@@ -30,6 +30,8 @@ from biyos._convert.arrays import (
     counts,
     doubles,
     entries_of,
+    index_array,
+    index_view,
     indices_of,
     int64s,
     ints,
@@ -1262,8 +1264,8 @@ class Model:
         """
         return self._getname("BIYOS_getvarname", Variables, idx)
 
-    def getvaridx(self, name: Sequence[str]) -> list[Index]:
-        """Return the indices of the variables with names.
+    def getvaridx(self, name: Sequence[str]) -> Variables:
+        """Return the variables with names.
 
         Parameters
         ----------
@@ -1273,7 +1275,9 @@ class Model:
         Returns
         -------
         idx
-            The index of the variable that alone holds each name.
+            The variable that alone holds each name, as a ``Variables``
+            block, which raises ``ValueError`` once the model has had a
+            deletion. ``indices`` gives the indices as a list.
 
         Raises
         ------
@@ -1290,7 +1294,7 @@ class Model:
         --------
         BIYOS_getvaridx
         """
-        return self._getidx(lib.BIYOS_getvaridx, name)
+        return self._getidx(lib.BIYOS_getvaridx, Variables, name)
 
     def delvarname(self, idx: Selection[Variable, Variables]) -> None:
         """Remove the names of variables, which then have none.
@@ -1550,8 +1554,8 @@ class Model:
         """
         return self._getname("BIYOS_getfunname", Functions, idx)
 
-    def getfunidx(self, name: Sequence[str]) -> list[Index]:
-        """Return the indices of named functions, as ``getvaridx`` does.
+    def getfunidx(self, name: Sequence[str]) -> Functions:
+        """Return the named functions, as ``getvaridx`` does.
 
         Parameters
         ----------
@@ -1561,13 +1565,13 @@ class Model:
         Returns
         -------
         idx
-            The index of the function that alone holds each name.
+            The function that alone holds each name, as a ``Functions`` block.
 
         See Also
         --------
         BIYOS_getfunidx
         """
-        return self._getidx(lib.BIYOS_getfunidx, name)
+        return self._getidx(lib.BIYOS_getfunidx, Functions, name)
 
     def delfunname(self, idx: Selection[Function, Functions]) -> None:
         """Remove the names of functions, as ``delvarname`` does.
@@ -3016,8 +3020,8 @@ class Model:
         """
         return self._getname("BIYOS_getconname", Constraints, idx)
 
-    def getconidx(self, name: Sequence[str]) -> list[Index]:
-        """Return the indices of named constraints, as ``getvaridx`` does.
+    def getconidx(self, name: Sequence[str]) -> Constraints:
+        """Return the named constraints, as ``getvaridx`` does.
 
         Parameters
         ----------
@@ -3027,13 +3031,14 @@ class Model:
         Returns
         -------
         idx
-            The index of the constraint that alone holds each name.
+            The constraint that alone holds each name, as a ``Constraints``
+            block.
 
         See Also
         --------
         BIYOS_getconidx
         """
-        return self._getidx(lib.BIYOS_getconidx, name)
+        return self._getidx(lib.BIYOS_getconidx, Constraints, name)
 
     def delconname(self, idx: Selection[Constraint, Constraints]) -> None:
         """Remove the names of constraints, as ``delvarname`` does.
@@ -3571,8 +3576,8 @@ class Model:
         """
         return self._getname("BIYOS_getobjname", Objectives, idx)
 
-    def getobjidx(self, name: Sequence[str]) -> list[Index]:
-        """Return the indices of named objectives, as ``getvaridx`` does.
+    def getobjidx(self, name: Sequence[str]) -> Objectives:
+        """Return the named objectives, as ``getvaridx`` does.
 
         Parameters
         ----------
@@ -3582,13 +3587,13 @@ class Model:
         Returns
         -------
         idx
-            The index of the objective that alone holds each name.
+            The objective that alone holds each name, as a ``Objectives`` block.
 
         See Also
         --------
         BIYOS_getobjidx
         """
-        return self._getidx(lib.BIYOS_getobjidx, name)
+        return self._getidx(lib.BIYOS_getobjidx, Objectives, name)
 
     def delobjname(self, idx: Selection[Objective, Objectives]) -> None:
         """Remove the names of objectives, as ``delvarname`` does.
@@ -3973,8 +3978,8 @@ class Model:
         """
         return self._getname("BIYOS_getindname", Indicators, idx)
 
-    def getindidx(self, name: Sequence[str]) -> list[Index]:
-        """Return the indices of named indicators, as ``getvaridx`` does.
+    def getindidx(self, name: Sequence[str]) -> Indicators:
+        """Return the named indicators, as ``getvaridx`` does.
 
         Parameters
         ----------
@@ -3984,13 +3989,13 @@ class Model:
         Returns
         -------
         idx
-            The index of the indicator that alone holds each name.
+            The indicator that alone holds each name, as a ``Indicators`` block.
 
         See Also
         --------
         BIYOS_getindidx
         """
-        return self._getidx(lib.BIYOS_getindidx, name)
+        return self._getidx(lib.BIYOS_getindidx, Indicators, name)
 
     def delindname(self, idx: Selection[Indicator, Indicators]) -> None:
         """Remove the names of indicators, as ``delvarname`` does.
@@ -4238,9 +4243,8 @@ class Model:
         """
         return self._getname("BIYOS_getsosname", SpecialOrderedSets, idx)
 
-    def getsosidx(self, name: Sequence[str]) -> list[Index]:
-        """Return the indices of named special ordered sets, as
-        ``getvaridx`` does.
+    def getsosidx(self, name: Sequence[str]) -> SpecialOrderedSets:
+        """Return the named special ordered sets, as ``getvaridx`` does.
 
         Parameters
         ----------
@@ -4250,13 +4254,14 @@ class Model:
         Returns
         -------
         idx
-            The index of the set that alone holds each name.
+            The set that alone holds each name, as a ``SpecialOrderedSets``
+            block.
 
         See Also
         --------
         BIYOS_getsosidx
         """
-        return self._getidx(lib.BIYOS_getsosidx, name)
+        return self._getidx(lib.BIYOS_getsosidx, SpecialOrderedSets, name)
 
     def delsosname(
         self, idx: Selection[SpecialOrderedSet, SpecialOrderedSets]
@@ -4806,8 +4811,8 @@ class Model:
         """
         return self._getname("BIYOS_getconename", Cones, idx)
 
-    def getconeidx(self, name: Sequence[str]) -> list[Index]:
-        """Return the indices of named cones, as ``getvaridx`` does.
+    def getconeidx(self, name: Sequence[str]) -> Cones:
+        """Return the named cones, as ``getvaridx`` does.
 
         Parameters
         ----------
@@ -4817,13 +4822,13 @@ class Model:
         Returns
         -------
         idx
-            The index of the cone that alone holds each name.
+            The cone that alone holds each name, as a ``Cones`` block.
 
         See Also
         --------
         BIYOS_getconeidx
         """
-        return self._getidx(lib.BIYOS_getconeidx, name)
+        return self._getidx(lib.BIYOS_getconeidx, Cones, name)
 
     def delconename(self, idx: Selection[Cone, Cones]) -> None:
         """Remove the names of cones, as ``delvarname`` does.
@@ -5228,8 +5233,8 @@ class Model:
         """
         return self._getname("BIYOS_getcconname", Complements, idx)
 
-    def getcconidx(self, name: Sequence[str]) -> list[Index]:
-        """Return the indices of named complements, as ``getvaridx`` does.
+    def getcconidx(self, name: Sequence[str]) -> Complements:
+        """Return the named complements, as ``getvaridx`` does.
 
         Parameters
         ----------
@@ -5239,13 +5244,14 @@ class Model:
         Returns
         -------
         idx
-            The index of the complement that alone holds each name.
+            The complement that alone holds each name, as a ``Complements``
+            block.
 
         See Also
         --------
         BIYOS_getcconidx
         """
-        return self._getidx(lib.BIYOS_getcconidx, name)
+        return self._getidx(lib.BIYOS_getcconidx, Complements, name)
 
     def delcconname(self, idx: Selection[Complement, Complements]) -> None:
         """Remove the names of complements, as ``delvarname`` does.
@@ -5854,13 +5860,16 @@ class Model:
             raise error from cause
 
     def _getidx(
-        self, function: Callable[..., int], name: Sequence[str]
-    ) -> list[Index]:
+        self,
+        function: Callable[..., int],
+        family: type[_Block],
+        name: Sequence[str],
+    ) -> _Block:
         n = len(listed("name", name))
         names = strings("name", name, n)
-        found = (c_index * n)()
-        self._call(function, n, names, found)
-        return list(found)
+        found = index_view(n)
+        self._call(function, n, names, index_array(found))
+        return family(self, found, self._gen)
 
     def _added(
         self,
