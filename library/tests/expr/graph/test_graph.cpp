@@ -288,6 +288,24 @@ TEST(GraphTest, NumericOperand)
     EXPECT_EQ(graph.size(), 4);
 }
 
+TEST(GraphTest, Branches)
+{
+    Graph graph;
+    const Offset x = graph.add_variable(0);
+    const Offset less = graph.add(Operator::Less, std::array{x, x});
+    const Offset ratio = graph.add(Operator::Division, std::array{x, x});
+    const Offset branch = graph.add(Operator::If, std::array{less, ratio, x});
+    EXPECT_EQ(ids(graph.children(branch)), (std::vector<Offset>{less, ratio, x}));
+    EXPECT_EQ(graph.op(graph.add(Operator::If, std::array{less, less, less})), Operator::If);
+    EXPECT_EQ(refusal([&] { graph.add(Operator::If, std::array{ratio, less, x}); }),
+              refused(Operator::If, "takes a condition first: node 2 is operator 6"));
+    EXPECT_EQ(refusal([&] { graph.add(Operator::If, std::array{less, x}); }),
+              refused(Operator::If, "takes 3 children, not 2"));
+    EXPECT_EQ(refusal([&] { graph.add(Operator::If, 1.0, std::array{less, x, x}); }),
+              refused(Operator::If, "takes no payload"));
+    EXPECT_EQ(graph.size(), 5);
+}
+
 TEST(GraphTest, UnaryShape)
 {
     Graph graph;

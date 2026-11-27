@@ -36,6 +36,7 @@ using biyos::Tolerances;
 using biyos::Workspace;
 using biyos::test::binary;
 using biyos::test::bits;
+using biyos::test::branch;
 using biyos::test::constant;
 using biyos::test::default_tolerances;
 using biyos::test::jacobian_of;
@@ -197,6 +198,11 @@ std::vector<Real> point_of(const Inputs &t)
         point[k] = t[k] ? -1.0 : 1.0;
     }
     return point;
+}
+
+Real chosen(const Tape &tape, Real x, Real then, Real otherwise)
+{
+    return values_of(tape, std::array{x, then, otherwise})[0];
 }
 
 }
@@ -382,4 +388,18 @@ TEST(LogicTest, Slopes)
             EXPECT_EQ(std::isnan(slope), kReads[r][0]) << r;
         }
     }
+}
+
+TEST(BranchTest, Taken)
+{
+    Graph graph;
+    const Offset x = graph.add_variable(0);
+    const Offset negative = binary(graph, Operator::Less, x, constant(graph, 0.0));
+    const Offset root = branch(graph, negative, graph.add_variable(1), graph.add_variable(2));
+    const Tape tape(graph, std::span(&root, 1));
+    EXPECT_EQ(bits(chosen(tape, -1.0, 2.0, 3.0)), bits(2.0));
+    EXPECT_EQ(bits(chosen(tape, 1.0, 2.0, 3.0)), bits(3.0));
+    EXPECT_EQ(bits(chosen(tape, -1.0, 2.0, kNan)), bits(2.0));
+    EXPECT_EQ(bits(chosen(tape, 1.0, kInfinity, 3.0)), bits(3.0));
+    EXPECT_TRUE(std::isnan(chosen(tape, kNan, 2.0, 3.0)));
 }

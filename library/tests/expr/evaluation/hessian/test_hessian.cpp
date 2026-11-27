@@ -48,10 +48,12 @@ using biyos::to_size;
 using biyos::Tolerances;
 using biyos::test::arrow;
 using biyos::test::binary;
+using biyos::test::branch;
 using biyos::test::constant;
 using biyos::test::default_tolerances;
 using biyos::test::gradient_of;
 using biyos::test::kBudgets;
+using biyos::test::kSide;
 using biyos::test::kVariables;
 using biyos::test::kWide;
 using biyos::test::picks;
@@ -68,6 +70,7 @@ using Rows = std::vector<Values>;
 constexpr Real kStep = 1e-5;
 constexpr Real kBound = 1e-6;
 constexpr Real kRounding = 1e-12;
+constexpr std::array kLaneCounts{std::size_t{1}, std::size_t{2}, std::size_t{3}, std::size_t{16}};
 constexpr std::size_t kPicked = 4;
 
 Values values_of(Hessian &hessian, std::span<const Real> point, std::span<const Real> weights)
@@ -401,6 +404,110 @@ TEST(HessianTest, Connective)
     Hessian nan(graph, std::span(&undefined, 1), {}, {env.stream(), tree});
     EXPECT_TRUE(std::isnan(entry_of(nan, std::array{-1.0, 2.0}, 0, 0)));
     EXPECT_DOUBLE_EQ(entry_of(nan, std::array{1.0, 2.0}, 0, 0), 0.0);
+}
+
+TEST(HessianTest, Branches)
+{
+    Env env;
+    TimingTree tree;
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 2);
+    const Offset zero = constant(graph, 0.0);
+    const Offset positive = binary(graph, Operator::GreaterEqual, x[0], zero);
+    const Offset root = unary(graph, Operator::Sqrt, x[0]);
+    const Offset scaled = graph.add(Operator::Product, 1.0, std::array{root, x[1]});
+    const Offset square = graph.add(Operator::Product, 1.0, std::array{x[1], x[1]});
+    const Offset domain = branch(graph, positive, scaled, square);
+    const Offset grown = unary(graph, Operator::Exp, x[0]);
+    const Offset taken = branch(graph, positive, square, grown);
+    const Offset shared = graph.add_sum(0.0, std::array{taken, grown}, std::array{1.0, 2.0});
+    const Offset lifted = graph.add(Operator::Product, 1.0, std::array{taken, x[0]});
+    const Offset rooted = binary(graph, Operator::GreaterEqual, root, zero);
+    const Offset undefined = branch(graph, rooted, square, grown);
+    const Real high = std::exp(0.5);
+    const Real low = std::exp(-0.5);
+    for (const std::size_t lanes : kLaneCounts)
+    {
+        SCOPED_TRACE(lanes);
+        Hessian first(graph, std::span(&domain, 1), {}, {env.stream(), tree}, lanes);
+        expect_rows(
+            dense(first.pattern(), values_of(first, std::array{-1.0, 0.5}, std::array{1.0}), 2),
+            {{0.0, 0.0}, {0.0, 2.0}});
+        expect_rows(
+            dense(first.pattern(), values_of(first, std::array{4.0, 0.5}, std::array{1.0}), 2),
+            {{-1.0 / 64.0, 0.25}, {0.25, 0.0}});
+        Hessian second(graph, std::span(&shared, 1), {}, {env.stream(), tree}, lanes);
+        expect_rows(
+            dense(second.pattern(), values_of(second, std::array{0.5, 0.3}, std::array{1.0}), 2),
+            {{2.0 * high, 0.0}, {0.0, 2.0}});
+        expect_rows(
+            dense(second.pattern(), values_of(second, std::array{-0.5, 0.3}, std::array{1.0}), 2),
+            {{3.0 * low, 0.0}, {0.0, 0.0}});
+        Hessian third(graph, std::span(&lifted, 1), {}, {env.stream(), tree}, lanes);
+        expect_rows(
+            dense(third.pattern(), values_of(third, std::array{0.5, 0.3}, std::array{1.0}), 2),
+            {{0.0, 0.6}, {0.6, 1.0}});
+        expect_rows(
+            dense(third.pattern(), values_of(third, std::array{-0.5, 0.3}, std::array{1.0}), 2),
+            {{1.5 * low, 0.0}, {0.0, 0.0}});
+        Hessian fourth(graph, std::span(&undefined, 1), {}, {env.stream(), tree}, lanes);
+        const Values found = values_of(fourth, std::array{-1.0, 0.5}, std::array{1.0});
+        EXPECT_FALSE(found.empty());
+        for (const Real value : found)
+        {
+            EXPECT_TRUE(std::isnan(value));
+        }
+    }
+}
+
+TEST(HessianTest, Switch)
+{
+    Env env;
+    TimingTree tree;
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 2);
+    const Offset one = constant(graph, 1.0);
+    const Offset curved = graph.add(Operator::Product, 1.0, std::array{x[0], x[0], x[1]});
+    const Offset line = graph.add_sum(0.0, x, std::array{3.0, 1.0});
+    const Offset above = binary(graph, Operator::GreaterEqual, x[0], one);
+    const Offset root = branch(graph, above, curved, line);
+    const Values point{1.0, 2.0};
+    const std::array weights{1.0};
+    Hessian hessian(graph, std::span(&root, 1), {}, {env.stream(), tree});
+    const Rows rows = dense(hessian.pattern(), values_of(hessian, point, weights), 2);
+    expect_rows(rows, {{4.0, 2.0}, {2.0, 0.0}});
+    const Tape tape(graph, std::span(&root, 1));
+    const Values here = gradient_of(tape, point, weights);
+    const Values ahead = gradient_of(tape, Values{1.0 + kSide, 2.0}, weights);
+    for (std::size_t i = 0; i < point.size(); ++i)
+    {
+        const Real slope = (ahead[i] - here[i]) / kSide;
+        EXPECT_NEAR(rows[i][0], slope, tolerance(slope)) << i;
+    }
+}
+
+TEST(HessianTest, Apart)
+{
+    Env env;
+    TimingTree tree;
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 3);
+    const Offset grown = unary(graph, Operator::Exp, x[2]);
+    const Offset cubic = graph.add(Operator::Product, 1.0, x);
+    const Offset then = graph.add_sum(0.0, std::array{cubic, grown}, std::array{1.0, 1.0});
+    const Offset wave = unary(graph, Operator::Sin, x[0]);
+    const Offset otherwise = graph.add(Operator::Product, 1.0, std::array{wave, x[2], x[2]});
+    const Offset below = binary(graph, Operator::Less, x[0], x[1]);
+    const Offset root = branch(graph, below, then, otherwise);
+    Hessian hessian(graph, std::span(&root, 1), {}, {env.stream(), tree});
+    const std::array weights{1.5};
+    std::size_t checked = 0;
+    for (const Values &point : {Values{0.2, 0.9, -0.4}, Values{0.9, 0.2, -0.4}})
+    {
+        const Rows rows = dense(hessian.pattern(), values_of(hessian, point, weights), 3);
+        checked += check_differences(graph, std::span(&root, 1), point, weights, rows);
+    }
+    EXPECT_EQ(checked, 18U);
 }
 
 TEST(HessianTest, Masked)
