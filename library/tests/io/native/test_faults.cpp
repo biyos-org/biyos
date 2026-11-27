@@ -97,6 +97,8 @@ TEST(NativeTest, Words)
               bad_line(4, "'sine' is not an operator"));
     EXPECT_EQ(native_fault(text({"BIYOS 1", "EXPRESSIONS 1", "0 1", "semicont 1", "END"})),
               bad_line(4, "'semicont' is not an operator"));
+    EXPECT_EQ(native_fault(text({"BIYOS 1", "EXPRESSIONS 1", "0 1", "node 0", "END"})),
+              bad_line(4, "'node' is not an operator"));
 }
 
 TEST(NativeTest, Entries)

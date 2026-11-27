@@ -236,7 +236,7 @@ A line is a record of fields separated by white space. Blank lines are skipped, 
 |---|---|
 | Number | Decimal or exponential, the sign optional, or exactly `inf` or `-inf`. The writer gives the shortest form that reads back to the same double. |
 | Index, count | A whole decimal number. Records and variables are counted from 0. |
-| Kind, sense, operator | The name of its `BIYOS_` constant after the group, in lowercase: `bin` for `BIYOS_VARKND_BIN`, `min` for `BIYOS_OBJSENSE_MIN`, `soc` for `BIYOS_CONEKND_SOC`, `sin` for `BIYOS_OP_SIN`. A number or a word of another group is refused. |
+| Kind, sense, operator | The name of its `BIYOS_` constant after the group, in lowercase: `bin` for `BIYOS_VARKND_BIN`, `min` for `BIYOS_OBJSENSE_MIN`, `soc` for `BIYOS_CONEKND_SOC`, `sin` for `BIYOS_OP_SIN`. A number or a word of another group is refused, and so is `node`: a file is read into a new model, which holds no node to name. |
 | Name | One field. A blank, a control byte, the byte 7F and `\` are `\` and two uppercase hexadecimal digits, so `a b` is `a\20b`. Any other byte, those of UTF-8 among them, is itself. |
 
 ### Sections

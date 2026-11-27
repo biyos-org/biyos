@@ -52,10 +52,10 @@ TEST(WordTest, Kinds)
 
 TEST(WordTest, Operators)
 {
-    EXPECT_EQ(kOperatorWords.size(), std::size_t{BIYOS_OP_REF});
+    EXPECT_EQ(kOperatorWords.size(), std::size_t{BIYOS_OP_REF - 1});
     for (int code = BIYOS_OP_CONST; code <= BIYOS_OP_REF; ++code)
     {
-        EXPECT_NE(word_of(code, kOperatorWords), "");
+        EXPECT_EQ(word_of(code, kOperatorWords).empty(), code == BIYOS_OP_NODE);
     }
     expect_distinct(kOperatorWords);
 }
