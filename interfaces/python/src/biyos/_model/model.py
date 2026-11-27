@@ -4431,13 +4431,13 @@ class Model:
 
     def getnpwlpt(
         self,
-        idx: Sequence[Index | PiecewiseLinear] | PiecewiseLinears | None = None,
+        pwl: Sequence[Index | PiecewiseLinear] | PiecewiseLinears | None = None,
     ) -> Offset:
         """Count the points of piecewise linear functions.
 
         Parameters
         ----------
-        idx
+        pwl
             The pwls, in any order, any of them more than once; every pwl by
             default.
 
@@ -4452,18 +4452,18 @@ class Model:
         BIYOS_getnpwlptsp
         BIYOS_getnpwlptrg
         """
-        every = range(self.getnpwl()) if idx is None else idx
+        every = range(self.getnpwl()) if pwl is None else pwl
         return self._count("BIYOS_getnpwlpt", PiecewiseLinears, every)
 
     def getpwl(
         self,
-        idx: Sequence[Index | PiecewiseLinear] | PiecewiseLinears | None = None,
+        pwl: Sequence[Index | PiecewiseLinear] | PiecewiseLinears | None = None,
     ) -> tuple[list[Offset], list[Real], list[Real]]:
         """Read piecewise linear functions, as ``addpwl`` takes them.
 
         Parameters
         ----------
-        idx
+        pwl
             The pwls, in any order, any of them more than once; every pwl by
             default.
 
@@ -4481,7 +4481,7 @@ class Model:
         BIYOS_getpwlsp
         BIYOS_getpwlrg
         """
-        every = range(self.getnpwl()) if idx is None else idx
+        every = range(self.getnpwl()) if pwl is None else pwl
         size = self.getnpwlpt(every)
         sizes = (c_offset * len(every))()
         xs = (c_real * size)()

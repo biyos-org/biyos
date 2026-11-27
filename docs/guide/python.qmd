@@ -47,7 +47,7 @@ The readers return lists, in the order of the C call's arrays, and a block for a
 | `getsos(sos)` | kinds, counts, `Variables`, weights |
 | `getcone(idx)` | kinds, counts, `Functions` |
 | `getccon(idx)` | bounded `Functions`, complementary `Functions`, lower bounds, upper bounds |
-| `getpwl(idx)` | counts, abscissas, values |
+| `getpwl(pwl)` | counts, abscissas, values |
 | `getgpat(fun)` | counts, `Variables` |
 | `gethpat(var)` | counts, rows as `Variables` |
 
