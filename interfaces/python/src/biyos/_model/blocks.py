@@ -596,7 +596,7 @@ def index_of(
     return integer(name, value)
 
 
-def idx_of(
+def members_of(
     model: "Model", family: type[Block[View]], name: str, block: Block[View]
 ) -> Indices:
     if not isinstance(block, family):

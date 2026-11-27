@@ -22,7 +22,7 @@ from biyos._convert.numbers import (
     c_real,
 )
 from biyos._convert.text import text
-from biyos._model.blocks import Block, Indices, View, idx_of, index_of
+from biyos._model.blocks import Block, Indices, View, members_of, index_of
 
 if TYPE_CHECKING:
     from _typeshed import WriteableBuffer
@@ -165,7 +165,7 @@ def _indices(
     one: bool = False,
 ) -> "Indices | list[Index]":
     if isinstance(values, Block):
-        return idx_of(model, family, name, values)
+        return members_of(model, family, name, values)
     entry = _entry(name, one)
     return [index_of(model, family, entry, value) for value in values]
 
@@ -177,7 +177,7 @@ def span_of(
     values: Sequence[SupportsIndex] | Block[View],
 ) -> range | None:
     if isinstance(values, Block):
-        idx = idx_of(model, family, name, values)
+        idx = members_of(model, family, name, values)
         return idx if isinstance(idx, range) else None
     if isinstance(values, range) and values.step == 1:
         return values
