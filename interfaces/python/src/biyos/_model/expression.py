@@ -536,6 +536,10 @@ class Comparison(Logical):
             )
         return self._same
 
+    def _node(self) -> Expression:
+        operator = Operator[self._sense.name]
+        return Operation(operator, (self._lhs, _operand(self._rhs)), ())
+
 
 class Condition(Logical):
     """A logical constraint built from comparisons.

@@ -6,7 +6,7 @@ from operator import index
 import pytest
 
 import biyos
-from biyos import EventKind, EventLevel
+from biyos import EventKind, EventLevel, Operator
 from biyos._capi import lib
 from listed import indexed
 from number import Number
@@ -15,6 +15,8 @@ from sized import Room, limit
 from tolerance import CHECKS
 
 NAN = float("nan")
+VAR = Operator.VARIABLE
+CONST = Operator.CONSTANT
 
 FUNCTIONS = [1, 0, 1]
 LOWER = [-1.0, -biyos.inf, 2.0]
@@ -316,3 +318,83 @@ def test_on(env, model):
 def test_tolerances(env, model, check):
     add_sample(model)
     check(env, model, "con", "constraint")
+
+
+@pytest.fixture
+def x(model):
+    return model.addvar(3)
+
+
+def test_condition(model, x):
+    cons = model.addcon((x[0] <= 1) | (x[1] >= 2))
+    funs, lb, ub = model.getcon(cons)
+    assert (lb, ub) == ([1.0], [1.0])
+    assert model.getexpr(funs) == (
+        [7],
+        [VAR, CONST, Operator.LESS_EQUAL, VAR, CONST, Operator.GREATER_EQUAL]
+        + [Operator.OR],
+        [0, 0, 2, 1, 0, 2, 2],
+        [1.0, 2.0],
+    )
+    assert indexed(model.getrlinterm(funs)) == ([], [], [])
+    assert model.getcst(funs) == [0.0]
+
+
+def test_negated(model, x):
+    cons = model.addcon(~(x[0] == x[1]))
+    funs = model.getcon(cons)[0]
+    assert model.getexpr(funs) == (
+        [4],
+        [VAR, VAR, Operator.EQUAL, Operator.NOT],
+        [0, 1, 2, 1],
+        [],
+    )
+
+
+def test_conditions(model, x):
+    cons = model.addcon([x[0] <= 1, (x[0] <= 1) & (x[2] >= x[1])])
+    funs, lb, ub = model.getcon(cons)
+    assert (lb, ub) == ([-biyos.inf, 1.0], [1.0, 1.0])
+    assert model.getexpr(funs[1:])[1] == [
+        VAR,
+        CONST,
+        Operator.LESS_EQUAL,
+        VAR,
+        VAR,
+        Operator.GREATER_EQUAL,
+        Operator.AND,
+    ]
+
+
+def test_repeated(model, x):
+    a = x[0] <= 1
+    cons = model.addcon(a | ~a)
+    code = model.getexpr(model.getcon(cons)[0])[1]
+    assert code.count(Operator.LESS_EQUAL) == 1
+    assert code[-2:] == [Operator.NOT, Operator.OR]
+
+
+def test_deep(model, x):
+    cond = x[0] <= 0
+    for _ in range(10**4):
+        cond = cond & (x[1] <= 0)
+    cons = model.addcon(cond)
+    code = model.getexpr(model.getcon(cons)[0])[1]
+    assert code.count(Operator.AND) == 10**4
+
+
+def test_condition_bounds(model, x):
+    with pytest.raises(TypeError, match="lb and ub come from"):
+        model.addcon((x[0] <= 1) | (x[1] <= 1), lb=[0.0])
+    with pytest.raises(TypeError, match="fun.1. is int, not a comparison"):
+        model.addcon([~(x[0] <= 1), 0])
+    assert model.getncon() == 0
+
+
+def test_condition_stale(model, x):
+    cond = (x[0] <= 1) | (x[2] >= 0)
+    model.delvar([2])
+    with pytest.raises(ValueError, match="predates a deletion"):
+        model.addcon(cond)
+    assert model.getncon() == 0
+    assert model.getnfun() == 2
