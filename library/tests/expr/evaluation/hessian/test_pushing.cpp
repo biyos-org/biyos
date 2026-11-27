@@ -1,7 +1,13 @@
+#include "core/env/env.hpp"
+#include "core/env/pool.hpp"
+#include "core/events/event.hpp"
+#include "core/events/events.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/tolerances.hpp"
+#include "core/timing/timer.hpp"
 #include "expr/evaluation/derivatives/value.hpp"
 #include "expr/evaluation/hessian/elements.hpp"
+#include "expr/evaluation/hessian/hessian.hpp"
 #include "expr/evaluation/hessian/pattern.hpp"
 #include "expr/evaluation/hessian/pushing.hpp"
 #include "expr/evaluation/hessian/sweep.hpp"
@@ -18,6 +24,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -27,16 +34,26 @@ namespace
 using biyos::Elimination;
 using biyos::elimination_of;
 using biyos::Entry;
+using biyos::Env;
+using biyos::Event;
+using biyos::EventKind;
+using biyos::EventLevel;
+using biyos::Field;
 using biyos::Graph;
+using biyos::Hessian;
 using biyos::Index;
 using biyos::Lists;
 using biyos::lists_of;
+using biyos::Lower;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::Pass;
+using biyos::Pool;
 using biyos::Pusher;
 using biyos::Real;
 using biyos::Tape;
+using biyos::TimingTree;
+using biyos::to_index;
 using biyos::to_size;
 using biyos::Tolerances;
 using biyos::variables_of;
@@ -63,8 +80,11 @@ constexpr std::array kSizes{3, 17, 33, 64, 200};
 constexpr std::uint64_t kSeeds = 4;
 constexpr Index kSubset = 64;
 constexpr Index kMany = 200;
+constexpr Index kTie = 17;
+constexpr Index kHead = 6;
 constexpr Real kBound = 1e-6;
 constexpr std::array kOperators{0.7, 1.3, 0.4, 0.3};
+constexpr std::array kWeights{1.0, -2.5, 0.0};
 
 struct Pushed
 {
@@ -167,6 +187,50 @@ Offset subset(Graph &graph, const std::vector<Offset> &x)
     return clique(graph, x, waves_of(graph, x), kSubset);
 }
 
+Hessian hessian_of(const Graph &graph, std::span<const Offset> roots)
+{
+    Env env;
+    TimingTree tree;
+    return Hessian(graph, roots, {}, {env.stream(), tree});
+}
+
+Values values_of(Hessian &hessian, std::span<const Real> point, Real weight)
+{
+    Values out(hessian.pattern().rows.size(), -1.0);
+    Pool pool;
+    hessian.values(point, std::array{weight}, default_tolerances(), out, pool);
+    return out;
+}
+
+void expect_hessian(const Graph &graph, Offset root, std::span<const Real> point, Real weight)
+{
+    const std::array roots{root};
+    Hessian hessian = hessian_of(graph, roots);
+    ASSERT_TRUE(hessian.pushed(0));
+    const Values out = values_of(hessian, point, weight);
+    const Tape tape(graph, roots);
+    const Lower &lower = hessian.pattern();
+    for (std::size_t j = 0; j + 1 < lower.starts.size(); ++j)
+    {
+        const Values column = column_of(tape, 0, point, default_tolerances(), to_index(j));
+        for (Offset k = lower.starts[j]; k < lower.starts[j + 1]; ++k)
+        {
+            const Real wanted = weight * column[to_size(lower.rows[to_size(k)])];
+            EXPECT_TRUE(near(out[to_size(k)], wanted)) << j << " " << out[to_size(k)];
+        }
+    }
+}
+
+std::string line_of(const Event &event)
+{
+    std::string line;
+    for (const Field &field : event.fields)
+    {
+        line += field.name + "=" + field.value + " ";
+    }
+    return line;
+}
+
 std::vector<Offset> shapes_of(Graph &graph, Index size, Random &random)
 {
     const std::vector<Offset> x = variables(graph, size);
@@ -244,6 +308,73 @@ TEST(PushingTest, Repeat)
         EXPECT_EQ(bits(parts_of(tape, pushed, e, second)), bits(parts_of(tape, fresh, e, second)))
             << e;
     }
+}
+
+TEST(PushingTest, Choice)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, kMany);
+    const std::array roots{arrow(graph, x), subset(graph, x)};
+    const Hessian hessian = hessian_of(graph, roots);
+    EXPECT_TRUE(hessian.colored(0));
+    EXPECT_FALSE(hessian.pushed(0));
+    EXPECT_FALSE(hessian.colored(1));
+    EXPECT_TRUE(hessian.pushed(1));
+}
+
+TEST(PushingTest, Event)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, kMany);
+    const std::vector<Offset> few(x.begin(), x.begin() + kTie);
+    const Offset total = graph.add_sum(0.0, x, Values(x.size(), 1.0));
+    const std::array roots{arrow(graph, x),
+                           subset(graph, x),
+                           clique(graph, few, waves_of(graph, few), kHead),
+                           unary(graph, Operator::Exp, total)};
+    Env env;
+    std::vector<std::string> lines;
+    const auto keep = [&lines](const Event &event) { lines.push_back(line_of(event)); };
+    env.events().add_hook(EventKind::Message, EventLevel::Debug, keep);
+    TimingTree tree;
+    const Hessian hessian(graph, roots, {}, {env.stream(), tree});
+    const std::vector<std::string> wanted{
+        "element=0 method=coloring pushes=802 sweeps=1 length=403 ",
+        "element=1 method=pushing pushes=2281 sweeps=13 length=405 ",
+        "element=2 method=coloring pushes=39 sweeps=1 length=39 ",
+        "element=3 method=dense pushes=20101 sweeps=13 length=202 ",
+    };
+    EXPECT_EQ(lines, wanted);
+}
+
+TEST(PushingTest, Values)
+{
+    Random random(11);
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, kMany);
+    const Offset root = subset(graph, x);
+    const Values point = point_of(random, kMany);
+    for (const Real weight : kWeights)
+    {
+        SCOPED_TRACE(weight);
+        expect_hessian(graph, root, point, weight);
+    }
+}
+
+TEST(PushingTest, Zero)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, kMany);
+    const std::array factors{waves_of(graph, x), unary(graph, Operator::Log, x[0])};
+    const Offset tail = graph.add(Operator::Product, 1.0, factors);
+    const std::array roots{clique(graph, x, tail, kSubset)};
+    Hessian hessian = hessian_of(graph, roots);
+    ASSERT_TRUE(hessian.pushed(0));
+    Values point(to_size(kMany), 0.5);
+    values_of(hessian, point, 1.0);
+    point.front() = -1.0;
+    const Values out = values_of(hessian, point, 0.0);
+    EXPECT_EQ(bits(out), bits(Values(out.size(), 0.0)));
 }
 
 TEST(PushingTest, Undefined)

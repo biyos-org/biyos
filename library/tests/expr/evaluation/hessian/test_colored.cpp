@@ -48,7 +48,6 @@ using biyos::test::products;
 using biyos::test::Random;
 using biyos::test::unary;
 using biyos::test::variables;
-using biyos::test::waves_of;
 
 using Values = std::vector<Real>;
 using Rows = std::vector<Values>;
@@ -151,7 +150,7 @@ bool cheap(Index wide)
 {
     Graph graph;
     const std::vector<Offset> x = variables(graph, kNarrow);
-    return colored(graph, clique(graph, x, waves_of(graph, x), wide));
+    return colored(graph, clique(graph, x, arrow(graph, x), wide));
 }
 
 TEST(ColoringTest, Gradients)
@@ -165,7 +164,10 @@ TEST(ColoringTest, Guard)
     Graph graph;
     const std::vector<Offset> x = variables(graph, kGuarded);
     const Offset total = graph.add_sum(0.0, x, Values(x.size(), 1.0));
-    EXPECT_FALSE(colored(graph, unary(graph, Operator::Exp, total)));
+    const std::array root{unary(graph, Operator::Exp, total)};
+    const Hessian hessian = hessian_of(graph, root);
+    EXPECT_FALSE(hessian.colored(0));
+    EXPECT_FALSE(hessian.pushed(0));
 }
 
 TEST(ColoringTest, Threshold)
@@ -193,8 +195,8 @@ TEST(ColoringTest, Routed)
 {
     Graph graph;
     const std::vector<Offset> x = variables(graph, kNarrow);
-    const Offset waves = waves_of(graph, x);
-    const std::array roots{clique(graph, x, waves, kClique), unary(graph, Operator::Cos, waves)};
+    const Offset tail = arrow(graph, x);
+    const std::array roots{clique(graph, x, tail, kClique), unary(graph, Operator::Cos, tail)};
     EXPECT_TRUE(hessian_of(graph, roots, kLanes, kSplit).colored(0));
 }
 
