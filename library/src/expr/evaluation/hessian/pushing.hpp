@@ -21,7 +21,7 @@ struct Elimination
     std::vector<Node> nodes;
     std::vector<std::uint32_t> operands;
     std::vector<std::uint32_t> bends;
-    std::vector<Offset> rows;
+    std::vector<Offset> lists;
     std::vector<Offset> starts;
     std::vector<std::uint32_t> columns;
     std::vector<Offset> parts;

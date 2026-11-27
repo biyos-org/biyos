@@ -83,7 +83,7 @@ std::vector<std::uint32_t> bend_starts(std::span<const Node> nodes)
     return starts;
 }
 
-std::vector<Offset> row_starts(std::span<const Offset> links)
+std::vector<Offset> list_starts(std::span<const Offset> links)
 {
     std::vector<Offset> starts{0};
     for (const Offset count : links)
@@ -118,8 +118,8 @@ Widest widest_of(std::span<const Elimination> eliminations) noexcept
     Widest widest{.capacity = 0, .ids = 0, .operands = 0, .bends = 0};
     for (const Elimination &elimination : eliminations)
     {
-        widest.capacity = (std::max)(widest.capacity, to_size(elimination.rows.back()));
-        widest.ids = (std::max)(widest.ids, elimination.rows.size() - 1);
+        widest.capacity = (std::max)(widest.capacity, to_size(elimination.lists.back()));
+        widest.ids = (std::max)(widest.ids, elimination.lists.size() - 1);
         widest.operands = (std::max)(widest.operands, elimination.operands.size());
         widest.bends = (std::max)(widest.bends, std::size_t{elimination.bends.back()});
     }
@@ -355,7 +355,7 @@ void link(const Push &push, std::uint32_t a, std::uint32_t b, Real value, bool a
         return;
     }
     const std::uint32_t row = (std::max)(a, b);
-    const auto at = to_size(push.elimination.rows[row] + push.space.sizes[row]++);
+    const auto at = to_size(push.elimination.lists[row] + push.space.sizes[row]++);
     push.space.columns[at] = (std::min)(a, b);
     push.space.values[at] = across && a == b ? 2.0 * value : value;
 }
@@ -363,7 +363,7 @@ void link(const Push &push, std::uint32_t a, std::uint32_t b, Real value, bool a
 Offset merge(const Push &push, std::size_t row) noexcept
 {
     PushSpace &space = push.space;
-    const Offset begin = push.elimination.rows[row];
+    const Offset begin = push.elimination.lists[row];
     const Offset end = begin + std::exchange(space.sizes[row], 0);
     Offset merged = begin;
     for (Offset k = begin; k < end; ++k)
@@ -463,7 +463,7 @@ void eliminate(const Push &push, std::size_t n) noexcept
         std::span(elimination.operands).subspan(node.begin, count);
     const std::span<const Real> slopes = std::span(space.slopes).subspan(node.begin, count);
     const Offset end = merge(push, id);
-    for (auto k = to_size(elimination.rows[id]); k < to_size(end); ++k)
+    for (auto k = to_size(elimination.lists[id]); k < to_size(end); ++k)
     {
         const std::uint32_t neighbour = space.columns[k];
         const Real weight = space.values[k];
@@ -503,7 +503,7 @@ void scatter(const Push &push, std::uint32_t row, std::span<Real> parts) noexcep
     {
         space.marks[columns[k]] = places[k];
     }
-    const auto begin = to_size(elimination.rows[row]);
+    const auto begin = to_size(elimination.lists[row]);
     const auto end = begin + to_size(std::exchange(space.sizes[row], 0));
     for (std::size_t k = begin; k < end; ++k)
     {
@@ -536,7 +536,7 @@ PushSpace space_of(const Tape &tape, std::span<const Elimination> eliminations)
 Elimination elimination_of(Offset element, Shape shape)
 {
     std::vector<std::uint32_t> bends = bend_starts(shape.nodes);
-    std::vector<Offset> rows = row_starts(shape.links);
+    std::vector<Offset> lists = list_starts(shape.links);
     Elimination elimination{
         .element = element,
         .variables = narrow(shape.links.size() - shape.nodes.size()),
@@ -544,7 +544,7 @@ Elimination elimination_of(Offset element, Shape shape)
         .nodes = std::move(shape.nodes),
         .operands = std::move(shape.operands),
         .bends = std::move(bends),
-        .rows = std::move(rows),
+        .lists = std::move(lists),
         .starts = {},
         .columns = {},
         .parts = {},
