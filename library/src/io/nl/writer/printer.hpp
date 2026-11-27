@@ -49,6 +49,7 @@ class Printer
     void add_products(std::span<const QuadraticTerm> terms);
     void add_terms(Offset sum);
     void open(std::size_t count);
+    void open_list(int code, std::size_t count);
     void expand(Offset node);
     void expand_sum(Offset node);
     void expand_product(Offset node);

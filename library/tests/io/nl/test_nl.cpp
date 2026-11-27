@@ -52,12 +52,14 @@ using biyos::test::nl::kOrderNlFile;
 using biyos::test::nl::less_of;
 using biyos::test::nl::log10_of;
 using biyos::test::nl::node;
+using biyos::test::nl::outside_of;
 using biyos::test::nl::pieces_of;
 using biyos::test::nl::read_sample;
 using biyos::test::nl::square_of;
 using biyos::test::nl::sum_of;
 using biyos::test::nl::tiny_wanted;
 using biyos::test::nl::tiny_with;
+using biyos::test::nl::window_of;
 
 namespace
 {
@@ -118,6 +120,53 @@ O0 0
 o48
 n1
 v0
+r
+3
+b
+3
+)";
+
+constexpr std::string_view kWindowTail = R"(C0
+n0
+O0 0
+o35
+o21
+o23
+v0
+n1
+o28
+v0
+n-1
+v0
+n0
+r
+3
+b
+3
+)";
+
+constexpr std::string_view kOutsideTail = R"(C0
+n0
+O0 0
+o35
+o71
+3
+o22
+v0
+n-1
+o29
+v0
+n2
+o20
+o24
+v0
+n0.5
+o34
+o30
+v0
+n3
+n1
+n0
 r
 3
 b
@@ -291,6 +340,24 @@ TEST(NlTest, Atan2)
     EXPECT_EQ(difference(model, tiny_wanted(atan2_of)), "");
     EXPECT_DOUBLE_EQ(objective_at(model, 1.0), std::numbers::pi / 4.0);
     EXPECT_DOUBLE_EQ(objective_at(model, -1.0), 3.0 * std::numbers::pi / 4.0);
+}
+
+TEST(NlTest, Window)
+{
+    const Model model = read_sample(tiny_with(kWindowTail));
+    EXPECT_EQ(difference(model, tiny_wanted(window_of)), "");
+    EXPECT_DOUBLE_EQ(objective_at(model, 0.5), 0.5);
+    EXPECT_DOUBLE_EQ(objective_at(model, -1.5), 0.0);
+}
+
+TEST(NlTest, Outside)
+{
+    const Model model = read_sample(tiny_with(kOutsideTail));
+    EXPECT_EQ(difference(model, tiny_wanted(outside_of)), "");
+    EXPECT_DOUBLE_EQ(objective_at(model, -1.5), 1.0);
+    EXPECT_DOUBLE_EQ(objective_at(model, 0.5), 1.0);
+    EXPECT_DOUBLE_EQ(objective_at(model, 1.0), 0.0);
+    EXPECT_DOUBLE_EQ(objective_at(model, 3.0), 1.0);
 }
 
 TEST(NlTest, Pieces)

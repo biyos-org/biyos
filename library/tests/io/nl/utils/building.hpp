@@ -84,6 +84,36 @@ inline Offset sum_of(Model &model, Offset x)
     return node(model, Operator::Sum, {x, one, minus}, {0.0, 1.0, 1.0, 1.0});
 }
 
+inline Offset constant_of(Model &model, Real value)
+{
+    return node(model, Operator::Constant, {}, {value});
+}
+
+inline Offset compare_of(Model &model, Operator op, Offset x, Real value)
+{
+    return node(model, op, {x, constant_of(model, value)}, {});
+}
+
+inline Offset window_of(Model &model, Offset x)
+{
+    const Offset below = compare_of(model, Operator::LessEqual, x, 1.0);
+    const Offset above = compare_of(model, Operator::GreaterEqual, x, -1.0);
+    const Offset inside = node(model, Operator::And, {below, above}, {});
+    return node(model, Operator::If, {inside, x, constant_of(model, 0.0)}, {});
+}
+
+inline Offset outside_of(Model &model, Offset x)
+{
+    const Offset low = compare_of(model, Operator::Less, x, -1.0);
+    const Offset high = compare_of(model, Operator::Greater, x, 2.0);
+    const Offset half = compare_of(model, Operator::Equal, x, 0.5);
+    const Offset other = compare_of(model, Operator::NotEqual, x, 3.0);
+    const Offset three = node(model, Operator::Not, {other}, {});
+    const Offset either = node(model, Operator::Or, {half, three}, {});
+    const Offset any = node(model, Operator::Or, {low, high, either}, {});
+    return node(model, Operator::If, {any, constant_of(model, 1.0), constant_of(model, 0.0)}, {});
+}
+
 inline Index count_of(const Model &model, Operator op)
 {
     Index count = 0;

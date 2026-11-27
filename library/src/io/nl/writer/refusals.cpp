@@ -155,6 +155,16 @@ std::string_view operator_text(Operator op) noexcept
     case Operator::Acosh:
     case Operator::Atanh:
     case Operator::PiecewiseLinear:
+    case Operator::LessEqual:
+    case Operator::GreaterEqual:
+    case Operator::Equal:
+    case Operator::Less:
+    case Operator::Greater:
+    case Operator::NotEqual:
+    case Operator::And:
+    case Operator::Or:
+    case Operator::Not:
+    case Operator::If:
         break;
     case Operator::Entropy:
         return "the operator entropy";
@@ -164,21 +174,6 @@ std::string_view operator_text(Operator op) noexcept
         return "the operator erf";
     case Operator::Atan2:
         return "the operator atan2";
-    case Operator::LessEqual:
-    case Operator::GreaterEqual:
-    case Operator::Equal:
-    case Operator::Less:
-    case Operator::Greater:
-    case Operator::NotEqual:
-        return "a comparison";
-    case Operator::And:
-        return "the operator and";
-    case Operator::Or:
-        return "the operator or";
-    case Operator::Not:
-        return "the operator not";
-    case Operator::If:
-        return "the operator if";
     }
     return "";
 }

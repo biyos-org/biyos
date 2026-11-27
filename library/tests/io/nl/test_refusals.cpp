@@ -35,17 +35,15 @@ v0
 n2
 )";
 
-constexpr std::string_view kLtTail = R"(C0
-o22
+constexpr std::string_view kCeilTail = R"(C0
+o14
 v0
-n2
 )";
 
-constexpr std::string_view kIfTail = R"(C0
-o35
+constexpr std::string_view kImpliesTail = R"(C0
+o72
 n1
-v0
-n2
+n1
 )";
 
 constexpr std::string_view kFloorTail = R"(C0
@@ -132,8 +130,8 @@ TEST(NlTest, Remainder)
 
 TEST(NlTest, Refused)
 {
-    EXPECT_EQ(tiny_fault(kLtTail), refused(12, "operator lt"));
-    EXPECT_EQ(tiny_fault(kIfTail), refused(12, "operator if"));
+    EXPECT_EQ(tiny_fault(kCeilTail), refused(12, "operator ceil"));
+    EXPECT_EQ(tiny_fault(kImpliesTail), refused(12, "operator implies"));
     EXPECT_EQ(tiny_fault(kFloorTail), refused(12, "operator floor"));
     EXPECT_EQ(tiny_fault(kAlldiffTail), refused(12, "operator alldiff"));
 }

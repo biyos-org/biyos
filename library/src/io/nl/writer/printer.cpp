@@ -196,6 +196,12 @@ void Printer::open(std::size_t count)
     }
 }
 
+void Printer::open_list(int code, std::size_t count)
+{
+    add(Piece::Opcode, code);
+    add(Piece::Count, to_offset(count));
+}
+
 void Printer::expand(Offset node)
 {
     const Operator op = graph_.op(node);
@@ -224,8 +230,13 @@ void Printer::expand(Offset node)
         break;
     case Operator::Max:
     case Operator::Min:
-        add(Piece::Opcode, code_of(op));
-        add(Piece::Count, to_offset(children.size()));
+        open_list(code_of(op), children.size());
+        break;
+    case Operator::And:
+        open_list(kAndListCode, children.size());
+        break;
+    case Operator::Or:
+        open_list(kOrListCode, children.size());
         break;
     case Operator::PiecewiseLinear:
         expand_pieces(node);
@@ -248,22 +259,20 @@ void Printer::expand(Offset node)
     case Operator::Asinh:
     case Operator::Acosh:
     case Operator::Atanh:
-        add(Piece::Opcode, code_of(op));
-        break;
-    case Operator::Entropy:
-    case Operator::SignPower:
-    case Operator::Erf:
-    case Operator::Atan2:
     case Operator::LessEqual:
     case Operator::GreaterEqual:
     case Operator::Equal:
     case Operator::Less:
     case Operator::Greater:
     case Operator::NotEqual:
-    case Operator::And:
-    case Operator::Or:
     case Operator::Not:
     case Operator::If:
+        add(Piece::Opcode, code_of(op));
+        break;
+    case Operator::Entropy:
+    case Operator::SignPower:
+    case Operator::Erf:
+    case Operator::Atan2:
         throw Error(ErrorKind::Internal, "io", "NL holds no such operator");
     }
     for (const Offset child : children)
