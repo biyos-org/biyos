@@ -10,6 +10,7 @@
 #include "core/text/text.hpp"
 #include "core/timing/timer.hpp"
 #include "expr/evaluation/derivatives/value.hpp"
+#include "expr/evaluation/hessian/coloring.hpp"
 #include "expr/evaluation/hessian/elements.hpp"
 #include "expr/evaluation/hessian/pattern.hpp"
 #include "expr/evaluation/hessian/sweep.hpp"
@@ -36,6 +37,7 @@ namespace
 
 constexpr std::size_t kWidest = std::size_t{1} << (std::numeric_limits<std::size_t>::digits - 1);
 constexpr Offset kGrain = 64;
+constexpr Offset kDense = -1;
 
 struct Chunk
 {
@@ -88,6 +90,22 @@ void seed(std::span<const Index> variables, Chunk chunk, Pass &pass, Real value)
     {
         const auto variable = to_size(variables[chunk.first + l]);
         pass.seeds[variable * pass.lanes + l] = value;
+    }
+}
+
+void paint(std::span<const Index> variables,
+           std::span<const Index> colors,
+           Chunk window,
+           Pass &pass,
+           Real value) noexcept
+{
+    for (std::size_t k = 0; k < variables.size(); ++k)
+    {
+        const auto color = to_size(colors[k]);
+        if (color >= window.first && color < window.first + window.count)
+        {
+            pass.seeds[to_size(variables[k]) * pass.lanes + color - window.first] = value;
+        }
     }
 }
 
@@ -147,6 +165,38 @@ Blocks blocks_of(const Tape &tape, Timing timing)
     return blocks;
 }
 
+Offset length_of(std::span<const Run> runs) noexcept
+{
+    Offset length = 0;
+    for (const Run run : runs)
+    {
+        length += run.end - run.begin;
+    }
+    return length;
+}
+
+Offset length_of(const Tape &tape, Offset element)
+{
+    const std::span<const Block> prepass = tape.blocks().first(to_size(tape.prepass()));
+    Offset length = length_of(tape.runs(element));
+    for (const Range range : tape.route(element))
+    {
+        for (Offset position = range.begin; position < range.end; ++position)
+        {
+            const Block &block = block_of(prepass, position);
+            const std::size_t output = to_size(position - block.begin);
+            length += length_of(slice(std::span(block.runs), block.starts, output));
+        }
+    }
+    return length;
+}
+
+bool cheap(const Tape &tape, Offset element, std::span<const Entry> entries, std::size_t size)
+{
+    const auto sweeps = to_offset((size + kLanes - 1) / kLanes);
+    return star_work(entries, size) <= sweeps * length_of(tape, element);
+}
+
 std::vector<Offset> chunks_of(const Pattern &pattern)
 {
     std::vector<Offset> chunks{0};
@@ -199,12 +249,13 @@ Hessian::Hessian(const Graph &graph,
       lower_(lower_of(tape_.pattern(), blocks_, declared)),
       map_(map_of(lower_, tape_.pattern(), blocks_, declared))
 {
+    color(timing);
     const std::vector<std::size_t> widths = widths_of(lanes_of(lanes));
     std::vector<bool> used(widths.size(), false);
     used.front() = true;
     for (Offset e = 0; e < tape_.roots(); ++e)
     {
-        classes_.push_back(class_of(widths, variables_of(tape_.pattern(), e).size()));
+        classes_.push_back(class_of(widths, directions(e)));
         used[classes_.back()] = true;
     }
     std::vector<std::size_t> places(widths.size(), 0);
@@ -224,6 +275,38 @@ Hessian::Hessian(const Graph &graph,
     chunks_ = chunks_of(tape_.pattern());
     scales_.assign(to_size(tape_.roots()), 0.0);
     parts_.assign((std::max)(map_.blocks.size(), tape_.pattern().variables.size()), 0.0);
+}
+
+void Hessian::color(Timing timing)
+{
+    places_.assign(to_size(tape_.roots()), kDense);
+    if (!any_large(tape_.pattern()))
+    {
+        return;
+    }
+    const Timer timer(timing.stream, timing.tree, "expr", "coloring");
+    for (Offset e = 0; e < tape_.roots(); ++e)
+    {
+        const std::size_t size = variables_of(tape_.pattern(), e).size();
+        const std::span<const Entry> entries = entries_of(blocks_, e);
+        if (large(size) && cheap(tape_, e, entries, size))
+        {
+            places_[to_size(e)] = to_offset(colorings_.size());
+            colorings_.push_back(star_coloring(entries, size));
+        }
+    }
+}
+
+std::size_t Hessian::directions(Offset e) const noexcept
+{
+    const Offset place = places_[to_size(e)];
+    return place == kDense ? variables_of(tape_.pattern(), e).size()
+                           : to_size(colorings_[to_size(place)].directions);
+}
+
+bool Hessian::colored(Offset element) const noexcept
+{
+    return places_[to_size(element)] != kDense;
 }
 
 const Lower &Hessian::pattern() const noexcept
@@ -294,6 +377,34 @@ void Hessian::write_block(Offset e,
     }
 }
 
+void Hessian::write_colored(Offset e,
+                            Real scale,
+                            std::span<const Real> point,
+                            const Tolerances &tolerances,
+                            std::vector<Pass> &passes) noexcept
+{
+    Pass &pass = passes[classes_[to_size(e)]];
+    const Coloring &coloring = colorings_[to_size(places_[to_size(e)])];
+    const std::span<const Index> variables = variables_of(tape_.pattern(), e);
+    const std::span<Real> parts = std::span(parts_).subspan(to_size(map_.starts[to_size(e)]));
+    const auto count = to_size(coloring.directions);
+    auto read = coloring.reads.begin();
+    for (std::size_t first = 0; first < count; first += pass.lanes)
+    {
+        const Chunk window{.first = first, .count = (std::min)(pass.lanes, count - first)};
+        paint(variables, coloring.colors, window, pass, 1.0);
+        sweep(tape_, e, point, tolerances, pass);
+        for (; read != coloring.reads.end() && to_size(read->color) < first + window.count; ++read)
+        {
+            const auto variable = to_size(variables[to_size(read->row)]);
+            const std::size_t lane = to_size(read->color) - first;
+            parts[to_size(read->part)] = scale * pass.second.gradient[variable * pass.lanes + lane];
+        }
+        clear(variables, pass);
+        paint(variables, coloring.colors, window, pass, 0.0);
+    }
+}
+
 void Hessian::write_product(Offset e,
                             Real scale,
                             std::span<const Real> point,
@@ -328,6 +439,10 @@ void Hessian::fill_blocks(std::size_t chunk,
         if (is_zero(scale))
         {
             std::ranges::fill(slice(std::span(parts_), map_.starts, to_size(e)), 0.0);
+        }
+        else if (colored(e))
+        {
+            write_colored(e, scale, point, tolerances, workers_[worker]);
         }
         else
         {
