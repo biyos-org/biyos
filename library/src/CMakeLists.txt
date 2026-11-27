@@ -109,6 +109,7 @@ add_library(biyos_internal STATIC
     io/nl/writer/layout.cpp
     io/nl/writer/printer.cpp
     io/nl/writer/refusals.cpp
+    io/nl/writer/sets.cpp
     io/nl/writer/usage.cpp
     io/nl/writer/writer.cpp
     io/native/native.cpp

@@ -10,6 +10,7 @@
 #include "io/nl/writer/entries.hpp"
 #include "io/nl/writer/layout.hpp"
 #include "io/nl/writer/printer.hpp"
+#include "io/nl/writer/sets.hpp"
 #include "io/nl/writer/usage.hpp"
 #include "io/utils/report.hpp"
 #include "model/model.hpp"
@@ -130,6 +131,7 @@ void Plan::print(std::ostream &output) const
     print_bounds(output);
     print_columns(output);
     print_entries(output);
+    print_sets(output, model_, columns_.position);
 }
 
 void Plan::report(Stream stream, const std::string &file) const

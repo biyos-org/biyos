@@ -308,6 +308,18 @@ G0 1
 1 1
 )";
 
+constexpr std::string_view kWrittenSets = R"(S0 4 sosno
+0 1
+1 1
+2 -2
+3 -2
+S4 4 ref
+0 1
+1 2.5
+2 0
+3 4
+)";
+
 std::string refused(std::string_view record, std::string_view part)
 {
     return "unsupported: " + std::string(record) + ": NL cannot hold " + std::string(part);
@@ -533,4 +545,22 @@ TEST(NlTest, PairTwice)
     const Complement again{.function = 3, .lower = 0.0, .upper = kInfinity, .multiplier = 1};
     model.add_complements(std::span(&again, 1));
     EXPECT_EQ(refusal(model), refused("complement 1", "variable 0 twice"));
+}
+
+TEST(NlTest, WrittenSets)
+{
+    EXPECT_TRUE(printed(numbered()).ends_with(kWrittenSets)) << printed(numbered());
+}
+
+TEST(NlTest, KeptSets)
+{
+    expect_kept(numbered(), std::vector{0.5, -0.25, 1.0, 2.0});
+}
+
+TEST(NlTest, EmptySet)
+{
+    Model model = numbered();
+    const auto kind = SpecialOrderedSetKind::One;
+    model.add_special_ordered_sets(std::span(&kind, 1), std::vector<Offset>{0, 0}, {});
+    EXPECT_EQ(refusal(model), refused("set 2", "an empty set"));
 }

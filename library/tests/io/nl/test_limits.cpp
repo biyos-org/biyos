@@ -132,7 +132,7 @@ TEST(NlTest, Records)
     EXPECT_EQ(refusal(built(indicators)), refused("indicator 0", "indicators"));
     Parts sets = base;
     sets.special_ordered_sets = sample().special_ordered_sets;
-    EXPECT_EQ(refusal(built(sets)), refused("set 0", "special ordered sets"));
+    EXPECT_EQ(refusal(built(sets)), refused("set 1", "variable 0 in two sets"));
     Parts cones = base;
     cones.cones = sample().cones;
     EXPECT_EQ(refusal(built(cones)), refused("cone 0", "cones"));

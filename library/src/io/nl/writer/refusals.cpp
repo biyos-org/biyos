@@ -21,6 +21,7 @@ namespace
 
 constexpr std::string_view kFormat = "NL";
 constexpr std::string_view kComplement = "complement";
+constexpr std::string_view kSet = "set";
 
 std::string_view kind_text(VariableKind kind) noexcept
 {
@@ -99,6 +100,30 @@ void check_complements(const Model &model)
     }
 }
 
+void check_sets(const Model &model)
+{
+    std::vector<bool> held(to_size(model.n_variables()), false);
+    for (Index s = 0; s < model.n_special_ordered_sets(); ++s)
+    {
+        const auto members = model.members(s, s + 1);
+        if (members.empty())
+        {
+            refuse_part(kFormat, kSet, s, "an empty set");
+        }
+        for (const Member &member : members)
+        {
+            if (held[to_size(member.variable)])
+            {
+                refuse_part(kFormat,
+                            kSet,
+                            s,
+                            "variable " + text_of(member.variable) + " in two sets");
+            }
+            held[to_size(member.variable)] = true;
+        }
+    }
+}
+
 std::string_view operator_text(Operator op) noexcept
 {
     switch (op)
@@ -154,7 +179,7 @@ void check_records(const Model &model)
     check_absent(kFormat, model, Family::Cone, "cones");
     check_complements(model);
     check_absent(kFormat, model, Family::Indicator, "indicators");
-    check_absent(kFormat, model, Family::SpecialOrderedSet, "special ordered sets");
+    check_sets(model);
     check_kinds(model);
     check_weights(model);
 }
