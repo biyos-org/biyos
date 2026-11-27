@@ -4163,7 +4163,7 @@ class Model:
 
     def getnsosvar(
         self,
-        idx: Sequence[Index | SpecialOrderedSet]
+        sos: Sequence[Index | SpecialOrderedSet]
         | SpecialOrderedSets
         | None = None,
     ) -> Offset:
@@ -4171,7 +4171,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        sos
             The sets, in any order, any of them more than once; every set by
             default.
 
@@ -4186,12 +4186,12 @@ class Model:
         BIYOS_getnsosvarsp
         BIYOS_getnsosvarrg
         """
-        every = range(self.getnsos()) if idx is None else idx
+        every = range(self.getnsos()) if sos is None else sos
         return self._count("BIYOS_getnsosvar", SpecialOrderedSets, every)
 
     def getsos(
         self,
-        idx: Sequence[Index | SpecialOrderedSet]
+        sos: Sequence[Index | SpecialOrderedSet]
         | SpecialOrderedSets
         | None = None,
     ) -> tuple[
@@ -4204,7 +4204,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        sos
             The sets, in any order, any of them more than once; every set by
             default.
 
@@ -4225,7 +4225,7 @@ class Model:
         BIYOS_getsossp
         BIYOS_getsosrg
         """
-        every = range(self.getnsos()) if idx is None else idx
+        every = range(self.getnsos()) if sos is None else sos
         size = self.getnsosvar(every)
         n = len(every)
         kinds = (c_integer * n)()
@@ -4239,54 +4239,54 @@ class Model:
         return found, list(counts), var, list(weights)
 
     @overload
-    def setsosname(self, idx: One[SpecialOrderedSet], name: str) -> None: ...
+    def setsosname(self, sos: One[SpecialOrderedSet], name: str) -> None: ...
 
     @overload
     def setsosname(
         self,
-        idx: Many[SpecialOrderedSet, SpecialOrderedSets],
+        sos: Many[SpecialOrderedSet, SpecialOrderedSets],
         name: Sequence[str],
     ) -> None: ...
 
     def setsosname(
         self,
-        idx: Selection[SpecialOrderedSet, SpecialOrderedSets],
+        sos: Selection[SpecialOrderedSet, SpecialOrderedSets],
         name: str | Sequence[str],
     ) -> None:
         """Name special ordered sets, as ``setvarname`` names variables.
 
         Parameters
         ----------
-        idx
+        sos
             The sets to name.
             An index or a view stands for one set, and each other argument is
             then a scalar.
         name
-            The new name of each, as many as ``idx``.
+            The new name of each, as many as ``sos``.
 
         See Also
         --------
         BIYOS_setsosnamesp
         BIYOS_setsosnamerg
         """
-        self._setname("BIYOS_setsosname", SpecialOrderedSets, idx, name)
+        self._setname("BIYOS_setsosname", SpecialOrderedSets, sos, name)
 
     @overload
-    def getsosname(self, idx: One[SpecialOrderedSet]) -> str | None: ...
+    def getsosname(self, sos: One[SpecialOrderedSet]) -> str | None: ...
 
     @overload
     def getsosname(
-        self, idx: Many[SpecialOrderedSet, SpecialOrderedSets]
+        self, sos: Many[SpecialOrderedSet, SpecialOrderedSets]
     ) -> list[str | None]: ...
 
     def getsosname(
-        self, idx: Selection[SpecialOrderedSet, SpecialOrderedSets]
+        self, sos: Selection[SpecialOrderedSet, SpecialOrderedSets]
     ) -> str | None | list[str | None]:
         """Return the names of special ordered sets, as ``getvarname`` does.
 
         Parameters
         ----------
-        idx
+        sos
             The sets to read.
             An index or a view stands for one set, and the result is then a
             scalar.
@@ -4301,7 +4301,7 @@ class Model:
         BIYOS_getsosnamesp
         BIYOS_getsosnamerg
         """
-        return self._getname("BIYOS_getsosname", SpecialOrderedSets, idx)
+        return self._getname("BIYOS_getsosname", SpecialOrderedSets, sos)
 
     def getsosidx(self, name: Sequence[str]) -> SpecialOrderedSets:
         """Return the named special ordered sets, as ``getvaridx`` does.
@@ -4313,7 +4313,7 @@ class Model:
 
         Returns
         -------
-        idx
+        sos
             The set that alone holds each name, as a ``SpecialOrderedSets``
             block.
 
@@ -4324,14 +4324,14 @@ class Model:
         return self._getidx(lib.BIYOS_getsosidx, SpecialOrderedSets, name)
 
     def delsosname(
-        self, idx: Selection[SpecialOrderedSet, SpecialOrderedSets]
+        self, sos: Selection[SpecialOrderedSet, SpecialOrderedSets]
     ) -> None:
         """Remove the names of special ordered sets, as ``delvarname``
         does.
 
         Parameters
         ----------
-        idx
+        sos
             The sets that lose their names.
             An index or a view stands for one set.
 
@@ -4340,10 +4340,10 @@ class Model:
         BIYOS_delsosnamesp
         BIYOS_delsosnamerg
         """
-        self._delname("BIYOS_delsosname", SpecialOrderedSets, idx)
+        self._delname("BIYOS_delsosname", SpecialOrderedSets, sos)
 
     def delsos(
-        self, idx: Selection[SpecialOrderedSet, SpecialOrderedSets]
+        self, sos: Selection[SpecialOrderedSet, SpecialOrderedSets]
     ) -> list[Index]:
         """Delete special ordered sets.
 
@@ -4353,7 +4353,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        sos
             The sets to delete, in any order, none of them twice.
             An index or a view stands for one set.
 
@@ -4368,7 +4368,7 @@ class Model:
         BIYOS_delsossp
         BIYOS_delsosrg
         """
-        return self._delete("BIYOS_delsos", SpecialOrderedSets, idx)
+        return self._delete("BIYOS_delsos", SpecialOrderedSets, sos)
 
     def addpwl(
         self,
