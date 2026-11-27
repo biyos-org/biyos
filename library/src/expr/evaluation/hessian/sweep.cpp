@@ -230,6 +230,7 @@ void motion(const Instruction &instruction,
         return;
     case Operator::Max:
     case Operator::Min:
+    case Operator::If:
         add_extreme(instruction, lift, partials);
         return;
     }
@@ -469,6 +470,7 @@ void step(const Instruction &instruction,
         return;
     case Operator::Max:
     case Operator::Min:
+    case Operator::If:
         send(instruction, partials, trail);
         return;
     }

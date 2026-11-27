@@ -72,6 +72,8 @@ Pusher::Rule Pusher::rule_of(const Instruction &instruction) noexcept
     case Operator::Max:
     case Operator::Min:
         return {.form = Form::Listed, .curve = Curve::None};
+    case Operator::If:
+        return {.form = Form::Branches, .curve = Curve::None};
     case Operator::Product:
         return {.form = Form::Listed, .curve = Curve::Cross};
     case Operator::Negation:
@@ -187,6 +189,12 @@ void Pusher::gather(const Instruction &instruction,
         return;
     case Form::Listed:
         for (const std::uint32_t slot : listed(instruction, operands))
+        {
+            operands_.push_back(occupants_[slot]);
+        }
+        return;
+    case Form::Branches:
+        for (const std::uint32_t slot : listed(instruction, operands).subspan(1))
         {
             operands_.push_back(occupants_[slot]);
         }

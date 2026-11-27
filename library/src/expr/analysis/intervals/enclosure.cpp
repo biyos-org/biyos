@@ -137,6 +137,16 @@ Interval undecided(const Pass &pass, Offset node) noexcept
     return {0.0, 1.0};
 }
 
+Interval branches_of(const Pass &pass, Offset node) noexcept
+{
+    if (first(pass, node).is_empty())
+    {
+        return Interval::empty();
+    }
+    const std::span<const Offset> children = pass.graph.children(node);
+    return hull(pass.nodes[to_size(children[1])], pass.nodes[to_size(children[2])]);
+}
+
 Interval enclosure(const Pass &pass, Offset node) noexcept
 {
     switch (pass.graph.op(node))
@@ -213,6 +223,8 @@ Interval enclosure(const Pass &pass, Offset node) noexcept
     case Operator::Or:
     case Operator::Not:
         return undecided(pass, node);
+    case Operator::If:
+        return branches_of(pass, node);
     }
     return Interval::entire();
 }

@@ -22,6 +22,9 @@ namespace biyos
 namespace
 {
 
+constexpr Real kThen = 1.0;
+constexpr Real kOtherwise = 2.0;
+
 std::span<Real> part(std::span<Real> partials, std::size_t k, const Frame &frame) noexcept
 {
     return row(partials, k, frame.lanes);
@@ -88,6 +91,15 @@ void extreme(const Instruction &instruction,
             partials[l] = wins ? index : partials[l];
             best[l] = wins ? x[l] : best[l];
         }
+    }
+}
+
+void branch(const Instruction &instruction, const Frame &frame, std::span<Real> partials) noexcept
+{
+    const std::span<const Real> condition = row(frame, listed(instruction, frame.operands)[0]);
+    for (std::size_t l = 0; l < frame.lanes; ++l)
+    {
+        partials[l] = is_zero(condition[l]) ? kOtherwise : kThen;
     }
 }
 
@@ -327,6 +339,9 @@ void slopes_of(const Instruction &instruction,
     case Operator::Not:
         std::ranges::fill(partials, 0.0);
         return;
+    case Operator::If:
+        branch(instruction, frame, partials);
+        return;
     }
 }
 
@@ -392,6 +407,7 @@ std::uint32_t n_partials(const Instruction &instruction) noexcept
     case Operator::Erf:
     case Operator::PiecewiseLinear:
     case Operator::Not:
+    case Operator::If:
         return 1;
     }
     return 0;

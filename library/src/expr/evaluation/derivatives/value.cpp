@@ -3,6 +3,7 @@
 #include "core/env/error.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/tolerances.hpp"
+#include "core/numeric/zero.hpp"
 #include "core/text/text.hpp"
 #include "expr/evaluation/derivatives/partials.hpp"
 #include "expr/graph/node.hpp"
@@ -170,6 +171,19 @@ void extreme(const Instruction &instruction, const Frame &frame, F pick) noexcep
         {
             frame.result[l] = pick(frame.result[l], x[l]);
         }
+    }
+}
+
+void select(const Instruction &instruction, const Frame &frame) noexcept
+{
+    const std::span<const std::uint32_t> operands = listed(instruction, frame.operands);
+    const std::span<const Real> condition = row(frame, operands[0]);
+    const std::span<const Real> then = row(frame, operands[1]);
+    const std::span<const Real> otherwise = row(frame, operands[2]);
+    for (std::size_t l = 0; l < frame.lanes; ++l)
+    {
+        const Real taken = is_zero(condition[l]) ? otherwise[l] : then[l];
+        frame.result[l] = std::isnan(condition[l]) ? condition[l] : taken;
     }
 }
 
@@ -388,6 +402,9 @@ void evaluate(const Instruction &instruction, const Frame &frame) noexcept
         return;
     case Operator::Not:
         map(instruction, frame, [](Real x) { return 1.0 - x; });
+        return;
+    case Operator::If:
+        select(instruction, frame);
         return;
     }
 }

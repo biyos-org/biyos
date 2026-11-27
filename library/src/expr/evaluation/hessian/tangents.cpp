@@ -230,6 +230,7 @@ void curves_of(const Instruction &instruction,
     case Operator::And:
     case Operator::Or:
     case Operator::Not:
+    case Operator::If:
         std::ranges::fill(out, 0.0);
         return;
     case Operator::Product:

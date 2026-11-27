@@ -220,7 +220,7 @@ std::vector<int> biyos::test::sampled_codes()
     {
         codes.push_back(code);
     }
-    for (int code = BIYOS_OP_ATAN2; code <= BIYOS_OP_NOT; ++code)
+    for (int code = BIYOS_OP_ATAN2; code <= BIYOS_OP_IF; ++code)
     {
         codes.push_back(code);
     }
@@ -287,6 +287,9 @@ Graph biyos::test::operator_graph(Operator op, const Parameters &parameters)
     case Operator::Or:
     case Operator::Not:
         graph.add(op, conditions_of(graph, op, x));
+        break;
+    case Operator::If:
+        graph.add(op, std::array{graph.add(Operator::Less, two), x[1], x[2]});
         break;
     case Operator::Negation:
     case Operator::Exp:

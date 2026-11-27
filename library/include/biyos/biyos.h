@@ -1133,6 +1133,7 @@ BIYOS_API BIYOS_status BIYOS_delcconrg(BIYOS_model *mdl,
 #define BIYOS_OP_AND 41
 #define BIYOS_OP_OR 42
 #define BIYOS_OP_NOT 43
+#define BIYOS_OP_IF 44
 
 BIYOS_API BIYOS_status BIYOS_addvarnode(BIYOS_model *mdl, BIYOS_index var, BIYOS_offset *node);
 BIYOS_API BIYOS_status BIYOS_addnode(BIYOS_model *mdl,

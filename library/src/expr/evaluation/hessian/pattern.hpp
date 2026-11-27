@@ -33,6 +33,7 @@ class Pusher
         Unary,
         Binary,
         Listed,
+        Branches,
     };
 
     enum class Curve

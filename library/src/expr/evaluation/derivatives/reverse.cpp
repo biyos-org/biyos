@@ -212,6 +212,7 @@ void step(const Instruction &instruction,
         return;
     case Operator::Max:
     case Operator::Min:
+    case Operator::If:
         send(instruction, partials, trail);
         return;
     }

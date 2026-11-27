@@ -428,6 +428,7 @@ Graph every_operator()
     graph.add(Operator::And, conditions);
     graph.add(Operator::Or, conditions);
     graph.add(Operator::Not, std::span(conditions).first(1));
+    graph.add(Operator::If, std::array{conditions[0], x[0], x[1]});
     graph.add(Operator::Max, x);
     graph.add(Operator::Min, x);
     for (const Operator op : kUnary)

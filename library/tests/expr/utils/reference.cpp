@@ -53,6 +53,11 @@ Real second(const Frame &frame, Offset node)
     return frame.values[to_size(frame.graph.children(node)[1])];
 }
 
+Real third(const Frame &frame, Offset node)
+{
+    return frame.values[to_size(frame.graph.children(node)[2])];
+}
+
 Real sum_of(const Frame &frame, Offset node)
 {
     const std::span<const Offset> terms = frame.graph.children(node);
@@ -199,6 +204,7 @@ bool holds(Operator op, Real a, Real b)
     case Operator::And:
     case Operator::Or:
     case Operator::Not:
+    case Operator::If:
         break;
     }
     return false;
@@ -285,6 +291,7 @@ Real unary(Operator op, Real value)
     case Operator::And:
     case Operator::Or:
     case Operator::Not:
+    case Operator::If:
         break;
     }
     return kUndefined;
@@ -351,6 +358,8 @@ Real value_of(const Frame &frame, Offset node)
     case Operator::Or:
     case Operator::Not:
         return connective_of(frame, node);
+    case Operator::If:
+        return biyos::test::select(first(frame, node), second(frame, node), third(frame, node));
     }
     return kUndefined;
 }
@@ -373,6 +382,15 @@ Real biyos::test::connective(Operator op, std::span<const Real> conditions)
         return kUndefined;
     }
     return decides(op, conditions) ? 1.0 : 0.0;
+}
+
+Real biyos::test::select(Real condition, Real then, Real otherwise)
+{
+    if (std::isnan(condition))
+    {
+        return kUndefined;
+    }
+    return is_zero(condition) ? otherwise : then;
 }
 
 void biyos::test::evaluate(const Graph &graph, std::span<const Real> point, std::span<Real> values)

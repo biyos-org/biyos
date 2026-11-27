@@ -244,4 +244,5 @@ _ROWS = {
     Operator.AND: _Row(_written, "and"),
     Operator.OR: _Row(_written, "or"),
     Operator.NOT: _Row(_written, "not"),
+    Operator.IF: _Row(_written, "if"),
 }

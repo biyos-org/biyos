@@ -29,6 +29,7 @@ struct Shape
     bool positive = false;
     bool condition = false;
     bool connective = false;
+    bool guarded = false;
 };
 
 [[noreturn]] void refuse(const std::string &reason)
@@ -110,6 +111,8 @@ std::optional<Shape> find_shape(Operator op) noexcept
             .condition = true,
             .connective = true,
         };
+    case Operator::If:
+        return Shape{.payload = Payload::None, .least = 3, .most = 3, .guarded = true};
     }
     return std::nullopt;
 }
@@ -202,12 +205,15 @@ void check_shape(Operator op, Payload payload, Offset children)
     }
 }
 
-void check_operand(Operator op, Offset child, Operator found)
+void check_operand(Operator op, std::size_t k, Offset child, Operator found)
 {
-    if (shape_of(op).connective && !shape_of(found).condition)
+    const Shape shape = shape_of(op);
+    const bool wanted = shape.connective || (shape.guarded && k == 0);
+    if (wanted && !shape_of(found).condition)
     {
-        const std::string node = "node " + text_of(child);
-        refuse(operator_name(op) + " takes conditions: " + node + " is " + operator_name(found));
+        const std::string phrase = shape.connective ? "conditions" : "a condition first";
+        const std::string node = "node " + text_of(child) + " is " + operator_name(found);
+        refuse(operator_name(op) + " takes " + phrase + ": " + node);
     }
 }
 

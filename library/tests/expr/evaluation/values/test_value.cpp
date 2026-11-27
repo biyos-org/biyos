@@ -53,6 +53,7 @@ using biyos::test::Random;
 using biyos::test::random_graph;
 using biyos::test::random_point;
 using biyos::test::refusal;
+using biyos::test::select;
 using biyos::test::sign_power;
 using biyos::test::unary;
 using biyos::test::values_of;
@@ -147,6 +148,7 @@ std::vector<Real> cmath_values(const Point &point, const Truths &truths)
         std::atan2(z, x),
     };
     values.insert(values.end(), truths.begin(), truths.end());
+    values.push_back(x > y ? x : z);
     return values;
 }
 
@@ -261,6 +263,8 @@ Real Reference::compute(Offset node)
     case Operator::Or:
     case Operator::Not:
         return connective(op, children(node));
+    case Operator::If:
+        return select(child(node, 0), child(node, 1), child(node, 2));
     }
     return kNan;
 }

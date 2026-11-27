@@ -65,6 +65,7 @@ OPERATORS = {
     "BIYOS_OP_AND": biyos.Operator.AND,
     "BIYOS_OP_OR": biyos.Operator.OR,
     "BIYOS_OP_NOT": biyos.Operator.NOT,
+    "BIYOS_OP_IF": biyos.Operator.IF,
 }
 
 FORMATS = {
