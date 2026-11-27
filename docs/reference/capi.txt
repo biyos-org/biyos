@@ -2898,7 +2898,7 @@ text A model is read from a file in the format the caller names, never guessed f
 table Formats
 value BIYOS_FILEFMT_MPS Free MPS, for linear and mixed-integer models.
 value BIYOS_FILEFMT_FIXMPS Fixed MPS, for linear and mixed-integer models. Read only.
-value BIYOS_FILEFMT_NL Text NL, for nonlinear models. Read only.
+value BIYOS_FILEFMT_NL NL, text or binary, for nonlinear models. Read only.
 value BIYOS_FILEFMT_BYS The biyos format, which holds every part of a model but its callbacks and its options.
 since 0.1.0
 
@@ -2911,9 +2911,9 @@ param mdl out Receives the model; set to null on failure.
 return `BIYOS_OK`, with the model in `*mdl`.
 error BIYOS_ERR_BADARG `path` or `mdl` is null, `fmt` is not a format, or `env` delivers an event.
 error BIYOS_ERR_FILEIO The file cannot be opened or read.
-error BIYOS_ERR_BADFILE The file breaks a rule of its format. The message names the file and the line.
-error BIYOS_ERR_UNSUPPORTED The file holds a part the reader does not handle. The message names the part and its line.
-note Each oddity the reader reads past is a warning event from module `io`, with the fields `file` and `line`, and each part it skips, such as the starting point of an NL file, an info event with the same fields. [File formats](#sec-formats) gives the rules of each format.
+error BIYOS_ERR_BADFILE The file breaks a rule of its format. The message names the file and the line, or the byte in binary NL.
+error BIYOS_ERR_UNSUPPORTED The file holds a part the reader does not handle. The message names the part and its line, or its byte in binary NL.
+note Each oddity the reader reads past is a warning event from module `io`, with the fields `file` and `line`, and each part it skips, such as the starting point of an NL file, an info event with the same fields, `byte` taking the place of `line` in binary NL. [File formats](#sec-formats) gives the rules of each format.
 note The call sends the span `read` from module `io` ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_newmdl BIYOS_freemdl
 since 0.1.0
