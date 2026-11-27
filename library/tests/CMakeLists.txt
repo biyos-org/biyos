@@ -114,7 +114,7 @@ biyos_add_test(test_expr
     expr/utils/chords.cpp
     expr/utils/reference.cpp
     expr/utils/sampling.cpp)
-target_include_directories(test_expr PRIVATE expr/utils)
+target_include_directories(test_expr PRIVATE expr/utils utils)
 target_link_libraries(test_expr PRIVATE biyos_internal)
 
 biyos_add_test(test_model
