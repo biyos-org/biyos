@@ -155,7 +155,7 @@ void Model::add_linear_terms(std::span<const Index> functions,
 
 std::vector<Index> Model::delete_functions(std::span<const Index> indices)
 {
-    std::vector<Index> map = renumbering(kNoun, n_functions(), indices);
+    std::vector<Index> map = renumbering(Family::Function, n_functions(), indices);
     check_unused(map);
     keep(constants_, map);
     keep_parts(linear_ends_, linear_terms_, map);

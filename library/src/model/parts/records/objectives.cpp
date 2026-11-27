@@ -134,7 +134,7 @@ void Model::set_objectives(std::span<const Index> indices, std::span<const Objec
 
 std::vector<Index> Model::delete_objectives(std::span<const Index> indices)
 {
-    std::vector<Index> map = renumbering(kNoun, n_objectives(), indices);
+    std::vector<Index> map = renumbering(Family::Objective, n_objectives(), indices);
     keep(objectives_, map);
     renumber_names(Family::Objective, map);
     return map;

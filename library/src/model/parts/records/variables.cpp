@@ -163,7 +163,7 @@ void renumber_terms(std::vector<Offset> &ends,
 
 std::vector<Index> Model::delete_variables(std::span<const Index> indices)
 {
-    std::vector<Index> map = renumbering(kNoun, n_variables(), indices);
+    std::vector<Index> map = renumbering(Family::Variable, n_variables(), indices);
     check_nodes(graph_, map);
     check_members(special_ordered_set_ends_, members_, map);
     check_indicators(indicators_, map);

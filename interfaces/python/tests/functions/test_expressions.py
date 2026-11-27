@@ -317,7 +317,7 @@ def test_refused(model):
     assert message == "invalid argument: variable 3: unknown"
     message = refusal(model.attachexpr, [0, 0], [x, x])
     assert message == (
-        "invalid argument: argument 'idx': function 0 is repeated"
+        "invalid argument: argument 'fun': function 0 is repeated"
     )
     message = refusal(model.attachexpr, [1], [1])
     assert message == "invalid argument: function 1: node 1 is unknown"
