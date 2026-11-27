@@ -184,12 +184,7 @@ class ChainRule
 
     std::vector<Real> operands_of(Offset node) const
     {
-        std::vector<Real> operands;
-        for (std::size_t k = 0; k < graph_.children(node).size(); ++k)
-        {
-            operands.push_back(child(node, k));
-        }
-        return operands;
+        return children_of(graph_, node, [this](Offset child) { return values_[at(child)]; });
     }
 
     Real extreme_of(Offset node) const

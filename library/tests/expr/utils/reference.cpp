@@ -22,6 +22,7 @@ using biyos::Operator;
 using biyos::Real;
 using biyos::to_size;
 using biyos::Tolerances;
+using biyos::test::children_of;
 
 constexpr Real kUndefined = std::numeric_limits<Real>::quiet_NaN();
 
@@ -104,14 +105,10 @@ Real smallest(const Frame &frame, Offset node)
     return best;
 }
 
-std::vector<Real> children_of(const Frame &frame, Offset node)
+Real connective_of(const Frame &frame, Offset node)
 {
-    std::vector<Real> values;
-    for (const Offset child : frame.graph.children(node))
-    {
-        values.push_back(frame.values[to_size(child)]);
-    }
-    return values;
+    const auto stored = [&frame](Offset child) { return frame.values[to_size(child)]; };
+    return biyos::test::connective(frame.graph.op(node), children_of(frame.graph, node, stored));
 }
 
 Real quotient(Real left, Real right)
@@ -353,7 +350,7 @@ Real value_of(const Frame &frame, Offset node)
     case Operator::And:
     case Operator::Or:
     case Operator::Not:
-        return biyos::test::connective(graph.op(node), children_of(frame, node));
+        return connective_of(frame, node);
     }
     return kUndefined;
 }

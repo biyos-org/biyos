@@ -38,6 +38,7 @@ using biyos::Tolerances;
 using biyos::value_at;
 using biyos::Workspace;
 using biyos::test::binary;
+using biyos::test::children_of;
 using biyos::test::comparison;
 using biyos::test::connective;
 using biyos::test::constant;
@@ -287,12 +288,7 @@ Real Reference::product(Offset node)
 
 std::vector<Real> Reference::children(Offset node)
 {
-    std::vector<Real> values;
-    for (std::size_t k = 0; k < graph_.children(node).size(); ++k)
-    {
-        values.push_back(child(node, k));
-    }
-    return values;
+    return children_of(graph_, node, [this](Offset child) { return value(child); });
 }
 
 Real Reference::extreme(Offset node, Operator op)
