@@ -1,15 +1,13 @@
 #include "bounds.hpp"
-#include "core/env/env.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/tolerances.hpp"
-#include "core/options/lookup.hpp"
-#include "core/options/options.hpp"
 #include "expr/analysis/intervals/interval.hpp"
 #include "expr/analysis/intervals/logic.hpp"
 #include "expr/evaluation/derivatives/value.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "expr/tape/tape.hpp"
+#include "reference.hpp"
 #include "sampling.hpp"
 
 #include <gtest/gtest.h>
@@ -26,22 +24,20 @@ namespace
 {
 
 using biyos::complement;
-using biyos::Env;
 using biyos::Graph;
 using biyos::Interval;
-using biyos::Lookup;
 using biyos::Offset;
 using biyos::Operator;
-using biyos::Option;
-using biyos::Options;
 using biyos::Real;
 using biyos::taken;
 using biyos::Tape;
 using biyos::Tolerances;
 using biyos::Workspace;
+using biyos::test::default_tolerances;
 using biyos::test::exact;
 using biyos::test::interval_text;
 using biyos::test::text;
+using biyos::test::tolerances_of;
 
 struct Relation
 {
@@ -120,18 +116,9 @@ class Oracle
     std::vector<Real> truths_;
 };
 
-Tolerances tolerances_of(Real absolute, Real relative)
-{
-    Env env;
-    Options options(env);
-    options.set_double(Option::FeasAbs, absolute);
-    options.set_double(Option::FeasRel, relative);
-    return Tolerances(Lookup(options));
-}
-
 std::vector<Tolerances> narrow_bands()
 {
-    return {tolerances_of(1e-6, 1e-6),
+    return {default_tolerances(),
             tolerances_of(0.1, 0.0),
             tolerances_of(0.0, 0.5),
             tolerances_of(0.05, 0.2)};
@@ -314,7 +301,7 @@ TEST(DecisionTest, Wide)
 
 TEST(DecisionTest, Decided)
 {
-    const Tolerances tolerances = tolerances_of(1e-6, 1e-6);
+    const Tolerances tolerances = default_tolerances();
     const Interval low(1.0, 2.0);
     const Interval high(3.0, 4.0);
     EXPECT_TRUE(exact(biyos::less_equal(tolerances, low, high), 1.0, 1.0));
@@ -331,7 +318,7 @@ TEST(DecisionTest, Decided)
 
 TEST(DecisionTest, Within)
 {
-    const Tolerances tolerances = tolerances_of(1e-6, 1e-6);
+    const Tolerances tolerances = default_tolerances();
     const Interval point(1.0, 1.0);
     const Interval near(1.0, 1.0 + 1e-7);
     EXPECT_TRUE(exact(biyos::less_equal(tolerances, near, point), 1.0, 1.0));
@@ -344,7 +331,7 @@ TEST(DecisionTest, Within)
 
 TEST(DecisionTest, Opposite)
 {
-    const Tolerances tolerances = tolerances_of(1e-6, 1e-6);
+    const Tolerances tolerances = default_tolerances();
     const Interval negative(-3.0, -2.0);
     const Interval positive(2.0, 3.0);
     EXPECT_TRUE(exact(biyos::less_equal(tolerances, negative, positive), 1.0, 1.0));
@@ -353,7 +340,7 @@ TEST(DecisionTest, Opposite)
 
 TEST(DecisionTest, Empty)
 {
-    const Tolerances tolerances = tolerances_of(1e-6, 1e-6);
+    const Tolerances tolerances = default_tolerances();
     const Interval held(1.0, 2.0);
     for (const Relation &relation : kRelations)
     {

@@ -52,7 +52,7 @@ biyos_add_test(test_core
     core/text/test_utf8.cpp
     core/timing/test_clock.cpp
     core/timing/test_timer.cpp)
-target_include_directories(test_core PRIVATE core/utils)
+target_include_directories(test_core PRIVATE core/utils expr/utils)
 target_link_libraries(test_core PRIVATE biyos_internal)
 
 biyos_add_test(test_allocation

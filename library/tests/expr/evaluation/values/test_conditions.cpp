@@ -1,13 +1,11 @@
-#include "core/env/env.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/tolerances.hpp"
-#include "core/options/lookup.hpp"
-#include "core/options/options.hpp"
 #include "expr/evaluation/derivatives/value.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
 #include "expr/tape/tape.hpp"
 #include "graphs.hpp"
+#include "reference.hpp"
 #include "sweep.hpp"
 
 #include <gtest/gtest.h>
@@ -22,14 +20,10 @@
 namespace
 {
 
-using biyos::Env;
 using biyos::forward;
 using biyos::Graph;
-using biyos::Lookup;
 using biyos::Offset;
 using biyos::Operator;
-using biyos::Option;
-using biyos::Options;
 using biyos::Real;
 using biyos::Tape;
 using biyos::Tolerances;
@@ -41,6 +35,7 @@ using biyos::test::constant;
 using biyos::test::default_tolerances;
 using biyos::test::jacobian_of;
 using biyos::test::kComparisons;
+using biyos::test::tolerances_of;
 using biyos::test::unary;
 using biyos::test::values_of;
 
@@ -80,15 +75,6 @@ struct Comparisons
 
     Tape tape() const { return Tape(graph, roots); }
 };
-
-Tolerances absolute(Real feastol)
-{
-    Env env;
-    Options options(env);
-    options.set_double(Option::FeasAbs, feastol);
-    options.set_double(Option::FeasRel, 0.0);
-    return Tolerances(Lookup(options));
-}
 
 Truths truths(Real a, Real b, const Tolerances &tolerances)
 {
@@ -293,10 +279,10 @@ TEST(ComparisonTest, Negations)
 
 TEST(ComparisonTest, Options)
 {
-    const Tolerances wide = absolute(0.1);
+    const Tolerances wide = tolerances_of(0.1, 0.0);
     EXPECT_EQ(bits(truths(0.0, 0.05, wide)), bits(kEqual));
     EXPECT_EQ(bits(truths(0.0, 0.2, wide)), bits(kBelow));
-    const Tolerances exact = absolute(0.0);
+    const Tolerances exact = tolerances_of(0.0, 0.0);
     EXPECT_EQ(bits(truths(1.0, 1.0, exact)), bits(kEqual));
     EXPECT_EQ(bits(truths(1.0, std::nextafter(1.0, 2.0), exact)), bits(kBelow));
     EXPECT_EQ(bits(truths(std::nextafter(1.0, 2.0), 1.0, exact)), bits(kAbove));
