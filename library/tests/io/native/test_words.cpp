@@ -52,8 +52,8 @@ TEST(WordTest, Kinds)
 
 TEST(WordTest, Operators)
 {
-    EXPECT_EQ(kOperatorWords.size(), std::size_t{BIYOS_OP_ATAN2 - 1});
-    for (int code = BIYOS_OP_CONST; code <= BIYOS_OP_ATAN2; ++code)
+    EXPECT_EQ(kOperatorWords.size(), std::size_t{BIYOS_OP_NE - 1});
+    for (int code = BIYOS_OP_CONST; code <= BIYOS_OP_NE; ++code)
     {
         EXPECT_EQ(word_of(code, kOperatorWords).empty(), code == BIYOS_OP_NODE);
     }
