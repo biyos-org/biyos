@@ -21,7 +21,7 @@ if text == "sleep":
     time.sleep(60)
 if text == "crash":
     os.kill(os.getpid(), signal.SIGKILL)
-if text == "fixed" and sys.argv[3:] != ["fixed"]:
+if text in ("fixed", "nl") and sys.argv[3:] != [text]:
     sys.stderr.write("bad file 'source': line 1\\n")
     sys.exit(2)
 if text == "broken":
@@ -112,6 +112,11 @@ class RunTest(unittest.TestCase):
         fixed = self.served("afiro", "fixed", form="fixed")
         self.assertEqual(self.records(fixed)[-1]["outcome"], "same")
         self.assertEqual(self.outcome("fixed")["outcome"], "error")
+
+    def test_nl(self):
+        nl = self.served("afiro", "nl", form="nl")
+        self.assertEqual(self.records(nl)[-1]["outcome"], "same")
+        self.assertEqual(self.outcome("nl")["outcome"], "error")
 
     def test_same(self):
         entry = self.outcome("same")

@@ -21,7 +21,7 @@ LIMIT_SECONDS = 600.0
 FAILURES = (OSError, ValueError, EOFError, zlib.error, HTTPException)
 OUTCOMES = {0: "same", 1: "differs", 2: "error", 3: "unwritable"}
 PHASES = ("read", "write", "reread")
-FORMS = ("", "fixed")
+FORMS = ("", "fixed", "nl")
 
 
 @dataclass(frozen=True)
