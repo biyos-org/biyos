@@ -42,7 +42,8 @@ class Hessian
                 std::span<const Real> weights,
                 const Tolerances &tolerances,
                 std::span<Real> out,
-                Pool &pool);
+                Pool &pool,
+                Timing timing);
     void product(std::span<const Real> point,
                  std::span<const Real> weights,
                  std::span<const Real> direction,
@@ -66,6 +67,10 @@ class Hessian
                      std::size_t worker,
                      std::span<const Real> point,
                      const Tolerances &tolerances) noexcept;
+    void push_elements(std::span<const Real> point,
+                       const Tolerances &tolerances,
+                       Pool &pool,
+                       Timing timing);
     void fill_products(std::size_t chunk,
                        std::size_t worker,
                        std::span<const Real> point,

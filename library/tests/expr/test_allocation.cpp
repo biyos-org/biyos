@@ -253,8 +253,9 @@ std::size_t hessian_cost(const Graph &graph,
     const std::vector<Real> weights(roots.size(), 1.0);
     Pool pool;
     const Tolerances tolerances{Lookup(env.options())};
+    tree.reserve(tree.nodes().size() + 1);
     const std::size_t start = allocations();
-    hessian.values(point, weights, tolerances, out, pool);
+    hessian.values(point, weights, tolerances, out, pool, {env.stream(), tree});
     return allocations() - start;
 }
 
@@ -406,7 +407,7 @@ void Threaded::run()
     forward(tape, point, tolerances, team, pool, values);
     jacobian(tape, point, tolerances, team, pool, values, gradients);
     weighted_gradient(tape, point, weights, tolerances, team, pool, values, gradient);
-    hessian.values(point, weights, tolerances, entries, pool);
+    hessian.values(point, weights, tolerances, entries, pool, {env.stream(), tree});
     hessian.product(point, weights, point, tolerances, gradient, pool);
 }
 

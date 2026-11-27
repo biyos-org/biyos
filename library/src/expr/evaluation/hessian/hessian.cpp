@@ -599,6 +599,20 @@ void Hessian::fill_pushed(std::size_t k,
     }
 }
 
+void Hessian::push_elements(std::span<const Real> point,
+                            const Tolerances &tolerances,
+                            Pool &pool,
+                            Timing timing)
+{
+    if (eliminations_.empty())
+    {
+        return;
+    }
+    const Timer timer(timing.stream, timing.tree, "expr", "pushing");
+    auto pushing = [&](auto k, auto worker) noexcept { fill_pushed(k, worker, point, tolerances); };
+    pool.run(workers_.size(), eliminations_.size(), pushing);
+}
+
 struct Hessian::Products
 {
     Hessian &hessian;
@@ -637,7 +651,8 @@ void Hessian::values(std::span<const Real> point,
                      std::span<const Real> weights,
                      const Tolerances &tolerances,
                      std::span<Real> out,
-                     Pool &pool)
+                     Pool &pool,
+                     Timing timing)
 {
     check(point, weights);
     check_size("out", out.size(), lower_.rows.size(), "the pattern size");
@@ -646,8 +661,7 @@ void Hessian::values(std::span<const Real> point,
     auto fill = [&](auto chunk, auto worker) noexcept
     { fill_blocks(chunk, worker, used, tolerances); };
     pool.run(workers_.size(), chunks_.size() - 1, fill);
-    auto pushing = [&](auto k, auto worker) noexcept { fill_pushed(k, worker, used, tolerances); };
-    pool.run(workers_.size(), eliminations_.size(), pushing);
+    push_elements(used, tolerances, pool, timing);
     std::ranges::fill(out, 0.0);
     gather(std::span<const Real>(parts_), std::span<const Offset>(map_.blocks), out);
 }

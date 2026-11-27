@@ -101,7 +101,8 @@ Pairs nonzeros(const Graph &graph, Offset root, std::span<const Values> points)
     for (const Values &point : points)
     {
         Values out(lower.rows.size(), 0.0);
-        hessian.values(point, std::array{1.0}, default_tolerances(), out, pool);
+        hessian
+            .values(point, std::array{1.0}, default_tolerances(), out, pool, {env.stream(), tree});
         for (std::size_t j = 0; j + 1 < lower.starts.size(); ++j)
         {
             for (auto k = to_size(lower.starts[j]); k < to_size(lower.starts[j + 1]); ++k)

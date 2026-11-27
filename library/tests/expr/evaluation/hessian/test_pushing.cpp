@@ -198,7 +198,10 @@ Values values_of(Hessian &hessian, std::span<const Real> point, Real weight)
 {
     Values out(hessian.pattern().rows.size(), -1.0);
     Pool pool;
-    hessian.values(point, std::array{weight}, default_tolerances(), out, pool);
+    Env env;
+    TimingTree tree;
+    hessian
+        .values(point, std::array{weight}, default_tolerances(), out, pool, {env.stream(), tree});
     return out;
 }
 
@@ -219,6 +222,21 @@ void expect_hessian(const Graph &graph, Offset root, std::span<const Real> point
             EXPECT_TRUE(near(out[to_size(k)], wanted)) << j << " " << out[to_size(k)];
         }
     }
+}
+
+std::vector<std::string> spans_of(const Graph &graph, Offset root, std::span<const Real> point)
+{
+    const std::array roots{root};
+    Env env;
+    TimingTree tree;
+    Hessian hessian(graph, roots, {}, {env.stream(), tree});
+    std::vector<std::string> spans;
+    const auto keep = [&spans](const Event &event) { spans.push_back(event.text); };
+    env.events().add_hook(EventKind::Span, EventLevel::Info, keep);
+    Values out(hessian.pattern().rows.size());
+    Pool pool;
+    hessian.values(point, std::array{1.0}, default_tolerances(), out, pool, {env.stream(), tree});
+    return spans;
 }
 
 std::string line_of(const Event &event)
@@ -345,6 +363,16 @@ TEST(PushingTest, Event)
         "element=3 method=dense pushes=20101 sweeps=13 length=202 ",
     };
     EXPECT_EQ(lines, wanted);
+}
+
+TEST(PushingTest, Span)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, kMany);
+    const Values point(to_size(kMany), 0.5);
+    const std::vector<std::string> both{"pushing", "pushing"};
+    EXPECT_EQ(spans_of(graph, subset(graph, x), point), both);
+    EXPECT_TRUE(spans_of(graph, arrow(graph, x), point).empty());
 }
 
 TEST(PushingTest, Values)

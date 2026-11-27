@@ -46,7 +46,7 @@ using evaluation::widest;
 namespace
 {
 
-constexpr std::size_t kSpans = 4;
+constexpr std::size_t kSpans = 5;
 
 Program program_of(const Model &model, Stream stream)
 {

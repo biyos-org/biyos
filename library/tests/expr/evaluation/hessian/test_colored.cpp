@@ -111,7 +111,9 @@ Values values_of(Hessian &hessian, std::span<const Real> point)
 {
     Values out(hessian.pattern().rows.size(), -1.0);
     Pool pool;
-    hessian.values(point, std::array{1.0}, default_tolerances(), out, pool);
+    Env env;
+    TimingTree tree;
+    hessian.values(point, std::array{1.0}, default_tolerances(), out, pool, {env.stream(), tree});
     return out;
 }
 
