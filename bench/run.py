@@ -21,6 +21,7 @@ LIMIT_SECONDS = 600.0
 FAILURES = (OSError, ValueError, EOFError, zlib.error, HTTPException)
 OUTCOMES = {0: "same", 1: "differs", 2: "error", 3: "unwritable"}
 PHASES = ("read", "write", "reread")
+FORMS = ("", "fixed")
 
 
 @dataclass(frozen=True)
@@ -29,7 +30,7 @@ class Instance:
     name: str
     url: str
     sha256: str
-    fixed: bool = False
+    form: str = ""
 
 
 def parse_list(path):
@@ -39,11 +40,12 @@ def parse_list(path):
         fields = line.split()
         if not fields or fields[0].startswith("#"):
             continue
-        if len(fields) < 3 or fields[3:] not in ([], ["fixed"]):
+        form = fields[3] if len(fields) == 4 else ""
+        if len(fields) not in (3, 4) or form not in FORMS:
             raise ValueError(
-                f"{path}:{number}: expected name, URL, SHA-256, maybe fixed"
+                f"{path}:{number}: expected name, URL, SHA-256, maybe a form"
             )
-        instances.append(Instance(library, *fields[:3], len(fields) == 4))
+        instances.append(Instance(library, *fields[:3], form))
     return instances
 
 
@@ -122,8 +124,8 @@ def judged(done):
     return outcome, times, detail
 
 
-def round_trip(tool, source, scratch, limit, fixed):
-    command = [*tool, str(source), str(scratch), *(["fixed"] if fixed else [])]
+def round_trip(tool, source, scratch, limit, form):
+    command = [*tool, str(source), str(scratch), *([form] if form else [])]
     start = time.monotonic()
     try:
         done = subprocess.run(
@@ -148,7 +150,7 @@ def attempt(instance, cache, tool, limit):
         except FAILURES as error:
             return "refused", {}, str(error)
         scratch = folder / "written"
-        return round_trip(tool, source, scratch, limit, instance.fixed)
+        return round_trip(tool, source, scratch, limit, instance.form)
 
 
 def record_of(instance, outcome, times, detail, stamp):
