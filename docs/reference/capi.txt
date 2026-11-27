@@ -728,7 +728,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first variable of the range.
 param end in In the `rg` form, one past the last variable of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the variable of each entry; may be null when `n` is 0.
+param var in In the `sp` form, the variable of each entry; may be null when `n` is 0.
 param lb in The new lower bound of each; null leaves the lower bounds as they are.
 param ub in The new upper bound of each; null leaves the upper bounds as they are.
 return `BIYOS_OK` once the bounds are set.
@@ -743,8 +743,8 @@ param mdl in The model.
 param beg in In the `rg` form, the first variable of the range.
 param end in In the `rg` form, one past the last variable of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param lb out Entry `j` receives the lower bound of variable `idx[j]` or `beg + j`; skipped when null.
+param var in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param lb out Entry `j` receives the lower bound of variable `var[j]` or `beg + j`; skipped when null.
 param ub out Entry `j` receives its upper bound; skipped when null.
 return `BIYOS_OK` once the arrays are written.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a variable or the range ends past the last variable.
@@ -757,7 +757,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first variable of the range.
 param end in In the `rg` form, one past the last variable of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the variable of each entry; may be null when `n` is 0.
+param var in In the `sp` form, the variable of each entry; may be null when `n` is 0.
 param knd in The new kind of each; null changes nothing.
 return `BIYOS_OK` once the kinds are set. The bounds and tolerances are kept.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a variable, the range ends past the last variable, a kind is unknown, or the bounds of a variable are refused for its new kind, as when it becomes binary with a bound outside [0, 1]: set such bounds first.
@@ -772,8 +772,8 @@ param mdl in The model.
 param beg in In the `rg` form, the first variable of the range.
 param end in In the `rg` form, one past the last variable of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param knd out Entry `j` receives the kind of variable `idx[j]` or `beg + j`; skipped when null.
+param var in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param knd out Entry `j` receives the kind of variable `var[j]` or `beg + j`; skipped when null.
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a variable or the range ends past the last variable.
 see BIYOS_setvarkndsp BIYOS_getvarrg
@@ -785,7 +785,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first variable of the range.
 param end in In the `rg` form, one past the last variable of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the variable of each entry; may be null when `n` is 0.
+param var in In the `sp` form, the variable of each entry; may be null when `n` is 0.
 param atol in The new absolute tolerance of each; null leaves the absolute tolerances as they are.
 param rtol in The new relative tolerance of each; null leaves the relative tolerances as they are.
 return `BIYOS_OK` once the tolerances are set. A variable that held none keeps the options for the part not given.
@@ -800,8 +800,8 @@ param mdl in The model.
 param beg in In the `rg` form, the first variable of the range.
 param end in In the `rg` form, one past the last variable of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param atol out Entry `j` receives the absolute tolerance of variable `idx[j]` or `beg + j`, or NaN when it holds none; skipped when null.
+param var in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param atol out Entry `j` receives the absolute tolerance of variable `var[j]` or `beg + j`, or NaN when it holds none; skipped when null.
 param rtol out Entry `j` receives its relative tolerance, or NaN when it holds none; skipped when null.
 return `BIYOS_OK` once the arrays are written.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a variable or the range ends past the last variable.
@@ -815,7 +815,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first variable of the range.
 param end in In the `rg` form, one past the last variable of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the variable of each entry; may be null when `n` is 0.
+param var in In the `sp` form, the variable of each entry; may be null when `n` is 0.
 return `BIYOS_OK` once the variables listed hold no tolerance of their own. One that held none, or listed more than once, is left without one.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a variable or the range ends past the last variable.
 see BIYOS_setvartolsp
@@ -834,8 +834,8 @@ param mdl in The model.
 param beg in In the `rg` form, the first variable to read.
 param end in In the `rg` form, one past the last variable to read.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param knd out Entry `j` receives the kind of variable `idx[j]` or `beg + j`; skipped when null.
+param var in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param knd out Entry `j` receives the kind of variable `var[j]` or `beg + j`; skipped when null.
 param lb out Entry `j` receives its lower bound; skipped when null.
 param ub out Entry `j` receives its upper bound; skipped when null.
 return `BIYOS_OK` once the arrays are written.
@@ -850,7 +850,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first variable to delete.
 param end in In the `rg` form, one past the last variable to delete.
 param n in In the `sp` form, the number of variables to delete.
-param idx in In the `sp` form, the variables to delete, in any order; may be null when `n` is 0.
+param var in In the `sp` form, the variables to delete, in any order; may be null when `n` is 0.
 param map out Receives one entry for each variable the model held before the call: entry `i` is the new index of variable `i`, or -1 when it is deleted; skipped when null.
 return `BIYOS_OK` once the variables are deleted. The others keep their order, their data and their names, and are numbered from 0 again; each term, set, indicator, node and callback that uses one refers to it by its new index.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a variable, a variable is listed more than once, with a message such as `invalid argument: argument 'idx': variable 1 is repeated`, or the range ends past the last variable.
@@ -866,7 +866,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first variable of the range.
 param end in In the `rg` form, one past the last variable of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the variable of each entry; may be null when `n` is 0.
+param var in In the `sp` form, the variable of each entry; may be null when `n` is 0.
 param name in The new name of each, which the model copies; may be null only when there are no entries, and no entry may be null.
 return `BIYOS_OK` once the names are set.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a variable, the range ends past the last variable, an entry of `name` is null, or a name is empty or not well-formed UTF-8, with a message such as `invalid argument: variable 3: name is empty`.
@@ -881,8 +881,8 @@ param mdl in The model.
 param beg in In the `rg` form, the first variable of the range.
 param end in In the `rg` form, one past the last variable of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
-param name out Entry `j` receives the name of variable `idx[j]` or `beg + j`, or an empty string when it has none; skipped when null.
+param var in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param name out Entry `j` receives the name of variable `var[j]` or `beg + j`, or an empty string when it has none; skipped when null.
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a variable or the range ends past the last variable.
 note Each pointer stays valid until a call that sets or removes names of variables and lists that variable succeeds, a call that deletes variables succeeds, or the model is freed. Adding items, naming other variables, a failed call and a copy of the model leave it valid.
@@ -894,7 +894,7 @@ summary Look up variables by name.
 param mdl in The model.
 param n in The number of names.
 param name in The names, each matched byte for byte; may be null only when `n` is 0, and no entry may be null.
-param idx out Entry `j` receives the index of the variable that alone holds `name[j]`; skipped when null.
+param var out Entry `j` receives the index of the variable that alone holds `name[j]`; skipped when null.
 return `BIYOS_OK` once the array is written.
 error BIYOS_ERR_BADARG `n` is negative, an entry of `name` is null, or a name is held by no variable, with a message such as `invalid argument: variable 'x': unknown`, or by several, with a message that counts them, such as `invalid argument: variable 'x': names 3 variables`. The call fails at the first such name.
 note The lookup succeeds again once the other variables holding the name are renamed or lose their names. The names of a family are kept in a hash table, so a lookup does not search the items one by one.
@@ -907,7 +907,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first variable of the range.
 param end in In the `rg` form, one past the last variable of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the variable of each entry; may be null when `n` is 0.
+param var in In the `sp` form, the variable of each entry; may be null when `n` is 0.
 return `BIYOS_OK` once the variables listed have no name. One without a name, or listed more than once, is left without one.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a variable or the range ends past the last variable.
 note Once the call succeeds, a pointer read earlier with `BIYOS_getvarnamesp` for a variable it lists is no longer valid.
@@ -1104,14 +1104,14 @@ param mdl in The model.
 param beg in In the `rg` form, the first variable of the range.
 param end in In the `rg` form, one past the last variable of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param var in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
 param cnt in The `n` counts of the entries' terms, `end - beg` in the `rg` form; null adds no terms.
 param fun in The function of each term; not read when there are no terms.
 param coef in The coefficient of each term; not read when there are no terms.
 return `BIYOS_OK` once the terms are added.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a variable, the range ends past the last variable, a count in `cnt` is negative or the counts add up past `INT64_MAX`, a function is not one of the model or appears twice for a variable in the call, or a coefficient, or its sum with the one held, is not finite.
 error BIYOS_ERR_NOMEMORY The model would hold more terms than any allocation can hold.
-note Entry `j` enters the `cnt[j]` functions of `fun` that follow those of entry `j - 1`, entry `j` being variable `idx[j]`, or `beg + j` in the `rg` form, so a variable added late joins the functions of existing constraints in one call. A variable listed twice enters the functions of both entries, which together name each function once. A variable a function already holds adds its coefficient to the one held. A refused call changes nothing.
+note Entry `j` enters the `cnt[j]` functions of `fun` that follow those of entry `j - 1`, entry `j` being variable `var[j]`, or `beg + j` in the `rg` form, so a variable added late joins the functions of existing constraints in one call. A variable listed twice enters the functions of both entries, which together name each function once. A variable a function already holds adds its coefficient to the one held. A refused call changes nothing.
 see BIYOS_addlinterm BIYOS_getclintermsp
 since 0.1.0
 
@@ -1152,7 +1152,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first variable of the range.
 param end in In the `rg` form, one past the last variable of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param var in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
 param nnz out Receives the number of linear terms of the entries, a variable counted each time it appears.
 return `BIYOS_OK`, with the number in `*nnz`.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a variable, the range ends past the last variable, or `nnz` is null.
@@ -1167,7 +1167,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first variable of the range.
 param end in In the `rg` form, one past the last variable of the range.
 param n in In the `sp` form, the number of entries.
-param idx in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
+param var in In the `sp` form, the variable of each entry, in any order and any of them more than once; may be null when `n` is 0.
 param cap in The number of terms the output arrays hold.
 param cnt out Receives `n` counts, `end - beg` in the `rg` form; skipped when null.
 param fun out Receives the function of each term, each variable's sorted by function; skipped when null.

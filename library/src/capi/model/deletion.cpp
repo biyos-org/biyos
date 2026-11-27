@@ -104,10 +104,10 @@ void delete_callbacks(Session &session, Selection selection, BIYOS_index *map)
 
 BIYOS_status BIYOS_delvarsp(BIYOS_model *mdl,
                             BIYOS_index n,
-                            const BIYOS_index *idx,
+                            const BIYOS_index *var,
                             BIYOS_index *map)
 {
-    return guarded<delete_variables<List>>(mdl, List{n, idx}, map);
+    return guarded<delete_variables<List>>(mdl, List{n, var}, map);
 }
 
 BIYOS_status BIYOS_delvarrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_index *map)

@@ -145,10 +145,10 @@ BIYOS_status BIYOS_delmdlname(BIYOS_model *mdl)
 
 BIYOS_status BIYOS_setvarnamesp(BIYOS_model *mdl,
                                 BIYOS_index n,
-                                const BIYOS_index *idx,
+                                const BIYOS_index *var,
                                 const char *const *name)
 {
-    return guarded<set_names<Family::Variable, List>>(mdl, List{n, idx}, name);
+    return guarded<set_names<Family::Variable, List>>(mdl, List{n, var}, name);
 }
 
 BIYOS_status BIYOS_setvarnamerg(BIYOS_model *mdl,
@@ -161,10 +161,10 @@ BIYOS_status BIYOS_setvarnamerg(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_getvarnamesp(const BIYOS_model *mdl,
                                 BIYOS_index n,
-                                const BIYOS_index *idx,
+                                const BIYOS_index *var,
                                 const char **name)
 {
-    return guarded<get_names<Family::Variable, List>>(mdl, List{n, idx}, name);
+    return guarded<get_names<Family::Variable, List>>(mdl, List{n, var}, name);
 }
 
 BIYOS_status BIYOS_getvarnamerg(const BIYOS_model *mdl,
@@ -178,14 +178,14 @@ BIYOS_status BIYOS_getvarnamerg(const BIYOS_model *mdl,
 BIYOS_status BIYOS_getvaridx(const BIYOS_model *mdl,
                              BIYOS_index n,
                              const char *const *name,
-                             BIYOS_index *idx)
+                             BIYOS_index *var)
 {
-    return guarded<get_indices<Family::Variable>>(mdl, n, name, idx);
+    return guarded<get_indices<Family::Variable>>(mdl, n, name, var);
 }
 
-BIYOS_status BIYOS_delvarnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *idx)
+BIYOS_status BIYOS_delvarnamesp(BIYOS_model *mdl, BIYOS_index n, const BIYOS_index *var)
 {
-    return guarded<delete_names<Family::Variable, List>>(mdl, List{n, idx});
+    return guarded<delete_names<Family::Variable, List>>(mdl, List{n, var});
 }
 
 BIYOS_status BIYOS_delvarnamerg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end)
