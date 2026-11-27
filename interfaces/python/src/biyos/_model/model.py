@@ -2574,7 +2574,7 @@ class Model:
         self._call(lib.BIYOS_getncbfun, integer("cb", cb), byref(count))
         return count.value
 
-    def getcbfun(self, cb: Index) -> list[Index]:
+    def getcbfun(self, cb: Index) -> Functions:
         """Read the functions a callback covers, as ``addcb`` takes them.
 
         Parameters
@@ -2585,18 +2585,20 @@ class Model:
         Returns
         -------
         fun
-            The functions, in the order given to ``addcb``.
+            The functions, in the order given to ``addcb``, as a
+            ``Functions`` block, which raises ``ValueError`` once the model
+            has had a deletion. ``indices`` gives the indices as a list.
 
         See Also
         --------
         BIYOS_getcbfun
         """
         n = self.getncbfun(cb)
-        found = (c_index * n)()
-        self._call(lib.BIYOS_getcbfun, integer("cb", cb), n, found)
-        return list(found)
+        found = index_view(n)
+        self._call(lib.BIYOS_getcbfun, integer("cb", cb), n, index_array(found))
+        return Functions(self, found, self._gen)
 
-    def getcbvar(self, cb: Index) -> list[Index] | None:
+    def getcbvar(self, cb: Index) -> Variables | None:
         """Read the variables a callback reads, as ``addcb`` takes them.
 
         Parameters
@@ -2607,8 +2609,11 @@ class Model:
         Returns
         -------
         var
-            The variables, in the order given to ``addcb``, or None when
-            the callback reads every variable of the model.
+            The variables, in the order given to ``addcb``, as a
+            ``Variables`` block, or None when the callback reads every
+            variable of the model. The block raises ``ValueError`` once the
+            model has had a deletion. ``indices`` gives the indices as a
+            list.
 
         See Also
         --------
@@ -2619,9 +2624,10 @@ class Model:
         self._call(lib.BIYOS_getncbvar, integer("cb", cb), byref(count))
         if count.value == _capi.DENSE:
             return None
-        found = (c_index * count.value)()
-        self._call(lib.BIYOS_getcbvar, integer("cb", cb), count.value, found)
-        return list(found)
+        n = count.value
+        found = index_view(n)
+        self._call(lib.BIYOS_getcbvar, integer("cb", cb), n, index_array(found))
+        return Variables(self, found, self._gen)
 
     def delcb(self, idx: Index | Sequence[Index]) -> list[Index]:
         """Delete callbacks.

@@ -1,4 +1,4 @@
-from ctypes import c_char_p
+from ctypes import byref, c_char_p
 
 import pytest
 
@@ -19,6 +19,8 @@ FAMILIES = {
     "cone": biyos.Cones,
     "ccon": biyos.Complements,
 }
+
+CALLBACKS = [("cbfun", "fun"), ("cbvar", "var")]
 
 
 @pytest.fixture
@@ -88,6 +90,27 @@ def test_lookup(model, other, short):
     assert type(found) is FAMILIES[short]
     assert found.indices() == looked_up(model, short, names)
     renamed(model, other, short, found)
+    stale(model, found)
+
+
+def covered(model, call, cb):
+    count = c_index()
+    counter = getattr(lib, f"BIYOS_getn{call}")
+    assert counter(model._handle, cb, byref(count)) == 0
+    found = (c_index * count.value)()
+    reader = getattr(lib, f"BIYOS_get{call}")
+    assert reader(model._handle, cb, count.value, found) == 0
+    return list(found)
+
+
+@pytest.mark.parametrize(("call", "short"), CALLBACKS)
+def test_callback(model, call, short):
+    model.addcb([2, 0], [3, 1])
+    found = getattr(model, f"get{call}")(0)
+    assert type(found) is FAMILIES[short]
+    assert found.indices() == covered(model, call, 0)
+    with model.copy() as copy:
+        renamed(model, copy, short, found)
     stale(model, found)
 
 

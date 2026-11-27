@@ -273,7 +273,7 @@ def test_delcb_scalar(model):
     model.addcb([0])
     model.addcb([1, 2])
     assert model.delcb(0) == [-1, 0]
-    assert model.getcbfun(0) == [1, 2]
+    assert model.getcbfun(0).indices() == [1, 2]
 
 
 def test_coverage():

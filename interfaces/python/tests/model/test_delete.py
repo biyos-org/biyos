@@ -236,7 +236,7 @@ def test_listed_variable(model):
     model.addfun(1)
     model.addcb([0], [4, 1])
     assert model.delvar([3, 0]) == [-1, 0, 1, -1, 2]
-    assert model.getcbvar(0) == [2, 0]
+    assert model.getcbvar(0).indices() == [2, 0]
     used = "in use: variable 2: used by callback 0"
     assert variable_in_use(model, [1, 2]) == used
     model.addcb([0])

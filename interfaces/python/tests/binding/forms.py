@@ -315,3 +315,8 @@ def lookups(mdl: Model) -> None:
     assert_type(mdl.getsosidx(names), SpecialOrderedSets)
     assert_type(mdl.getconeidx(names), Cones)
     assert_type(mdl.getcconidx(names), Complements)
+
+
+def callbacks(mdl: Model) -> None:
+    assert_type(mdl.getcbfun(0), Functions)
+    assert_type(mdl.getcbvar(0), Variables | None)
