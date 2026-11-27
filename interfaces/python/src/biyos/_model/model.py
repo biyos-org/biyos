@@ -875,7 +875,7 @@ class Model:
     @overload
     def setvarbnd(
         self,
-        idx: One[Variable],
+        var: One[Variable],
         lb: Real | None = None,
         ub: Real | None = None,
     ) -> None: ...
@@ -883,14 +883,14 @@ class Model:
     @overload
     def setvarbnd(
         self,
-        idx: Many[Variable, Variables],
+        var: Many[Variable, Variables],
         lb: Sequence[Real] | None = None,
         ub: Sequence[Real] | None = None,
     ) -> None: ...
 
     def setvarbnd(
         self,
-        idx: Selection[Variable, Variables],
+        var: Selection[Variable, Variables],
         lb: Real | Sequence[Real] | None = None,
         ub: Real | Sequence[Real] | None = None,
     ) -> None:
@@ -900,7 +900,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        var
             The variables.
             An index or a view stands for one variable, and each other argument
             is then a scalar.
@@ -912,7 +912,7 @@ class Model:
         BIYOS_setvarbndsp
         BIYOS_setvarbndrg
         """
-        one, n, chosen = self._selected("BIYOS_setvarbnd", Variables, idx)
+        one, n, chosen = self._selected("BIYOS_setvarbnd", Variables, var)
         arrays = (
             doubles("lb", lb, n, one),
             doubles("ub", ub, n, one),
@@ -920,21 +920,21 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getvarbnd(self, idx: One[Variable]) -> tuple[Real, Real]: ...
+    def getvarbnd(self, var: One[Variable]) -> tuple[Real, Real]: ...
 
     @overload
     def getvarbnd(
-        self, idx: Many[Variable, Variables]
+        self, var: Many[Variable, Variables]
     ) -> tuple[list[Real], list[Real]]: ...
 
     def getvarbnd(
-        self, idx: Selection[Variable, Variables]
+        self, var: Selection[Variable, Variables]
     ) -> tuple[Real, Real] | tuple[list[Real], list[Real]]:
         """Read the bounds of variables.
 
         Parameters
         ----------
-        idx
+        var
             The variables, in any order, any of them more than once.
             An index or a view stands for one variable, and each result is then
             a scalar.
@@ -952,31 +952,31 @@ class Model:
         BIYOS_getvarbndrg
         """
         bounds = (c_real, c_real)
-        lb, ub = self._getlist("BIYOS_getvarbnd", Variables, idx, *bounds)
+        lb, ub = self._getlist("BIYOS_getvarbnd", Variables, var, *bounds)
         return lb, ub
 
     @overload
     def setvarknd(
-        self, idx: One[Variable], knd: VariableKind | None
+        self, var: One[Variable], knd: VariableKind | None
     ) -> None: ...
 
     @overload
     def setvarknd(
         self,
-        idx: Many[Variable, Variables],
+        var: Many[Variable, Variables],
         knd: Sequence[VariableKind] | None,
     ) -> None: ...
 
     def setvarknd(
         self,
-        idx: Selection[Variable, Variables],
+        var: Selection[Variable, Variables],
         knd: VariableKind | Sequence[VariableKind] | None,
     ) -> None:
         """Set the kinds of variables.
 
         Parameters
         ----------
-        idx
+        var
             The variables.
             An index or a view stands for one variable, and each other argument
             is then a scalar.
@@ -988,26 +988,26 @@ class Model:
         BIYOS_setvarkndsp
         BIYOS_setvarkndrg
         """
-        one, n, chosen = self._selected("BIYOS_setvarknd", Variables, idx)
+        one, n, chosen = self._selected("BIYOS_setvarknd", Variables, var)
         arrays = (ints("knd", knd, n, one),)
         self._call(*chosen, *arrays)
 
     @overload
-    def getvarknd(self, idx: One[Variable]) -> VariableKind: ...
+    def getvarknd(self, var: One[Variable]) -> VariableKind: ...
 
     @overload
     def getvarknd(
-        self, idx: Many[Variable, Variables]
+        self, var: Many[Variable, Variables]
     ) -> list[VariableKind]: ...
 
     def getvarknd(
-        self, idx: Selection[Variable, Variables]
+        self, var: Selection[Variable, Variables]
     ) -> VariableKind | list[VariableKind]:
         """Read the kinds of variables.
 
         Parameters
         ----------
-        idx
+        var
             The variables, in any order, any of them more than once.
             An index or a view stands for one variable, and the result is then a
             scalar.
@@ -1022,14 +1022,14 @@ class Model:
         BIYOS_getvarkndsp
         BIYOS_getvarkndrg
         """
-        (found,) = self._getlist("BIYOS_getvarknd", Variables, idx, c_integer)
+        (found,) = self._getlist("BIYOS_getvarknd", Variables, var, c_integer)
         knd: VariableKind | list[VariableKind] = _each(VariableKind, found)
         return knd
 
     @overload
     def setvartol(
         self,
-        idx: One[Variable],
+        var: One[Variable],
         atol: Real | None = None,
         rtol: Real | None = None,
     ) -> None: ...
@@ -1037,14 +1037,14 @@ class Model:
     @overload
     def setvartol(
         self,
-        idx: Many[Variable, Variables],
+        var: Many[Variable, Variables],
         atol: Sequence[Real] | None = None,
         rtol: Sequence[Real] | None = None,
     ) -> None: ...
 
     def setvartol(
         self,
-        idx: Selection[Variable, Variables],
+        var: Selection[Variable, Variables],
         atol: Real | Sequence[Real] | None = None,
         rtol: Real | Sequence[Real] | None = None,
     ) -> None:
@@ -1057,7 +1057,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        var
             The variables.
             An index or a view stands for one variable, and each other argument
             is then a scalar.
@@ -1070,7 +1070,7 @@ class Model:
         BIYOS_setvartolsp
         BIYOS_setvartolrg
         """
-        one, n, chosen = self._selected("BIYOS_setvartol", Variables, idx)
+        one, n, chosen = self._selected("BIYOS_setvartol", Variables, var)
         arrays = (
             doubles("atol", atol, n, one),
             doubles("rtol", rtol, n, one),
@@ -1079,16 +1079,16 @@ class Model:
 
     @overload
     def getvartol(
-        self, idx: One[Variable]
+        self, var: One[Variable]
     ) -> tuple[Real | None, Real | None]: ...
 
     @overload
     def getvartol(
-        self, idx: Many[Variable, Variables]
+        self, var: Many[Variable, Variables]
     ) -> tuple[list[Real | None], list[Real | None]]: ...
 
     def getvartol(
-        self, idx: Selection[Variable, Variables]
+        self, var: Selection[Variable, Variables]
     ) -> (
         tuple[Real | None, Real | None]
         | tuple[list[Real | None], list[Real | None]]
@@ -1097,7 +1097,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        var
             The variables, in any order, any of them more than once.
             An index or a view stands for one variable, and each result is then
             a scalar.
@@ -1115,15 +1115,15 @@ class Model:
         BIYOS_getvartolrg
         """
         pair = (c_real, c_real)
-        atol, rtol = self._getlist("BIYOS_getvartol", Variables, idx, *pair)
+        atol, rtol = self._getlist("BIYOS_getvartol", Variables, var, *pair)
         return _each(_or_none, atol), _each(_or_none, rtol)
 
-    def delvartol(self, idx: Selection[Variable, Variables]) -> None:
+    def delvartol(self, var: Selection[Variable, Variables]) -> None:
         """Return variables to ``feastol_abs`` and ``feastol_rel``.
 
         Parameters
         ----------
-        idx
+        var
             The variables that lose their tolerances.
             An index or a view stands for one variable.
 
@@ -1132,7 +1132,7 @@ class Model:
         BIYOS_delvartolsp
         BIYOS_delvartolrg
         """
-        rows = picked(self, Variables, idx)
+        rows = picked(self, Variables, var)
         self._call(*self._chosen("BIYOS_delvartol", Variables, rows))
 
     def getnvar(self) -> Index:
@@ -1153,16 +1153,16 @@ class Model:
 
     @overload
     def getvar(
-        self, idx: One[Variable]
+        self, var: One[Variable]
     ) -> tuple[VariableKind, Real, Real]: ...
 
     @overload
     def getvar(
-        self, idx: Many[Variable, Variables] | None = None
+        self, var: Many[Variable, Variables] | None = None
     ) -> tuple[list[VariableKind], list[Real], list[Real]]: ...
 
     def getvar(
-        self, idx: Selection[Variable, Variables] | None = None
+        self, var: Selection[Variable, Variables] | None = None
     ) -> (
         tuple[VariableKind, Real, Real]
         | tuple[list[VariableKind], list[Real], list[Real]]
@@ -1171,7 +1171,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        var
             The variables, in any order, any of them more than once; every
             variable by default.
             An index or a view stands for one variable, and each result is then
@@ -1191,26 +1191,26 @@ class Model:
         BIYOS_getvarsp
         BIYOS_getvarrg
         """
-        every = range(self.getnvar()) if idx is None else idx
+        every = range(self.getnvar()) if var is None else var
         types = (c_integer, c_real, c_real)
         found = self._getlist("BIYOS_getvar", Variables, every, *types)
         kinds, lower, upper = found
         return _each(VariableKind, kinds), lower, upper
 
     @overload
-    def setvarname(self, idx: One[Variable], name: str) -> None: ...
+    def setvarname(self, var: One[Variable], name: str) -> None: ...
 
     @overload
     def setvarname(
-        self, idx: Many[Variable, Variables], name: Sequence[str]
+        self, var: Many[Variable, Variables], name: Sequence[str]
     ) -> None: ...
 
     def setvarname(
-        self, idx: Selection[Variable, Variables], name: str | Sequence[str]
+        self, var: Selection[Variable, Variables], name: str | Sequence[str]
     ) -> None:
         """Name variables of the model.
 
-        Variable ``idx[j]`` takes the name ``name[j]``, under the rules of
+        Variable ``var[j]`` takes the name ``name[j]``, under the rules of
         ``setname``. A variable listed more than once takes the last of
         its names. Names may repeat: several variables may hold one name,
         and ``getvaridx`` then refuses to choose among them. Every other
@@ -1218,12 +1218,12 @@ class Model:
 
         Parameters
         ----------
-        idx
+        var
             The variables to name.
             An index or a view stands for one variable, and each other argument
             is then a scalar.
         name
-            The new name of each, as many as ``idx``.
+            The new name of each, as many as ``var``.
 
         Raises
         ------
@@ -1232,7 +1232,7 @@ class Model:
             name is not a str.
         ValueError
             When a name holds a null character or cannot be encoded as
-            UTF-8, or when ``name`` and ``idx`` differ in length.
+            UTF-8, or when ``name`` and ``var`` differ in length.
         Error
             When an index is not that of a variable or a name is empty.
 
@@ -1241,24 +1241,24 @@ class Model:
         BIYOS_setvarnamesp
         BIYOS_setvarnamerg
         """
-        self._setname("BIYOS_setvarname", Variables, idx, name)
+        self._setname("BIYOS_setvarname", Variables, var, name)
 
     @overload
-    def getvarname(self, idx: One[Variable]) -> str | None: ...
+    def getvarname(self, var: One[Variable]) -> str | None: ...
 
     @overload
     def getvarname(
-        self, idx: Many[Variable, Variables]
+        self, var: Many[Variable, Variables]
     ) -> list[str | None]: ...
 
     def getvarname(
-        self, idx: Selection[Variable, Variables]
+        self, var: Selection[Variable, Variables]
     ) -> str | None | list[str | None]:
         """Return the names of variables.
 
         Parameters
         ----------
-        idx
+        var
             The variables to read, in any order, any of them more than once.
             An index or a view stands for one variable, and the result is then a
             scalar.
@@ -1273,7 +1273,7 @@ class Model:
         BIYOS_getvarnamesp
         BIYOS_getvarnamerg
         """
-        return self._getname("BIYOS_getvarname", Variables, idx)
+        return self._getname("BIYOS_getvarname", Variables, var)
 
     def getvaridx(self, name: Sequence[str]) -> Variables:
         """Return the variables with names.
@@ -1285,7 +1285,7 @@ class Model:
 
         Returns
         -------
-        idx
+        var
             The variable that alone holds each name, as a ``Variables``
             block, which raises ``ValueError`` once the model has had a
             deletion. ``indices`` gives the indices as a list.
@@ -1307,12 +1307,12 @@ class Model:
         """
         return self._getidx(lib.BIYOS_getvaridx, Variables, name)
 
-    def delvarname(self, idx: Selection[Variable, Variables]) -> None:
+    def delvarname(self, var: Selection[Variable, Variables]) -> None:
         """Remove the names of variables, which then have none.
 
         Parameters
         ----------
-        idx
+        var
             The variables that lose their names. One without a name, or
             listed more than once, is left without one.
             An index or a view stands for one variable.
@@ -1328,9 +1328,9 @@ class Model:
         BIYOS_delvarnamesp
         BIYOS_delvarnamerg
         """
-        self._delname("BIYOS_delvarname", Variables, idx)
+        self._delname("BIYOS_delvarname", Variables, var)
 
-    def delvar(self, idx: Selection[Variable, Variables]) -> list[Index]:
+    def delvar(self, var: Selection[Variable, Variables]) -> list[Index]:
         """Delete variables, with their terms in every function.
 
         The variables left keep their order and are numbered from 0 again, and
@@ -1342,7 +1342,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        var
             The variables to delete, in any order, none of them twice.
             An index or a view stands for one variable.
 
@@ -1365,7 +1365,7 @@ class Model:
         BIYOS_delvarsp
         BIYOS_delvarrg
         """
-        return self._delete("BIYOS_delvar", Variables, idx)
+        return self._delete("BIYOS_delvar", Variables, var)
 
     def addfun(self, n: Index) -> Functions:
         """Add functions after the last one, each with the constant 0 and
@@ -1870,13 +1870,13 @@ class Model:
         self._addlists("BIYOS_addclinterm", lead, others, coef)
 
     def getnclinterm(
-        self, idx: Sequence[Index | Variable] | Variables | None = None
+        self, var: Sequence[Index | Variable] | Variables | None = None
     ) -> Offset:
         """Count the linear terms of variables.
 
         Parameters
         ----------
-        idx
+        var
             The variables, in any order, any of them more than once; every
             variable by default.
 
@@ -1891,11 +1891,11 @@ class Model:
         BIYOS_getnclintermsp
         BIYOS_getnclintermrg
         """
-        every = range(self.getnvar()) if idx is None else idx
+        every = range(self.getnvar()) if var is None else var
         return self._count("BIYOS_getnclinterm", Variables, every)
 
     def getclinterm(
-        self, idx: Sequence[Index | Variable] | Variables | None = None
+        self, var: Sequence[Index | Variable] | Variables | None = None
     ) -> tuple[Functions, Variables, list[Real]]:
         """Read the linear terms of variables, by variable.
 
@@ -1905,7 +1905,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        var
             The variables, in any order, any of them more than once; every
             variable by default.
 
@@ -1915,7 +1915,7 @@ class Model:
             The function of each term, each variable's sorted by function,
             as a ``Functions`` block.
         var
-            The variable of each term, the terms of ``idx[0]`` first, as a
+            The variable of each term, the terms of ``var[0]`` first, as a
             ``Variables`` block.
         coef
             The coefficient of each term.
@@ -1925,7 +1925,7 @@ class Model:
         BIYOS_getclintermsp
         BIYOS_getclintermrg
         """
-        every = range(self.getnvar()) if idx is None else idx
+        every = range(self.getnvar()) if var is None else var
         types = (Functions, Variables)
         found, values = self._terms("clinterm", types, every, 1)
         return found[0], found[1], values
@@ -5562,14 +5562,14 @@ class Model:
         return self._pattern("gpat", Functions, every)
 
     def getnhpat(
-        self, idx: Sequence[Index | Variable] | Variables | None = None
+        self, var: Sequence[Index | Variable] | Variables | None = None
     ) -> Offset:
         """Count the entries of the Hessian pattern in columns of its lower
         triangle.
 
         Parameters
         ----------
-        idx
+        var
             The variables whose columns to count, in any order, any of them
             more than once; every variable by default.
 
@@ -5584,11 +5584,11 @@ class Model:
         BIYOS_getnhpatsp
         BIYOS_getnhpatrg
         """
-        every = range(self.getnvar()) if idx is None else idx
+        every = range(self.getnvar()) if var is None else var
         return self._count("BIYOS_getnhpat", Variables, every)
 
     def gethpat(
-        self, idx: Sequence[Index | Variable] | Variables | None = None
+        self, var: Sequence[Index | Variable] | Variables | None = None
     ) -> tuple[list[Offset], Variables]:
         """Read the Hessian pattern in columns of its lower triangle.
 
@@ -5597,7 +5597,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        var
             The variables whose columns to read, in any order, any of them
             more than once; every variable by default.
 
@@ -5607,14 +5607,14 @@ class Model:
             The number of rows in each column.
         var
             The rows of each column, sorted, each at least the column's
-            variable, those of ``idx[0]`` first, as a ``Variables`` block.
+            variable, those of ``var[0]`` first, as a ``Variables`` block.
 
         See Also
         --------
         BIYOS_gethpatsp
         BIYOS_gethpatrg
         """
-        every = range(self.getnvar()) if idx is None else idx
+        every = range(self.getnvar()) if var is None else var
         return self._pattern("hpat", Variables, every)
 
     def _compared(
