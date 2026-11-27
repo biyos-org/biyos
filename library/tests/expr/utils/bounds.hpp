@@ -11,6 +11,9 @@
 namespace biyos::test
 {
 
+constexpr Real kPiUp = 0x1.921fb54442d19p+1;
+constexpr Real kHalfPiUp = 0x1.921fb54442d19p+0;
+
 inline std::string interval_text(Interval interval)
 {
     if (interval.is_empty())

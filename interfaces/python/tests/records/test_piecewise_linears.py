@@ -183,7 +183,7 @@ def test_views(env, model):
     q = other.addpwl([2], [0.0, 1.0], [0.0, 1.0])
     with pytest.raises(ValueError, match="is a pwl of another model"):
         model.getpwl([q[0]])
-    with pytest.raises(ValueError, match="idx is a block of another model"):
+    with pytest.raises(ValueError, match="pwl is a block of another model"):
         model.getnpwlpt(q)
     with pytest.raises(ValueError, match="pwl is a pwl of another model"):
         model.addpwlnode(q[0], 0)
@@ -280,7 +280,7 @@ def test_numbers(model):
         model.addpwl([2], [0.0, 1.0], [0.0, True])
     with pytest.raises(OverflowError, match="cnt: 9223372036854775808 does"):
         model.addpwl([2**63], [], [])
-    with pytest.raises(OverflowError, match="idx: 4294967296 does not fit"):
+    with pytest.raises(OverflowError, match="pwl: 4294967296 does not fit"):
         model.getpwl(range(2**32, 2**32 + 1))
     assert model.getnpwl() == 0
 
