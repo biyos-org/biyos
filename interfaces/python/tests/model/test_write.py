@@ -30,7 +30,7 @@ def summary(model):
         model.getobjname(objectives),
         model.getobjsense(objectives),
         model.getcst(range(model.getnfun())),
-        model.getrlinterm(),
+        indexed(model.getrlinterm()),
     )
 
 
@@ -56,7 +56,7 @@ def structure(model):
     sets = range(model.getnsos())
     names = model.getsosname(sets)
     indicators = indexed(model.getind())
-    return summary(model), indicators, model.getsos(), names
+    return summary(model), indicators, indexed(model.getsos()), names
 
 
 def test_structure(env, tmp_path):

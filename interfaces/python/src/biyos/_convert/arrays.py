@@ -1,6 +1,6 @@
 import numbers
 from array import array
-from collections.abc import Sequence, Sized
+from collections.abc import Iterable, Sequence, Sized
 from ctypes import Array, c_char_p
 from typing import (
     TYPE_CHECKING,
@@ -211,6 +211,14 @@ def index_view(count: int) -> "memoryview[int]":
 
 def index_array(view: "memoryview[int]") -> Array[c_index]:
     return (c_index * len(view)).from_buffer(view)
+
+
+def repeated_view(
+    items: Iterable[Index], counts: Iterable[int]
+) -> "memoryview[int]":
+    pairs = zip(items, counts)
+    repeated = (item for item, count in pairs for _ in range(count))
+    return memoryview(array(c_index._type_, repeated))
 
 
 def _counted(name: str, counts: Array[c_offset]) -> None:

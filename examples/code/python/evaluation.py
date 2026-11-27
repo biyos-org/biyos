@@ -6,10 +6,11 @@ def evaluate(model):
     model.addobj(x[0] * x[1] + biyos.exp(x[0]))
     point = [0.0, 2.0]
     f = model.evalf(point)
-    cnt, var = model.getgpat()
+    gcnt, gvar = model.getgpat()
     g = model.evalg(point)
+    hcnt, hvar = model.gethpat()
     h = model.evalh(point, [1.0])
-    return f, (cnt, var, g), (*model.gethpat(), h)
+    return f, (gcnt, gvar.indices(), g), (hcnt, hvar.indices(), h)
 
 
 with biyos.Env() as env, biyos.Model(env) as model:

@@ -8,6 +8,7 @@ import pytest
 import biyos
 from biyos import ConeKind, EventKind, EventLevel
 from biyos._capi import lib
+from listed import indexed
 from number import Number
 from refusal import LOCKED, refusal
 from sized import Room, limit
@@ -104,7 +105,7 @@ def test_add(model):
     assert type(added) is biyos.Cones
     assert [index(cone) for cone in added] == [0, 1]
     assert model.getncone() == 2
-    assert model.getcone() == SAMPLE
+    assert indexed(model.getcone()) == SAMPLE
     assert model.getconeprm() == WEIGHTS
     assert all(type(kind) is ConeKind for kind in model.getcone()[0])
     assert model.getnconefun() == 5
@@ -128,18 +129,18 @@ def test_kinds(env, kind, dimension, weights):
         f = model.addfun(dimension)
         model.addcone([kind], [dimension], f, [len(weights)], weights)
         found = ([kind], [dimension], list(range(dimension)))
-        assert model.getcone() == found
+        assert indexed(model.getcone()) == found
         assert model.getconeprm() == ([len(weights)], weights)
 
 
 def test_range(model):
     add_sample(model)
-    assert model.getcone(range(1, 2)) == ([KINDS[1]], [2], [1, 3])
-    found = model.getcone([1, 0, 1])
+    assert indexed(model.getcone(range(1, 2))) == ([KINDS[1]], [2], [1, 3])
+    found = indexed(model.getcone([1, 0, 1]))
     kinds = [KINDS[1], KINDS[0], KINDS[1]]
     assert found == (kinds, [2, 3, 2], [1, 3, 4, 0, 2, 1, 3])
-    assert model.getcone(range(2, 2)) == ([], [], [])
-    assert model.getcone([]) == ([], [], [])
+    assert indexed(model.getcone(range(2, 2))) == ([], [], [])
+    assert indexed(model.getcone([])) == ([], [], [])
     assert model.getconeprm([1, 1, 0]) == ([2, 2, 0], PRM * 2)
     assert model.getconeprm(range(1)) == ([0], [])
     assert model.getnconefun([1, 0, 1]) == 7
@@ -175,7 +176,7 @@ def test_shared(model):
     model.addcon([1])
     model.addcone([ConeKind.SECOND_ORDER], [2], [1, 0])
     model.addcone([ConeKind.NONNEGATIVE], [2], [2, 1])
-    assert model.getcone()[2] == [1, 0, 2, 1]
+    assert model.getcone()[2].indices() == [1, 0, 2, 1]
     assert model.getcon()[0].indices() == [1]
     assert model.getnfun() == 5
 
@@ -184,8 +185,8 @@ def test_views(env, model):
     f = model.addfun(3)
     c = model.addcone([ConeKind.SECOND_ORDER], [3], f)
     model.addcone([ConeKind.NONNEGATIVE], [2], [f[2], 0])
-    assert model.getcone()[2] == [5, 6, 7, 7, 0]
-    assert model.getcone([c[0]]) == (
+    assert model.getcone()[2].indices() == [5, 6, 7, 7, 0]
+    assert indexed(model.getcone([c[0]])) == (
         [ConeKind.SECOND_ORDER],
         [3],
         [5, 6, 7],
@@ -223,7 +224,7 @@ def test_gone(model):
         model.getcone([view])
     with pytest.raises(ValueError, match="the block predates a deletion"):
         model.getconeprm(c)
-    assert model.getcone() == SAMPLE
+    assert indexed(model.getcone()) == SAMPLE
 
 
 def kept(found, function, *arguments):
@@ -246,8 +247,8 @@ def test_stale(model, monkeypatch):
     monkeypatch.setattr(model, "getncone", lambda: 0)
     spy = Room(lib.BIYOS_getconerg, read_lengths)
     monkeypatch.setattr(lib, "BIYOS_getconerg", spy)
-    assert model.getcone(range(2)) == SAMPLE
-    assert model.getcone() == ([], [], [])
+    assert indexed(model.getcone(range(2))) == SAMPLE
+    assert indexed(model.getcone()) == ([], [], [])
     assert model.getconeprm() == ([], [])
 
 
@@ -269,7 +270,7 @@ def test_refused(model, arguments, fault):
     add_sample(model)
     message = refusal(model.addcone, *arguments)
     assert message == f"invalid argument: {fault}"
-    assert model.getcone() == SAMPLE
+    assert indexed(model.getcone()) == SAMPLE
     assert model.getconeprm() == WEIGHTS
 
 
@@ -310,7 +311,7 @@ def test_numbers(model):
         model.getcone(range(2**32, 2**32 + 1))
     assert model.getncone() == 0
     model.addcone((Number(1),), (Number(2),), array.array("i", [1, 0]))
-    assert model.getcone() == ([ConeKind.NONNEGATIVE], [2], [1, 0])
+    assert indexed(model.getcone()) == ([ConeKind.NONNEGATIVE], [2], [1, 0])
 
 
 def test_locked(env, model):
@@ -321,7 +322,7 @@ def test_locked(env, model):
             model.addcone([ConeKind.NONNEGATIVE], [1], [0])
         except biyos.Error as error:
             seen.append(str(error))
-        seen.append(model.getcone())
+        seen.append(indexed(model.getcone()))
         seen.append(model.getconeprm([1]))
 
     add_sample(model)
@@ -351,11 +352,11 @@ def test_closed(env):
 def test_on(env, model):
     c = add_sample(model)
     copy = model.copy()
-    assert copy.getcone() == SAMPLE
+    assert indexed(copy.getcone()) == SAMPLE
     assert copy.getconeprm() == WEIGHTS
     d = c[1:].on(copy)
     assert type(d) is biyos.Cones
-    assert copy.getcone(d) == ([KINDS[1]], [2], [1, 3])
+    assert indexed(copy.getcone(d)) == ([KINDS[1]], [2], [1, 3])
     copy.addcone([ConeKind.NONNEGATIVE], [1], [0])
     assert model.getncone() == 2
     smaller = biyos.Model(env)

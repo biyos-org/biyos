@@ -5,6 +5,7 @@ import pytest
 import biyos
 from biyos import EventKind, EventLevel, Operator
 from biyos._capi import lib
+from listed import indexed
 from number import Number
 from refusal import LOCKED, refusal
 
@@ -86,9 +87,9 @@ def test_views(env, model):
         model.addvarnode(f[0])
     model.attachexpr(f, [0])
     model.attachexpr([f[0]], [0])
-    assert model.getrlinterm(f) == ([2], [3], [2.0])
+    assert indexed(model.getrlinterm(f)) == ([2], [3], [2.0])
     model.clrfun(f)
-    assert model.getrlinterm(f) == ([], [], [])
+    assert indexed(model.getrlinterm(f)) == ([], [], [])
 
 
 def test_postfix(model):
@@ -151,12 +152,12 @@ def test_attach(model):
     model.addlinterm([1], [2], [1.0])
     assert model.attachexpr([1], top) is None
     assert model.getcst(range(2)) == [0.5, 3.0]
-    assert model.getrlinterm() == ([1, 1], [0, 2], [2.0, 1.0])
-    assert model.getquadterm() == ([1], [0], [1], [1.0])
+    assert indexed(model.getrlinterm()) == ([1, 1], [0, 2], [2.0, 1.0])
+    assert indexed(model.getquadterm()) == ([1], [0], [1], [1.0])
     model.attachexpr([1], top)
     assert model.getcst(range(2)) == [0.5, 6.0]
-    assert model.getrlinterm() == ([1, 1], [0, 2], [4.0, 1.0])
-    assert model.getquadterm() == ([1], [0], [1], [2.0])
+    assert indexed(model.getrlinterm()) == ([1, 1], [0, 2], [4.0, 1.0])
+    assert indexed(model.getquadterm()) == ([1], [0], [1], [2.0])
 
 
 @pytest.mark.parametrize(
@@ -170,9 +171,9 @@ def test_forms(model, monkeypatch, kind, form):
     trace(monkeypatch, seen, "attachexpr")
     trace(monkeypatch, seen, "clrfun")
     model.attachexpr(idx, [x, x])
-    assert model.getrlinterm() == ([2, 3], [0, 0], [1.0, 1.0])
+    assert indexed(model.getrlinterm()) == ([2, 3], [0, 0], [1.0, 1.0])
     model.clrfun(idx)
-    assert model.getrlinterm() == ([], [], [])
+    assert indexed(model.getrlinterm()) == ([], [], [])
     assert seen == [form] * 2
 
 
@@ -187,7 +188,7 @@ def test_shared(model):
         [0.0, 1.0, 1.0],
     )
     model.attachexpr([0, 1], tops)
-    assert model.getrlinterm() == ([0], [1], [1.0])
+    assert indexed(model.getrlinterm()) == ([0], [1], [1.0])
     assert next_id(model) == 5
 
 
@@ -196,8 +197,8 @@ def test_clear(model):
     model.attachexpr([0, 1], top * 2)
     model.clrfun([1, 1])
     assert model.getcst(range(2)) == [3.5, 0.0]
-    assert model.getrlinterm() == ([0], [0], [2.0])
-    assert model.getquadterm() == ([0], [0], [1], [1.0])
+    assert indexed(model.getrlinterm()) == ([0], [0], [2.0])
+    assert indexed(model.getquadterm()) == ([0], [0], [1], [1.0])
     model.attachexpr([1], top)
     assert model.getcst(range(2)) == [3.5, 3.0]
     model.clrfun([])
@@ -213,8 +214,8 @@ def rebuilt(env, model):
     copy.addvar(model.getnvar())
     f = copy.addfun(model.getnfun())
     copy.setcst(f, model.getcst(range(model.getnfun())))
-    copy.addlinterm(*model.getrlinterm())
-    copy.addquadterm(*model.getquadterm())
+    copy.addlinterm(*indexed(model.getrlinterm()))
+    copy.addquadterm(*indexed(model.getquadterm()))
     copy.attachexpr(f, copy.addexpr(*model.getexpr()))
     return copy
 
@@ -251,8 +252,8 @@ def test_round_trip(env, model):
     with rebuilt(env, model) as copy:
         assert copy.getexpr() == model.getexpr()
         assert copy.getcst(range(4)) == model.getcst(range(4))
-        assert copy.getrlinterm() == model.getrlinterm()
-        assert copy.getquadterm() == model.getquadterm()
+        assert indexed(copy.getrlinterm()) == indexed(model.getrlinterm())
+        assert indexed(copy.getquadterm()) == indexed(model.getquadterm())
     code = [Operator.VARIABLE, Operator.SIN, Operator.KEEP]
     code += [Operator.REFERENCE, Operator.DIVISION, Operator.CONSTANT]
     assert model.getexpr(f) == ([5, 1], code, [0, 1, 1, 2, 2, 0], [0.0])
@@ -439,8 +440,8 @@ def test_copy(model):
     model.attachexpr([1], top)
     copy = model.copy()
     assert copy.getcst(range(2)) == model.getcst(range(2))
-    assert copy.getrlinterm() == model.getrlinterm()
-    assert copy.getquadterm() == model.getquadterm()
+    assert indexed(copy.getrlinterm()) == indexed(model.getrlinterm())
+    assert indexed(copy.getquadterm()) == indexed(model.getquadterm())
     assert next_id(copy) == 6
     copy.clrfun([1])
     assert model.getcst(range(2)) == [0.5, 3.0]

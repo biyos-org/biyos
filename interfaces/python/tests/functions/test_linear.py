@@ -9,6 +9,7 @@ import pytest
 import biyos
 from biyos import EventKind, EventLevel
 from biyos._capi import lib
+from listed import indexed
 from number import Growing, Number
 from refusal import LOCKED, refusal
 from sized import Room, limit
@@ -47,7 +48,7 @@ def model(env):
 
 
 def terms(model):
-    fun, var, coef = model.getrlinterm()
+    fun, var, coef = indexed(model.getrlinterm())
     ends = range(model.getnfun() + 1)
     return [bisect_left(fun, j) for j in ends], var, coef
 
@@ -112,7 +113,7 @@ def test_copied(env):
                 model.addfun(n_funs)
             drawn = random_terms(draw, n_vars, n_funs)
             source.addlinterm(*spread(drawn, 0, 0))
-            fun, var, coef = source.getrlinterm()
+            fun, var, coef = indexed(source.getrlinterm())
             order = list(range(len(coef)))
             draw.shuffle(order)
             target.addlinterm(
@@ -175,9 +176,9 @@ def test_views(env, model):
     model.addlinterm(f, [x[1], 0], [1.0, 2.0])
     model.addlinterm([f[0], f[0]], x, [3.0, 4.0])
     found = ([3, 3, 4], [3, 4, 0], [3.0, 5.0, 2.0])
-    assert model.getrlinterm(f) == found
-    assert model.getclinterm(x[1:]) == ([3], [4], [5.0])
-    assert model.getrlinterm([f[0]]) == ([3, 3], [3, 4], [3.0, 5.0])
+    assert indexed(model.getrlinterm(f)) == found
+    assert indexed(model.getclinterm(x[1:])) == ([3], [4], [5.0])
+    assert indexed(model.getrlinterm([f[0]])) == ([3, 3], [3, 4], [3.0, 5.0])
     other = biyos.Model(env)
     y = other.addvar(1)
     g = other.addfun(1)
@@ -238,26 +239,26 @@ def test_numbers(model):
 
 
 def test_by_variable(model):
-    assert model.getclinterm() == spread(HELD_VARS)
+    assert indexed(model.getclinterm()) == spread(HELD_VARS)
     model.addlinterm(*ADDED)
-    assert model.getclinterm() == spread(MERGED_VARS)
+    assert indexed(model.getclinterm()) == spread(MERGED_VARS)
 
 
 def test_by_function(model):
-    assert model.getrlinterm() == spread(SORTED, 0, 0)
-    assert model.getrlinterm([2, 0, 2]) == (
+    assert indexed(model.getrlinterm()) == spread(SORTED, 0, 0)
+    assert indexed(model.getrlinterm([2, 0, 2])) == (
         [2, 2, 0, 0, 0, 2, 2],
         [0, 1, 0, 1, 2, 0, 1],
         [4.0, 5.0, 1.0, 0.0, 3.0, 4.0, 5.0],
     )
-    assert model.getrlinterm(range(1, 2)) == ([], [], [])
+    assert indexed(model.getrlinterm(range(1, 2))) == ([], [], [])
 
 
 def test_range(model):
     tail = ([0, 2, 3], [0, 2, 0], [0.0, 5.0, 3.0])
-    assert model.getclinterm(range(1, 3)) == spread(tail, 1)
-    assert model.getclinterm(range(2, 3)) == ([0], [2], [3.0])
-    assert model.getclinterm(range(3, 3)) == ([], [], [])
+    assert indexed(model.getclinterm(range(1, 3))) == spread(tail, 1)
+    assert indexed(model.getclinterm(range(2, 3))) == ([0], [2], [3.0])
+    assert indexed(model.getclinterm(range(3, 3))) == ([], [], [])
 
 
 def test_counts(model):
@@ -285,12 +286,13 @@ def test_transpose(env):
                 model.addlinterm([fun[j] for j in owners], var, coef)
             by_function = terms(model)
             whole = transposed(by_function, 0, n_vars)
-            assert model.getclinterm() == spread(whole)
-            assert model.getrlinterm() == spread(by_function, 0, 0)
+            assert indexed(model.getclinterm()) == spread(whole)
+            assert indexed(model.getrlinterm()) == spread(by_function, 0, 0)
             pos = draw.randint(0, n_vars)
             n = draw.randint(0, n_vars - pos)
             part = transposed(by_function, pos, n)
-            assert model.getclinterm(range(pos, pos + n)) == spread(part, pos)
+            found = indexed(model.getclinterm(range(pos, pos + n)))
+            assert found == spread(part, pos)
             expect_lists(draw, model, "rlinterm", n_funs)
             expect_lists(draw, model, "clinterm", n_vars)
 
@@ -299,10 +301,11 @@ def expect_lists(draw, model, name, count):
     size = draw.randint(0, 8) if count > 0 else 0
     listed = [draw.randrange(count) for _ in range(size)]
     read = getattr(model, f"get{name}")
-    found = read(listed)
+    found = indexed(read(listed))
     wanted = ([], [], [])
     for index in listed:
-        for column, more in zip(wanted, read(range(index, index + 1))):
+        one = indexed(read(range(index, index + 1)))
+        for column, more in zip(wanted, one):
             column += more
     assert found == wanted
     assert getattr(model, f"getn{name}")(listed) == len(found[2])
@@ -310,8 +313,8 @@ def expect_lists(draw, model, name, count):
 
 def test_growing(model):
     grow = partial(model.addvar, 2)
-    expected = model.getclinterm()
-    assert model.getclinterm([0, Growing(1, grow), 2]) == expected
+    expected = indexed(model.getclinterm())
+    assert indexed(model.getclinterm([0, Growing(1, grow), 2])) == expected
     assert model.getnvar() == 7
 
 
@@ -319,8 +322,8 @@ def test_stale(model, monkeypatch):
     monkeypatch.setattr(model, "getnvar", lambda: 0)
     spy = Room(lib.BIYOS_getclintermrg, read_lengths)
     monkeypatch.setattr(lib, "BIYOS_getclintermrg", spy)
-    assert model.getclinterm(range(3)) == spread(HELD_VARS)
-    assert model.getclinterm() == ([], [], [])
+    assert indexed(model.getclinterm(range(3))) == spread(HELD_VARS)
+    assert indexed(model.getclinterm()) == ([], [], [])
 
 
 def test_outside(model, monkeypatch):
@@ -343,7 +346,7 @@ def test_locked(env, model):
             model.addlinterm([0], [0], [1.0])
         except biyos.Error as error:
             seen.append(str(error))
-        seen.append(model.getclinterm([2]))
+        seen.append(indexed(model.getclinterm([2])))
 
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
@@ -372,5 +375,9 @@ def test_copy(model):
     assert terms(copy) == MERGED
     copy.addlinterm([1], [0], [1.0])
     assert terms(model) == MERGED
-    assert copy.getclinterm([0]) == ([0, 1, 2], [0, 0, 0], [1.0, 1.0, 3.0])
+    assert indexed(copy.getclinterm([0])) == (
+        [0, 1, 2],
+        [0, 0, 0],
+        [1.0, 1.0, 3.0],
+    )
     copy.close()

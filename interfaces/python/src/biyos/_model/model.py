@@ -41,6 +41,7 @@ from biyos._convert.arrays import (
     nested_doubles,
     nested_indices,
     picked,
+    repeated_view,
     sequence,
     span_of,
     strings,
@@ -258,13 +259,6 @@ def _checked_env(env: Env) -> Env:
 def _kept(found: list[str], event: Event) -> None:
     if event.level == EventLevel.INFO:
         found.append(event.text)
-
-
-def _expanded(
-    counts: Array[c_offset], records: Sequence[Index]
-) -> list[Index]:
-    pairs = zip(records, counts)
-    return [record for record, count in pairs for _ in range(count)]
 
 
 def _or_none(value: Real) -> Real | None:
@@ -1773,8 +1767,12 @@ class Model:
 
     def getrlinterm(
         self, idx: Sequence[Index | Function] | Functions | None = None
-    ) -> tuple[list[Index], list[Index], list[Real]]:
+    ) -> tuple[Functions, Variables, list[Real]]:
         """Read the linear terms of functions, by function.
+
+        The functions and the variables come as blocks, which raise
+        ``ValueError`` once the model has had a deletion. ``indices`` gives
+        them as lists.
 
         Parameters
         ----------
@@ -1785,9 +1783,11 @@ class Model:
         Returns
         -------
         fun
-            The function of each term, the terms of ``idx[0]`` first.
+            The function of each term, the terms of ``idx[0]`` first, as a
+            ``Functions`` block.
         var
-            The variable of each term, each function's sorted by variable.
+            The variable of each term, each function's sorted by variable,
+            as a ``Variables`` block.
         coef
             The coefficient of each term.
 
@@ -1797,7 +1797,8 @@ class Model:
         BIYOS_getrlintermrg
         """
         every = range(self.getnfun()) if idx is None else idx
-        found, values = self._terms("rlinterm", Functions, every, 0)
+        types = (Functions, Variables)
+        found, values = self._terms("rlinterm", types, every, 0)
         return found[0], found[1], values
 
     @overload
@@ -1895,8 +1896,12 @@ class Model:
 
     def getclinterm(
         self, idx: Sequence[Index | Variable] | Variables | None = None
-    ) -> tuple[list[Index], list[Index], list[Real]]:
+    ) -> tuple[Functions, Variables, list[Real]]:
         """Read the linear terms of variables, by variable.
+
+        The functions and the variables come as blocks, which raise
+        ``ValueError`` once the model has had a deletion. ``indices`` gives
+        them as lists.
 
         Parameters
         ----------
@@ -1907,9 +1912,11 @@ class Model:
         Returns
         -------
         fun
-            The function of each term, each variable's sorted by function.
+            The function of each term, each variable's sorted by function,
+            as a ``Functions`` block.
         var
-            The variable of each term, the terms of ``idx[0]`` first.
+            The variable of each term, the terms of ``idx[0]`` first, as a
+            ``Variables`` block.
         coef
             The coefficient of each term.
 
@@ -1919,7 +1926,8 @@ class Model:
         BIYOS_getclintermrg
         """
         every = range(self.getnvar()) if idx is None else idx
-        found, values = self._terms("clinterm", Variables, every, 1)
+        types = (Functions, Variables)
+        found, values = self._terms("clinterm", types, every, 1)
         return found[0], found[1], values
 
     @overload
@@ -2050,8 +2058,12 @@ class Model:
 
     def getquadterm(
         self, idx: Sequence[Index | Function] | Functions | None = None
-    ) -> tuple[list[Index], list[Index], list[Index], list[Real]]:
+    ) -> tuple[Functions, Variables, Variables, list[Real]]:
         """Read the quadratic terms of functions.
+
+        The functions and the variables come as blocks, which raise
+        ``ValueError`` once the model has had a deletion. ``indices`` gives
+        them as lists.
 
         Parameters
         ----------
@@ -2062,12 +2074,13 @@ class Model:
         Returns
         -------
         fun
-            The function of each term, the terms of ``idx[0]`` first.
+            The function of each term, the terms of ``idx[0]`` first, as a
+            ``Functions`` block.
         var1
             The first variable of each term, never above the second, each
-            function's terms sorted by pair.
+            function's terms sorted by pair, as a ``Variables`` block.
         var2
-            The second variable of each term.
+            The second variable of each term, as a ``Variables`` block.
         coef
             The coefficient of each term.
 
@@ -2077,7 +2090,8 @@ class Model:
         BIYOS_getquadtermrg
         """
         every = range(self.getnfun()) if idx is None else idx
-        found, values = self._terms("quadterm", Functions, every, 0, 3)
+        types = (Functions, Variables, Variables)
+        found, values = self._terms("quadterm", types, every, 0)
         functions, firsts, seconds = found
         return functions, firsts, seconds, values
 
@@ -4181,9 +4195,12 @@ class Model:
         | SpecialOrderedSets
         | None = None,
     ) -> tuple[
-        list[SpecialOrderedSetKind], list[Offset], list[Index], list[Real]
+        list[SpecialOrderedSetKind], list[Offset], Variables, list[Real]
     ]:
         """Read special ordered sets, as ``addsos`` takes them.
+
+        The members come as a block, which raises ``ValueError`` once the
+        model has had a deletion. ``indices`` gives them as a list.
 
         Parameters
         ----------
@@ -4198,7 +4215,8 @@ class Model:
         cnt
             The number of members of each set.
         var
-            The variable of each member, each set's in the order added.
+            The variable of each member, each set's in the order added, as a
+            ``Variables`` block.
         coef
             The weight of each member.
 
@@ -4212,12 +4230,13 @@ class Model:
         n = len(every)
         kinds = (c_integer * n)()
         counts = (c_offset * n)()
-        members = (c_index * size)()
+        members = index_view(size)
         weights = (c_real * size)()
         chosen = self._chosen("BIYOS_getsos", SpecialOrderedSets, every)
-        self._call(*chosen, size, kinds, counts, members, weights)
+        self._call(*chosen, size, kinds, counts, index_array(members), weights)
         found = [SpecialOrderedSetKind(code) for code in kinds]
-        return found, list(counts), list(members), list(weights)
+        var = Variables(self, members, self._gen)
+        return found, list(counts), var, list(weights)
 
     @overload
     def setsosname(self, idx: One[SpecialOrderedSet], name: str) -> None: ...
@@ -4702,8 +4721,11 @@ class Model:
 
     def getcone(
         self, idx: Sequence[Index | Cone] | Cones | None = None
-    ) -> tuple[list[ConeKind], list[Offset], list[Index]]:
+    ) -> tuple[list[ConeKind], list[Offset], Functions]:
         """Read the kinds and members of cones.
+
+        The members come as a block, which raises ``ValueError`` once the
+        model has had a deletion. ``indices`` gives them as a list.
 
         Parameters
         ----------
@@ -4719,7 +4741,7 @@ class Model:
             The number of members of each cone.
         fun
             The members of each cone in order, the ``cnt[j]`` of entry ``j``
-            following those of entry ``j - 1``.
+            following those of entry ``j - 1``, as a ``Functions`` block.
 
         See Also
         --------
@@ -4731,10 +4753,10 @@ class Model:
         chosen = self._chosen("BIYOS_getcone", Cones, every)
         kinds = (c_integer * len(every))()
         counts = (c_offset * len(every))()
-        members = (c_index * size)()
-        self._call(*chosen, size, kinds, counts, members)
+        members = index_view(size)
+        self._call(*chosen, size, kinds, counts, index_array(members))
         found = [ConeKind(kind) for kind in kinds]
-        return found, list(counts), list(members)
+        return found, list(counts), Functions(self, members, self._gen)
 
     def getnconeprm(
         self, idx: Sequence[Index | Cone] | Cones | None = None
@@ -5511,8 +5533,11 @@ class Model:
 
     def getgpat(
         self, idx: Sequence[Index | Function] | Functions | None = None
-    ) -> tuple[list[Offset], list[Index]]:
+    ) -> tuple[list[Offset], Variables]:
         """Read the Jacobian pattern of functions.
+
+        The variables come as a block, which raises ``ValueError`` once the
+        model has had a deletion. ``indices`` gives them as a list.
 
         Parameters
         ----------
@@ -5526,7 +5551,7 @@ class Model:
             The number of variables in the pattern of each function.
         var
             The variables of each function's pattern, sorted, those of
-            ``idx[0]`` first.
+            ``idx[0]`` first, as a ``Variables`` block.
 
         See Also
         --------
@@ -5564,8 +5589,11 @@ class Model:
 
     def gethpat(
         self, idx: Sequence[Index | Variable] | Variables | None = None
-    ) -> tuple[list[Offset], list[Index]]:
+    ) -> tuple[list[Offset], Variables]:
         """Read the Hessian pattern in columns of its lower triangle.
+
+        The variables come as a block, which raises ``ValueError`` once the
+        model has had a deletion. ``indices`` gives them as a list.
 
         Parameters
         ----------
@@ -5579,7 +5607,7 @@ class Model:
             The number of rows in each column.
         var
             The rows of each column, sorted, each at least the column's
-            variable, those of ``idx[0]`` first.
+            variable, those of ``idx[0]`` first, as a ``Variables`` block.
 
         See Also
         --------
@@ -5859,38 +5887,36 @@ class Model:
     def _terms(
         self,
         name: str,
-        family: type[Block[View]],
+        types: Sequence[type[Block[View]]],
         idx: Sequence[SupportsIndex] | Block[View],
         place: int,
-        width: int = 2,
-    ) -> tuple[list[list[Index]], list[Real]]:
+    ) -> tuple[list[Any], list[Real]]:
+        family = types[place]
         size = self._count(f"BIYOS_getn{name}", family, idx)
         span = span_of(self, family, "idx", idx)
         chosen = self._chosen(f"BIYOS_get{name}", family, idx)
-        records = (
-            list(cast("Array[c_index]", chosen[2])) if span is None else span
-        )
-        found = [(c_index * size)() for _ in range(width)]
+        records = cast("Array[c_index]", chosen[2]) if span is None else span
+        found = [index_view(size) for _ in types[1:]]
         values = (c_real * size)()
         counts = (c_offset * len(records))()
-        others = found[:place] + found[place + 1 :]
-        self._call(*chosen, size, counts, *others, values)
-        columns = [list(column) for column in found]
-        columns[place] = _expanded(counts, records)
-        return columns, list(values)
+        self._call(*chosen, size, counts, *map(index_array, found), values)
+        found.insert(place, repeated_view(records, counts))
+        columns = zip(types, found)
+        blocks = [self._column(column, view, False) for column, view in columns]
+        return blocks, list(values)
 
     def _pattern(
         self,
         name: str,
         family: type[Block[View]],
         idx: Sequence[SupportsIndex] | Block[View],
-    ) -> tuple[list[Offset], list[Index]]:
+    ) -> tuple[list[Offset], Variables]:
         nnz = self._count(f"BIYOS_getn{name}", family, idx)
         cnt = (c_offset * len(idx))()
-        var = (c_index * nnz)()
+        var = index_view(nnz)
         chosen = self._chosen(f"BIYOS_get{name}", family, idx)
-        self._call(*chosen, nnz, cnt, var)
-        return list(cnt), list(var)
+        self._call(*chosen, nnz, cnt, index_array(var))
+        return list(cnt), Variables(self, var, self._gen)
 
     def _point(self, x: Sequence[Real]) -> Array[c_real] | None:
         return doubles("x", x, self.getnvar())

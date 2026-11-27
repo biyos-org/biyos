@@ -8,6 +8,7 @@ import pytest
 import biyos
 from biyos import EventKind, EventLevel, SpecialOrderedSetKind
 from biyos._capi import lib
+from listed import indexed
 from number import Number
 from refusal import LOCKED, refusal
 from sized import Room, limit
@@ -84,7 +85,7 @@ def records(kind):
 def test_add(model):
     added = model.addsos(*SAMPLE)
     assert model.getnsos() == 3
-    found = model.getsos()
+    found = indexed(model.getsos())
     assert found == SAMPLE
     assert all(type(kind) is SpecialOrderedSetKind for kind in found[0])
     assert type(added) is biyos.SpecialOrderedSets
@@ -111,48 +112,48 @@ def test_defaults(model):
 
 def test_empty(model):
     model.addsos([ONE, TWO], [0, 0], [])
-    assert model.getsos() == ([ONE, TWO], [0, 0], [], [])
+    assert indexed(model.getsos()) == ([ONE, TWO], [0, 0], [], [])
     assert model.getnsosvar() == 0
-    assert model.getsos(range(2, 2)) == NONE
-    assert model.getsos([]) == NONE
+    assert indexed(model.getsos(range(2, 2))) == NONE
+    assert indexed(model.getsos([])) == NONE
 
 
 def test_shared(model):
     weights = [1.0, 2.0, 1.0, 2.0]
     model.addsos([ONE, TWO], [2, 2], [0, 1, 1, 0], weights)
     model.addsos([ONE], [1], [0])
-    assert model.getsos()[2] == [0, 1, 1, 0, 0]
+    assert model.getsos()[2].indices() == [0, 1, 1, 0, 0]
 
 
 def test_listed(model):
     model.addsos(*SAMPLE)
     idx = [2, 0, 2, 1]
-    assert model.getsos(idx) == (
+    assert indexed(model.getsos(idx)) == (
         [ONE, TWO, ONE, ONE],
         [2, 3, 2, 0],
         [1, 0, 2, 0, 3, 1, 0],
         [0.5, 1.5, 3.0, -1.0, 2.5, 0.5, 1.5],
     )
     assert model.getnsosvar(idx) == 7
-    assert model.getsos([Number(1)]) == ([ONE], [0], [], [])
+    assert indexed(model.getsos([Number(1)])) == ([ONE], [0], [], [])
 
 
 def test_range(model):
     s = model.addsos(*SAMPLE)
-    assert model.getsos(range(1, 3)) == TAIL
-    assert model.getsos(s[1:]) == TAIL
+    assert indexed(model.getsos(range(1, 3))) == TAIL
+    assert indexed(model.getsos(s[1:])) == TAIL
     assert model.getnsosvar(range(1, 3)) == 2
-    assert model.getsos(range(3, 3)) == NONE
+    assert indexed(model.getsos(range(3, 3))) == NONE
 
 
 @pytest.mark.parametrize("kind", FORMS)
 def test_forms(model, monkeypatch, kind):
     s = model.addsos(*SAMPLE)
-    wanted = model.getsos(records(kind))
+    wanted = indexed(model.getsos(records(kind)))
     seen = []
     trace(monkeypatch, seen, "BIYOS_getnsosvar")
     trace(monkeypatch, seen, "BIYOS_getsos")
-    assert model.getsos(selection(s, kind)) == wanted
+    assert indexed(model.getsos(selection(s, kind))) == wanted
     assert seen == [FORMS[kind]] * 2
 
 
@@ -173,7 +174,7 @@ def test_sequences(model):
     weights = array.array("d", [0.5, 1.5, 4.0])
     model.addsos(kinds, sizes, range(3), weights)
     model.addsos((Number(1),), (Number(1),), (Number(3),))
-    found = model.getsos()
+    found = indexed(model.getsos())
     assert found[:2] == ([TWO, ONE, ONE], [2, 1, 1])
     assert found[2:] == ([0, 1, 2, 3], [0.5, 1.5, 4.0, 1.0])
 
@@ -182,7 +183,7 @@ def test_views(env, model):
     x = model.addvar(2)
     f = model.addfun(1)
     s = model.addsos([ONE, TWO], [2, 2], [x[0], 1, x[1], 0])
-    assert model.getsos(s)[2] == [4, 1, 5, 0]
+    assert model.getsos(s)[2].indices() == [4, 1, 5, 0]
     assert model.getsos([s[1]])[0] == [TWO]
     other = biyos.Model(env)
     y = other.addvar(1)
@@ -220,7 +221,7 @@ def test_gone(model):
         model.getsos([view])
     with pytest.raises(ValueError, match="the block predates a deletion"):
         model.getsos(s)
-    assert model.getsos() == SAMPLE
+    assert indexed(model.getsos()) == SAMPLE
 
 
 def test_stale(model, monkeypatch):
@@ -228,8 +229,8 @@ def test_stale(model, monkeypatch):
     monkeypatch.setattr(model, "getnsos", lambda: 0)
     spy = Room(lib.BIYOS_getsosrg, read_lengths)
     monkeypatch.setattr(lib, "BIYOS_getsosrg", spy)
-    assert model.getsos(range(3)) == SAMPLE
-    assert model.getsos() == NONE
+    assert indexed(model.getsos(range(3))) == SAMPLE
+    assert indexed(model.getsos()) == NONE
 
 
 def test_outside(model, monkeypatch):
@@ -264,7 +265,7 @@ def test_refused(model):
     )
     message = refusal(model.addsos, [ONE], [1], None)
     assert message == "invalid argument: argument 'var': is null"
-    assert model.getsos() == SAMPLE
+    assert indexed(model.getsos()) == SAMPLE
 
 
 def test_lengths(model):
@@ -300,10 +301,10 @@ def test_numbers(model):
 def test_copy(model):
     s = model.addsos(*SAMPLE)
     copy = model.copy()
-    assert copy.getsos() == SAMPLE
+    assert indexed(copy.getsos()) == SAMPLE
     copy.addsos([ONE], [1], [3])
     assert model.getnsos() == 3
-    assert copy.getsos(s.on(copy)) == SAMPLE
+    assert indexed(copy.getsos(s.on(copy))) == SAMPLE
     assert copy.getnsos() == 4
     copy.close()
 
@@ -317,7 +318,7 @@ def test_locked(env, model):
         except biyos.Error as error:
             seen.append(str(error))
         seen.append(model.getnsos())
-        seen.append(model.getsos([0]))
+        seen.append(indexed(model.getsos([0])))
 
     model.addsos(*SAMPLE)
     env.addhook(change, EventKind.MESSAGE, EventLevel.ERROR)

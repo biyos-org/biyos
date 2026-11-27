@@ -6,7 +6,8 @@ import pytest
 import biyos
 from biyos import ConeKind, SpecialOrderedSetKind, VariableKind
 from biyos._capi import lib
-from biyos._convert.numbers import c_index
+from biyos._convert.numbers import c_index, c_integer, c_offset, c_real
+from listed import indexed
 
 STALE = "the block predates a deletion from its model"
 
@@ -24,6 +25,19 @@ FAMILIES = {
 VIEWS = {"var": biyos.Variable, "fun": biyos.Function}
 
 CALLBACKS = [("cbfun", "fun"), ("cbvar", "var")]
+
+TERMS = [
+    ("rlinterm", "fun", ("fun", "var")),
+    ("clinterm", "var", ("fun", "var")),
+    ("quadterm", "fun", ("fun", "var", "var")),
+]
+
+MEMBERS = [
+    ("sos", "sos", "sosvar", ("knd", "cnt", "var", "coef")),
+    ("cone", "cone", "conefun", ("knd", "cnt", "fun")),
+    ("gpat", "fun", "gpat", ("cnt", "var")),
+    ("hpat", "var", "hpat", ("cnt", "var")),
+]
 
 RECORDS = [
     ("con", "con", ("fun", None, None)),
@@ -66,6 +80,8 @@ def build(model):
     model.addsos([SpecialOrderedSetKind.ONE] * 3, sizes, x[:3])
     model.addcone([ConeKind.NONNEGATIVE] * 3, sizes, g)
     model.addccon(shuffled, [f[1], f[2], f[0]])
+    model.addlinterm(shuffled, [x[1], x[3], x[0]], [1.0, 2.0, 3.0])
+    model.addquadterm(f[1], [x[2], x[0]], [x[3], x[0]], [4.0, 5.0])
     for short in FAMILIES:
         count = getattr(model, f"getn{short}")()
         names = [f"{short}{count - 1 - k}" for k in range(count)]
@@ -166,3 +182,84 @@ def test_record_one(model, call, short, columns):
     found = blocks_of(getattr(model, f"get{call}")(0), columns)
     assert all(type(view) is VIEWS[family] for view, family in found)
     assert [index(view) for view, _ in found] == [column[0] for column in every]
+
+
+def spread(counts):
+    return [k for k, count in enumerate(counts) for _ in range(count)]
+
+
+def termed(model, call, record, columns):
+    count = getattr(model, f"getn{record}")()
+    size = getattr(model, f"getn{call}")(range(count))
+    cnt = (c_offset * count)()
+    others = [(c_index * size)() for _ in columns[1:]]
+    coef = (c_real * size)()
+    reader = getattr(lib, f"BIYOS_get{call}rg")
+    found = reader(model._handle, 0, count, size, cnt, *others, coef)
+    assert found == 0
+    listed = [list(array) for array in others]
+    listed.insert(columns.index(record), spread(cnt))
+    return listed
+
+
+@pytest.mark.parametrize(("call", "record", "columns"), TERMS)
+def test_terms(model, call, record, columns):
+    *found, _ = getattr(model, f"get{call}")()
+    assert [type(block) for block in found] == [
+        FAMILIES[short] for short in columns
+    ]
+    listed = [block.indices() for block in found]
+    assert listed == termed(model, call, record, columns)
+    stale(model, *found)
+
+
+def test_copied_terms(model):
+    linear = model.getrlinterm()
+    quadratic = model.getquadterm()
+    with model.copy() as target:
+        target.clrfun(range(target.getnfun()))
+        fun, var, coef = linear
+        target.addlinterm(fun.on(target), var.on(target), coef)
+        fun, var1, var2, coef = quadratic
+        target.addquadterm(
+            fun.on(target), var1.on(target), var2.on(target), coef
+        )
+        assert model.compare(target) is None
+
+
+def member_array(name, count, size):
+    if name == "knd":
+        return (c_integer * count)()
+    if name == "cnt":
+        return (c_offset * count)()
+    if name == "coef":
+        return (c_real * size)()
+    return (c_index * size)()
+
+
+def membered(model, call, record, counter, columns):
+    count = getattr(model, f"getn{record}")()
+    size = getattr(model, f"getn{counter}")(range(count))
+    arrays = [member_array(name, count, size) for name in columns]
+    reader = getattr(lib, f"BIYOS_get{call}rg")
+    assert reader(model._handle, 0, count, size, *arrays) == 0
+    return [list(array) for array in arrays]
+
+
+@pytest.mark.parametrize(("call", "record", "counter", "columns"), MEMBERS)
+def test_members(model, call, record, counter, columns):
+    place = next(k for k, name in enumerate(columns) if name in FAMILIES)
+    block = getattr(model, f"get{call}")()[place]
+    assert type(block) is FAMILIES[columns[place]]
+    every = membered(model, call, record, counter, columns)
+    assert block.indices() == every[place]
+    stale(model, block)
+
+
+def test_copied_sets(model):
+    count = model.getnsos()
+    kinds, counts, var, weights = model.getsos()
+    with model.copy() as target:
+        target.addsos(kinds, counts, var.on(target), weights)
+        added = target.getsos(range(count, target.getnsos()))
+        assert indexed(added) == indexed(model.getsos())
