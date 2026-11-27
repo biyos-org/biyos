@@ -145,7 +145,7 @@ inline void expect_values(const Model &model, const Model &back, std::span<const
     {
         moved.push_back(x[to_size(k)]);
     }
-    std::vector<Index> kept(to_size(back.n_constraints()));
+    std::vector<Index> kept(to_size(back.n_constraints() + back.n_complements()));
     std::iota(kept.begin(), kept.end(), Index{0});
     const std::vector<Real> wanted = records_at(model, functions_of(rows), x);
     const std::vector<Real> found = records_at(back, kept, moved);

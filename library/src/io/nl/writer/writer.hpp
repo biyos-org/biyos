@@ -24,8 +24,10 @@ class Plan
 
   private:
     void print_header(std::ostream &output) const;
+    void print_nonlinear(std::ostream &output) const;
     void print_records(std::ostream &output, Printer &printer) const;
     void print_ranges(std::ostream &output) const;
+    void print_pairing(std::ostream &output, const Complement &complement) const;
     void print_bounds(std::ostream &output) const;
     void print_columns(std::ostream &output) const;
     void print_entries(std::ostream &output) const;

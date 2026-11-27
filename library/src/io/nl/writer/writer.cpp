@@ -5,6 +5,7 @@
 #include "core/numeric/identical.hpp"
 #include "core/text/text.hpp"
 #include "expr/forms/terms.hpp"
+#include "io/nl/source/bounds.hpp"
 #include "io/nl/writer/defined.hpp"
 #include "io/nl/writer/entries.hpp"
 #include "io/nl/writer/layout.hpp"
@@ -141,9 +142,14 @@ void Plan::report(Stream stream, const std::string &file) const
     {
         warn(stream, file, "NL leaves out the names");
     }
+    std::vector<bool> paired(to_size(model_.n_functions()), false);
+    for (const Complement &complement : model_.complements(0, model_.n_complements()))
+    {
+        paired[to_size(complement.function)] = true;
+    }
     for (Index function = 0; function < model_.n_functions(); ++function)
     {
-        if (!reached(usage_.function_reach(function)))
+        if (!reached(usage_.function_reach(function)) && !paired[to_size(function)])
         {
             inform(stream,
                    file,
@@ -176,7 +182,7 @@ void Plan::print_header(std::ostream &output) const
     const auto defined = defined_.counts();
     output << "g3 1 1 0\n";
     print_row(output, {model_.n_variables(), n_rows(), model_.n_objectives(), ranges, equations});
-    print_row(output, {records_.nonlinear_rows, records_.nonlinear_objectives});
+    print_nonlinear(output);
     print_row(output, {0, 0});
     print_row(output, {counts.in_constraints, counts.in_objectives, counts.in_both});
     print_row(output, {0, 0, 0, 1});
@@ -189,6 +195,27 @@ void Plan::print_header(std::ostream &output) const
     print_row(output, {jacobian, gradient});
     print_row(output, {0, 0});
     print_row(output, {defined[0], defined[1], defined[2], defined[3], defined[4]});
+}
+
+void Plan::print_nonlinear(std::ostream &output) const
+{
+    const Index rows = records_.nonlinear_rows;
+    const Index objectives = records_.nonlinear_objectives;
+    const Index complements = model_.n_complements();
+    if (complements == 0)
+    {
+        print_row(output, {rows, objectives});
+        return;
+    }
+    Index two_sided = 0;
+    Index shifted = 0;
+    for (const Complement &complement : model_.complements(0, complements))
+    {
+        two_sided += finite_of(complement.lower, complement.upper) == kBothFinite ? 1 : 0;
+        shifted += std::isfinite(complement.lower) && !identical(complement.lower, 0.0) ? 1 : 0;
+    }
+    const Index nonlinear = records_.nonlinear_complements;
+    print_row(output, {rows, objectives, complements - nonlinear, nonlinear, two_sided, shifted});
 }
 
 void Plan::print_records(std::ostream &output, Printer &printer) const
@@ -224,9 +251,21 @@ void Plan::print_ranges(std::ostream &output) const
     output << "r\n";
     for (const Row &row : records_.rows)
     {
+        if (row.family == Family::Complement)
+        {
+            print_pairing(output, model_.complement(row.record));
+            continue;
+        }
         const Constraint &constraint = model_.constraint(row.record);
         print_bound(output, constraint.lower, constraint.upper);
     }
+}
+
+void Plan::print_pairing(std::ostream &output, const Complement &complement) const
+{
+    const Index variable = columns_.position[to_size(variable_of(model_, complement))];
+    const Offset finite = finite_of(complement.lower, complement.upper);
+    output << kPairing << ' ' << finite << ' ' << variable + 1 << '\n';
 }
 
 void Plan::print_bounds(std::ostream &output) const

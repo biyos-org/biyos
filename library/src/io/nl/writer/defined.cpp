@@ -113,7 +113,8 @@ Index lead_of(const Graph &graph, Offset node) noexcept
 }
 
 Defined::Defined(const Model &model, const Usage &usage)
-    : constraints_(model.n_constraints()), indices_(to_size(model.graph().size()), kNobody)
+    : constraints_(model.n_constraints() + model.n_complements()),
+      indices_(to_size(model.graph().size()), kNobody)
 {
     const Graph &graph = model.graph();
     const std::vector<bool> marks = marked(graph, usage);

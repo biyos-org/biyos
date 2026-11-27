@@ -1,5 +1,6 @@
 #include "building.hpp"
 #include "loading.hpp"
+#include "written.hpp"
 
 #include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"
@@ -22,14 +23,18 @@ using biyos::Member;
 using biyos::Model;
 using biyos::ObjectiveSense;
 using biyos::Offset;
+using biyos::Real;
 using biyos::SpecialOrderedSetKind;
 using biyos::test::nl::add_goal;
 using biyos::test::nl::bad;
 using biyos::test::nl::continuous;
+using biyos::test::nl::expect_kept;
 using biyos::test::nl::fault_of;
 using biyos::test::nl::infos_of;
 using biyos::test::nl::kInfinity;
+using biyos::test::nl::printed;
 using biyos::test::nl::read_sample;
+using biyos::test::nl::refusal;
 using biyos::test::nl::refused;
 using biyos::test::nl::square_of;
 using biyos::test::nl::tiny_fault;
@@ -269,6 +274,45 @@ S1 1 sosno
 0 1
 )";
 
+constexpr std::string_view kWrittenNlFile = R"(g3 1 1 0
+ 2 2 1 0 0
+ 0 0 1 0 0 0
+ 0 0
+ 0 0 0
+ 0 0 0 1
+ 0 0 0 0 0
+ 4 1
+ 0 0
+ 0 0 0 0 0
+C0
+n0
+C1
+n-1
+O0 0
+n0
+r
+1 4
+5 1 1
+b
+2 0
+3
+k1
+2
+J0 2
+0 1
+1 1
+J1 2
+0 1
+1 1
+G0 1
+1 1
+)";
+
+std::string refused(std::string_view record, std::string_view part)
+{
+    return "unsupported: " + std::string(record) + ": NL cannot hold " + std::string(part);
+}
+
 std::string with(std::string_view text, std::string_view tail)
 {
     return std::string(text) + std::string(tail);
@@ -442,4 +486,51 @@ TEST(NlTest, LoneWeights)
         "file 't.nl' line 11: suffix 'ref' is skipped",
     };
     EXPECT_EQ(infos_of(tiny_with(with(kWeightsTail, kPlainTail))), wanted);
+}
+
+TEST(NlTest, WrittenPairs)
+{
+    EXPECT_EQ(printed(nonnegative()), kWrittenNlFile);
+}
+
+TEST(NlTest, KeptPairs)
+{
+    const std::vector<Real> x{0.5, -0.25};
+    expect_kept(nonnegative(), x);
+    expect_kept(mixed(), x);
+}
+
+TEST(NlTest, PairFunction)
+{
+    Model model = nonnegative();
+    const Index first = 0;
+    const Complement sum{.function = 1, .lower = 0.0, .upper = kInfinity, .multiplier = 0};
+    model.set_complements(std::span(&first, 1), std::span(&sum, 1));
+    EXPECT_EQ(refusal(model), refused("complement 0", "a function other than one variable"));
+}
+
+TEST(NlTest, PairBounds)
+{
+    Model model = nonnegative();
+    const Index first = 0;
+    const Complement raised{.function = 3, .lower = 1.0, .upper = kInfinity, .multiplier = 0};
+    model.set_complements(std::span(&first, 1), std::span(&raised, 1));
+    EXPECT_EQ(refusal(model), refused("complement 0", "bounds other than those of variable 0"));
+}
+
+TEST(NlTest, PairFree)
+{
+    Model model = nonnegative();
+    const Index first = 0;
+    const Complement free{.function = 2, .lower = -kInfinity, .upper = kInfinity, .multiplier = 0};
+    model.set_complements(std::span(&first, 1), std::span(&free, 1));
+    EXPECT_EQ(refusal(model), refused("complement 0", "free variable 1"));
+}
+
+TEST(NlTest, PairTwice)
+{
+    Model model = nonnegative();
+    const Complement again{.function = 3, .lower = 0.0, .upper = kInfinity, .multiplier = 1};
+    model.add_complements(std::span(&again, 1));
+    EXPECT_EQ(refusal(model), refused("complement 1", "variable 0 twice"));
 }
