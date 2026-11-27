@@ -12,6 +12,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -130,6 +131,14 @@ void Options::drop(Option option)
     const OptionSpec &spec = row_of(table_, option);
     values_[index_of(option)] = kept(strings_, default_of(spec));
     sources_[index_of(option)] = OptionSource::Default;
+}
+
+void Options::replace(Options &&other) noexcept
+{
+    table_ = other.table_;
+    strings_ = std::move(other.strings_);
+    values_ = std::move(other.values_);
+    sources_ = std::move(other.sources_);
 }
 
 bool Options::get_bool(Option option) const

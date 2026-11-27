@@ -14,6 +14,8 @@ class Strings
     Strings() = default;
     Strings(const Strings &) = delete;
     Strings &operator=(const Strings &) = delete;
+    Strings(Strings &&) noexcept = default;
+    Strings &operator=(Strings &&) noexcept = default;
 
     std::string_view keep(std::string_view text);
 

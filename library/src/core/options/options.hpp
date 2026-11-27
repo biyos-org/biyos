@@ -177,6 +177,7 @@ class Options
     void set_flags(Option option, Masks value);
     void set(Option option, const OptionValue &value);
     void drop(Option option);
+    void replace(Options &&other) noexcept;
 
     bool get_bool(Option option) const;
     int get_int(Option option) const;
