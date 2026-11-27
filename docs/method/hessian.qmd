@@ -20,7 +20,7 @@ The elements compile to a tape of their own ([Compiled tapes](#sec-tapes)), one 
 
 The exact pattern of an element comes from one reverse pass over its tape with no values, symbolic edge pushing [@gower2014]. Each node holds the set of nodes it pairs with, a pair standing for a nonlinear interaction. The pass visits the nodes from the root down. At node $i$, a pair $\{i, p\}$ with $p \neq i$ becomes $\{j, p\}$ for each operand $j$ of $i$, and the pair $\{i, i\}$ becomes $\{j, k\}$ for each two operands, equal or not. The node then adds the pairs its own second derivatives give: none for a sum, a negation, an absolute value, a maximum, a minimum, a piecewise linear function and a power of exponent 0 or 1; each two distinct factors of a product; $\{a, b\}$ and $\{b, b\}$ for a quotient $a / b$; each two operands for any other operator. When the pass ends, the pairs between variables are the pattern.
 
-The pattern holds every entry that can be nonzero at a point where the element is defined. The sweeps that fill it are those of the dense triangle, writing only the entries the pattern holds, unless the element is [colored](#sec-hessian-coloring). The pass is timed as the phase `pattern` of module `expr`, a child of the phase that builds the Hessian.
+The pattern holds every entry that can be nonzero at a point where the element is defined. The sweeps that fill it are those of the dense triangle, writing only the entries the pattern holds, unless the element is [colored](#sec-hessian-coloring) or [pushed](#sec-hessian-pushing). The pass is timed as the phase `pattern` of module `expr`, a child of the phase that builds the Hessian.
 
 ## Second-order adjoints {#sec-hessian-adjoints}
 
@@ -59,6 +59,23 @@ A sparse exact pattern needs fewer directions than variables. Variables can shar
 The coloring is the greedy one of @gebremedhin2007 [Algorithm 4.1], over the variables in ascending order of degree, ties broken by variable. A neighbor colored earlier then never has a larger degree, so the work grows as the sum, over the off-diagonal entries, of the smaller degree of their two variables. That sum is found in one pass over the pattern before coloring. When it exceeds the cost of a dense evaluation, taken as $\lceil n/16 \rceil$ times the length of the element's tape, the element keeps the dense sweeps on its exact pattern. The full triangle of $e^{\sum_i x_i}$ is one such element.
 
 When the Hessian is built, each entry of a colored element is given the row and the color it is read from, sorted by color [@montoison2025, sec. 5.2]. An element with $p$ colors takes $\lceil p/L \rceil$ sweeps of $L$ lanes, each over a window of colors, and reads its entries in order. The other variables of a color add exact zeros to an entry, so a colored entry equals the dense one up to the sign of a zero. The coloring is timed as the phase `coloring` of module `expr`, beside `pattern`.
+
+## Edge pushing {#sec-hessian-pushing}
+
+An element with many colors and a small nonlinear part costs less by numeric edge pushing [@gower2012], the pass of the exact pattern run with values. A forward sweep over the element stores each value, its partials $p_{ij}$ and its second derivatives. The reverse pass then visits the nodes from the root down, carrying each adjoint $\bar v_i$ and, for each node, a list of weighted pairs: $(p, w)$ in the list of $i$ adds $w$ to the second derivative of the element along $v_i$ and $v_p$, the nodes below the current one held fixed. At node $i$:
+
+- a pair $(p, w)$ with $p \neq i$ adds $p_{ij}\, w$ to the pair $\{j, p\}$ for each operand $j$;
+- the pair $(i, w)$ adds $p_{ij}\, p_{ik}\, w$ to $\{j, k\}$ for each two operands, equal or not;
+- the node adds $\bar v_i\, \partial^2 \operatorname{op}_i / \partial v_j \partial v_k$ to $\{j, k\}$ for the pairs of its pattern rule, through running products for a product;
+- each operand takes $\bar v_j \mathrel{+}= \bar v_i\, p_{ij}$.
+
+A term off the diagonal that lands on it, $\{j, p\}$ with $j = p$ or $\{j, k\}$ from two operands that are one node, adds twice, since it stands for both its orders. When the pass ends, the pairs between variables are the entries of $\nabla^2 f_e$, in the order of its exact pattern. The rule of [a zero adjoint](#sec-derivatives-zero) holds for each product: a term with an exactly zero factor adds no pair. Pushing tests both factors where the sweeps test only the first, so the two methods can differ only off the domain. A value off the domain makes the entries it reaches NaN, as in the sweeps.
+
+The pattern pass counts the pushes of each node, so every list is sized when the Hessian is built and the pass allocates nothing [@petra2018, sec. 3.1]. A node merges its list once, when it is visited, by marking the nodes already present.
+
+When the Hessian is built, each element over 16 variables takes one of three methods by exact counts. Let $P$ be the element's pushes, counted by the pattern pass, $T$ the length of its tape, and $S = \lceil d/16 \rceil$ its sweeps, with $d$ its colors when the coloring passes its guard and its variables otherwise. The element takes edge pushing when $P < S\,T$, else coloring when it passed the guard, else the dense sweeps on its exact pattern. A push costs no more than one step of a 16-lane sweep on biyos's tapes, so $P$ and $S\,T$ are compared one for one. The arrow takes coloring, with about $4n$ pushes against one sweep over a tape of $2n$ steps. The subset element $|e^{x_0 + \dots + x_{63}} + \sum_i \sin x_i|$ over 200 variables takes edge pushing, with 2,281 pushes against 13 sweeps over 405 steps.
+
+Each choice is a debug message from module `expr`, with the text `element E takes M`. Its fields are diagnostic, not a contract, and may change in any release: `element`, `method`, `pushes`, `sweeps` and `length`, in that order. `element` numbers the elements once each root is split along its top-level sum, `method` is `dense`, `coloring` or `pushing`, and `sweeps` and `length` are $S$ and $T$. The pushed elements of an evaluation are timed together as the phase `pushing` of module `expr`, inside the phase that evaluates the Hessian.
 
 ## Hessian times a vector {#sec-hessian-product}
 
