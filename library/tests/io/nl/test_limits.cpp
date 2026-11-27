@@ -110,6 +110,31 @@ Offset atan2_of(Model &model, Offset x)
     return node(model, Operator::Atan2, {x, x}, {});
 }
 
+Offset compare_of(Model &model, Offset x)
+{
+    return node(model, Operator::Less, {x, x}, {});
+}
+
+Offset and_of(Model &model, Offset x)
+{
+    return node(model, Operator::And, {compare_of(model, x)}, {});
+}
+
+Offset or_of(Model &model, Offset x)
+{
+    return node(model, Operator::Or, {compare_of(model, x)}, {});
+}
+
+Offset not_of(Model &model, Offset x)
+{
+    return node(model, Operator::Not, {compare_of(model, x)}, {});
+}
+
+Offset if_of(Model &model, Offset x)
+{
+    return node(model, Operator::If, {compare_of(model, x), x, x}, {});
+}
+
 Model with_kind(VariableKind kind)
 {
     Parts parts = writable();
@@ -167,12 +192,17 @@ TEST(NlTest, Operators)
         {.build = erf_of, .name = "erf"},
         {.build = sign_power_of, .name = "signed power"},
         {.build = atan2_of, .name = "atan2"},
+        {.build = and_of, .name = "and"},
+        {.build = or_of, .name = "or"},
+        {.build = not_of, .name = "not"},
+        {.build = if_of, .name = "if"},
     };
     for (const Refused &refusal_case : cases)
     {
         const std::string part = "the operator " + std::string(refusal_case.name);
         EXPECT_EQ(refusal(tiny_wanted(refusal_case.build)), refused("function 1", part));
     }
+    EXPECT_EQ(refusal(tiny_wanted(compare_of)), refused("function 1", "a comparison"));
 }
 
 TEST(NlTest, Unused)
