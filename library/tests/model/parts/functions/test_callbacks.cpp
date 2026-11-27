@@ -523,7 +523,7 @@ TEST(CallbackTest, DeleteRefused)
     EXPECT_EQ(refusal([&] { model.delete_callbacks(std::vector<Index>{2}); }),
               kBad + "callback 2: unknown");
     EXPECT_EQ(refusal([&] { model.delete_callbacks(std::vector<Index>{1, 1}); }),
-              kBad + "argument 'idx': callback 1 is repeated");
+              kBad + "argument 'cb': callback 1 is repeated");
     EXPECT_EQ(model.n_callbacks(), 2);
 }
 

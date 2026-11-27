@@ -3,8 +3,7 @@
 #include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"
 #include "io/nl/operators.hpp"
-#include "io/nl/tokens.hpp"
-#include "io/utils/lines.hpp"
+#include "io/nl/source/source.hpp"
 #include "model/model.hpp"
 
 #include <cstddef>
@@ -25,7 +24,7 @@ struct Operand
 class Expressions
 {
   public:
-    Expressions(Lines &lines, Model &model, Index variables, Index defined);
+    Expressions(Source &source, Model &model, Index variables, Index defined);
 
     Operand read();
     Offset node_of(const Operand &operand);
@@ -40,7 +39,7 @@ class Expressions
         std::size_t needed;
     };
 
-    void take(const Entry &entry);
+    void take();
     void open(const Opcode &opcode);
     void close();
     std::size_t operand_count(const Opcode &opcode);
@@ -54,9 +53,9 @@ class Expressions
     Offset node(Operator op, std::span<const Offset> children, std::span<const Real> values);
     Offset piecewise();
     Real piece();
-    Offset variable_node(std::string_view field);
+    Offset variable_node();
 
-    Lines &lines_;
+    Source &source_;
     Model &model_;
     Index variables_;
     std::vector<Offset> defined_;

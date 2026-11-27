@@ -111,7 +111,7 @@ def test_empty(model, short):
 def test_refused(model, short):
     blocks = build(model)
     noun = NOUNS[short]
-    repeated = f"invalid argument: argument 'idx': {noun} 1 is repeated"
+    repeated = f"invalid argument: argument '{short}': {noun} 1 is repeated"
     assert refusal(delete, model, short, [1, 0, 1]) == repeated
     unknown = f"invalid argument: {noun} 3: unknown"
     assert refusal(delete, model, short, [0, 3]) == unknown

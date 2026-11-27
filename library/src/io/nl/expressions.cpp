@@ -2,12 +2,12 @@
 
 #include "core/env/error.hpp"
 #include "core/numbers.hpp"
+#include "core/text/text.hpp"
 #include "expr/forms/terms.hpp"
 #include "expr/graph/node.hpp"
 #include "io/nl/operators.hpp"
 #include "io/nl/pieces.hpp"
-#include "io/nl/tokens.hpp"
-#include "io/utils/lines.hpp"
+#include "io/nl/source/source.hpp"
 #include "io/utils/records.hpp"
 #include "io/utils/report.hpp"
 #include "model/model.hpp"
@@ -38,39 +38,28 @@ std::string operator_text(const Opcode &opcode)
     return "operator " + std::string(opcode.name);
 }
 
-const Opcode &opcode_of(const Lines &lines, std::string_view field)
+const Opcode &opcode_of(Source &source)
 {
-    const Opcode *opcode = find_opcode(integer_of(lines, field));
+    source.expect(1);
+    const Opcode *opcode = find_opcode(source.integer());
     if (opcode == nullptr)
     {
-        bad_file(lines, "operator " + quote(field) + " is unknown");
+        source.bad("operator " + quote(source.last_field()) + " is unknown");
     }
     return *opcode;
 }
 
-std::string_view leading(const Lines &lines) noexcept
+Index count_line(Source &source, std::string_view part)
 {
-    return fields_of(lines).front();
-}
-
-std::string_view single(const Lines &lines, const Entry &entry)
-{
-    check_size(lines, entry.size(), 1);
-    return entry[0];
-}
-
-Index count_line(Lines &lines, std::string_view part)
-{
-    advance_in(lines, part);
-    const Fields fields = fields_of(lines);
-    check_size(lines, fields.size(), 1);
-    return count_of(lines, fields[0]);
+    source.line(part);
+    source.expect(1);
+    return source.count();
 }
 
 }
 
-Expressions::Expressions(Lines &lines, Model &model, Index variables, Index defined)
-    : lines_(lines), model_(model), variables_(variables), defined_(to_size(defined), kNoRoot)
+Expressions::Expressions(Source &source, Model &model, Index variables, Index defined)
+    : source_(source), model_(model), variables_(variables), defined_(to_size(defined), kNoRoot)
 {
 }
 
@@ -78,8 +67,8 @@ Operand Expressions::read()
 {
     do
     {
-        advance_in(lines_, "an expression");
-        take(Entry(lines_));
+        source_.item("an expression");
+        take();
         close();
     } while (!frames_.empty());
     const Operand result = operands_.back();
@@ -114,7 +103,7 @@ void Expressions::define(Index variable, std::span<const LinearTerm> terms, cons
     for (const LinearTerm &term : terms)
     {
         children_.push_back(
-            checked(lines_, [&] { return model_.add_variable_node(term.variable); }));
+            checked(source_, [&] { return model_.add_variable_node(term.variable); }));
         values_.push_back(term.coefficient);
     }
     if (!body.value)
@@ -125,34 +114,38 @@ void Expressions::define(Index variable, std::span<const LinearTerm> terms, cons
     slot = node(Operator::Sum, children_, values_);
 }
 
-void Expressions::take(const Entry &entry)
+void Expressions::take()
 {
-    switch (entry.key())
+    const char key = source_.key();
+    if (source_.is_constant(key))
     {
-    case 'n':
-        operands_.push_back({.node = kNoRoot, .value = value_of(lines_, single(lines_, entry))});
+        source_.expect(1);
+        operands_.push_back({.node = kNoRoot, .value = source_.constant(key)});
         return;
+    }
+    switch (key)
+    {
     case 'v':
-        operands_.push_back({.node = variable_node(single(lines_, entry)), .value = std::nullopt});
+        operands_.push_back({.node = variable_node(), .value = std::nullopt});
         return;
     case 'o':
-        open(opcode_of(lines_, single(lines_, entry)));
+        open(opcode_of(source_));
         return;
     case 'f':
-        unsupported(lines_, "imported functions");
+        source_.refuse("imported functions");
     case 'h':
-        unsupported(lines_, "strings");
+        source_.refuse("strings");
     default:
         break;
     }
-    bad_file(lines_, "expected an expression, not " + quote(leading(lines_)));
+    source_.bad("expected an expression, not " + quote(source_.key_text()));
 }
 
 void Expressions::open(const Opcode &opcode)
 {
     if (opcode.rule == Rule::Refused)
     {
-        unsupported(lines_, operator_text(opcode));
+        source_.refuse(operator_text(opcode));
     }
     if (opcode.rule == Rule::Pieces)
     {
@@ -186,10 +179,10 @@ std::size_t Expressions::operand_count(const Opcode &opcode)
     case Arity::Many:
         break;
     }
-    const Index count = count_line(lines_, operator_text(opcode));
+    const Index count = count_line(source_, operator_text(opcode));
     if (count == 0)
     {
-        bad_file(lines_, operator_text(opcode) + " has no operands");
+        source_.bad(operator_text(opcode) + " has no operands");
     }
     return to_size(count);
 }
@@ -278,15 +271,15 @@ Offset Expressions::node(Operator op,
                          std::span<const Real> values)
 {
     const int code = static_cast<int>(op);
-    return checked(lines_, [&] { return model_.add_node(code, children, values); });
+    return checked(source_, [&] { return model_.add_node(code, children, values); });
 }
 
 Offset Expressions::piecewise()
 {
-    const Index count = count_line(lines_, kPlterm);
+    const Index count = count_line(source_, kPlterm);
     if (count == 0)
     {
-        bad_file(lines_, "a plterm has no slopes");
+        source_.bad("a plterm has no slopes");
     }
     slopes_.clear();
     breaks_.clear();
@@ -296,43 +289,43 @@ Offset Expressions::piecewise()
         breaks_.push_back(piece());
     }
     slopes_.push_back(piece());
-    advance_in(lines_, kPlterm);
-    const Entry entry(lines_);
-    if (entry.key() != 'v')
+    source_.item(kPlterm);
+    if (source_.key() != 'v')
     {
-        bad_file(lines_, "a plterm ends with a variable, not " + quote(leading(lines_)));
+        source_.bad("a plterm ends with a variable, not " + quote(source_.key_text()));
     }
-    const Offset child = variable_node(single(lines_, entry));
-    const Curve curve = curve_of(lines_, slopes_, breaks_);
+    const Offset child = variable_node();
+    const Curve curve = curve_of(source_, slopes_, breaks_);
     const Offset pwl =
-        checked(lines_, [&] { return model_.add_piecewise_linear(curve.x, curve.y); });
-    return checked(lines_, [&] { return model_.add_piecewise(pwl, child); });
+        checked(source_, [&] { return model_.add_piecewise_linear(curve.x, curve.y); });
+    return checked(source_, [&] { return model_.add_piecewise(pwl, child); });
 }
 
 Real Expressions::piece()
 {
-    advance_in(lines_, kPlterm);
-    const Entry entry(lines_);
-    if (entry.key() != 'n')
+    source_.item(kPlterm);
+    const char key = source_.key();
+    if (!source_.is_constant(key))
     {
-        bad_file(lines_, "a plterm holds numbers, not " + quote(leading(lines_)));
+        source_.bad("a plterm holds numbers, not " + quote(source_.key_text()));
     }
-    return value_of(lines_, single(lines_, entry));
+    source_.expect(1);
+    return source_.constant(key);
 }
 
-Offset Expressions::variable_node(std::string_view field)
+Offset Expressions::variable_node()
 {
+    source_.expect(1);
     const Index total = to_index(to_size(variables_) + defined_.size());
-    const Index variable = index_in(lines_, field, total, "variable");
+    const Index variable = source_.index(total, "variable");
     if (variable < variables_)
     {
-        return checked(lines_, [&] { return model_.add_variable_node(variable); });
+        return checked(source_, [&] { return model_.add_variable_node(variable); });
     }
     const Offset defined = defined_[to_size(variable - variables_)];
     if (defined == kNoRoot)
     {
-        bad_file(lines_,
-                 "defined variable " + std::string(field) + " is used before its definition");
+        source_.bad("defined variable " + text_of(variable) + " is used before its definition");
     }
     return defined;
 }

@@ -3,7 +3,7 @@
 #include "core/numbers.hpp"
 #include "expr/forms/terms.hpp"
 #include "io/nl/expressions.hpp"
-#include "io/utils/lines.hpp"
+#include "io/nl/source/source.hpp"
 #include "io/utils/report.hpp"
 #include "model/model.hpp"
 
@@ -37,7 +37,7 @@ void Bodies::set_terms(Index function, std::vector<LinearTerm> terms)
     terms_[to_size(function)] = std::move(terms);
 }
 
-void Bodies::add_to(const Lines &lines, Model &model) const
+void Bodies::add_to(const Source &source, Model &model) const
 {
     std::vector<Real> constants;
     std::vector<Offset> starts{0};
@@ -59,8 +59,8 @@ void Bodies::add_to(const Lines &lines, Model &model) const
         }
         starts.push_back(to_offset(terms.size()));
     }
-    checked(lines, [&] { model.add_functions(constants, starts, std::move(terms)); });
-    checked(lines, [&] { model.attach_expressions(functions, nodes); });
+    checked(source, [&] { model.add_functions(constants, starts, std::move(terms)); });
+    checked(source, [&] { model.attach_expressions(functions, nodes); });
 }
 
 }

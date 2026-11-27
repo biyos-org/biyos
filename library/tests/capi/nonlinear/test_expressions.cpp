@@ -628,13 +628,13 @@ TEST(CApiTest, RefusedAttach)
     EXPECT_EQ(attach(model, {2}, {x}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), bad + "function 2: unknown");
     EXPECT_EQ(attach(model, {1, 1}, {x, x}), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), bad + "argument 'idx': function 1 is repeated");
+    EXPECT_EQ(env.message(), bad + "argument 'fun': function 1 is repeated");
     EXPECT_EQ(attach(model, {1}, {big + 1}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), bad + "function 1: node 2 is unknown");
     EXPECT_EQ(attach(model, {1, 0}, {x, big}), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), bad + "function 0: sum of constants is infinity");
     EXPECT_EQ(BIYOS_attachexprsp(model.get(), 1, nullptr, &x), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), bad + "argument 'idx': is null");
+    EXPECT_EQ(env.message(), bad + "argument 'fun': is null");
     const int function = 0;
     EXPECT_EQ(BIYOS_attachexprsp(model.get(), 1, &function, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), bad + "argument 'node': is null");
@@ -719,7 +719,7 @@ TEST(CApiTest, RefusedClear)
     EXPECT_EQ(BIYOS_clrfunsp(model.get(), 2, functions), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), bad + "function 2: unknown");
     EXPECT_EQ(BIYOS_clrfunsp(model.get(), 1, nullptr), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), bad + "argument 'idx': is null");
+    EXPECT_EQ(env.message(), bad + "argument 'fun': is null");
     EXPECT_EQ(BIYOS_clrfunsp(model.get(), -1, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), bad + "argument 'n': -1 is negative");
     EXPECT_EQ(read_functions(model, 2).constants, (std::vector<double>{0.5, 0.5}));
@@ -828,7 +828,7 @@ TEST(CApiTest, RefusedRead)
     EXPECT_EQ(env.message(), bad + "function 3: unknown");
     EXPECT_EQ(BIYOS_getexprsp(model.get(), 1, nullptr, 7, 1, nullptr, nullptr, nullptr, nullptr),
               BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), bad + "argument 'idx': is null");
+    EXPECT_EQ(env.message(), bad + "argument 'fun': is null");
 }
 
 TEST(CApiTest, RefusedCount)

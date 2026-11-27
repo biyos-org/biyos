@@ -132,6 +132,7 @@ Curvature outer_of(const Graph &graph,
     case Operator::PiecewiseLinear:
         return unary(segments(piecewise_linear_of(graph, node), operands[0]), arguments);
     case Operator::Atan2:
+        return angle_curvature(operands[0], operands[1], arguments);
     case Operator::LessEqual:
     case Operator::GreaterEqual:
     case Operator::Equal:

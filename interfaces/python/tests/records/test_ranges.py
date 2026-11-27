@@ -219,7 +219,7 @@ def test_refused(blocks):
 
 def test_start(blocks):
     model, _ = blocks
-    with pytest.raises(OverflowError, match="the start of idx: 1099511627776"):
+    with pytest.raises(OverflowError, match="the start of var: 1099511627776"):
         model.getvarknd(range(2**40, 2**40 + 1))
 
 
