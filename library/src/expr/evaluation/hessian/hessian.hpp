@@ -8,7 +8,7 @@
 #include "expr/evaluation/hessian/coloring.hpp"
 #include "expr/evaluation/hessian/elements.hpp"
 #include "expr/evaluation/hessian/pattern.hpp"
-#include "expr/evaluation/hessian/pushing.hpp"
+#include "expr/evaluation/hessian/pushing/lists.hpp"
 #include "expr/evaluation/hessian/sweep.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/tape/tape.hpp"

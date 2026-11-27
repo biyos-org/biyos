@@ -1,13 +1,9 @@
 #pragma once
 
 #include "core/numbers.hpp"
-#include "core/numeric/tolerances.hpp"
-#include "expr/evaluation/derivatives/value.hpp"
 #include "expr/evaluation/hessian/pattern.hpp"
-#include "expr/tape/tape.hpp"
 
 #include <cstdint>
-#include <span>
 #include <vector>
 
 namespace biyos
@@ -40,13 +36,5 @@ struct PushSpace
 };
 
 Elimination elimination_of(Offset element, Shape shape);
-PushSpace space_of(const Tape &tape, std::span<const Elimination> eliminations);
-void push(const Tape &tape,
-          const Elimination &elimination,
-          std::span<const Real> point,
-          const Tolerances &tolerances,
-          Workspace &workspace,
-          PushSpace &space,
-          std::span<Real> parts) noexcept;
 
 }
