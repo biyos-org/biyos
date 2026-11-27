@@ -1,3 +1,4 @@
+import sys
 from operator import contains, eq, ge, gt, index, le, lt, ne
 
 import pytest
@@ -72,29 +73,48 @@ STORED = [
     (ge, 2, "e", ([-biyos.inf], [2.0]), SINGLE),
     (eq, 2, "e", ([2.0], [2.0]), SINGLE),
 ]
-LESS = ComparisonSense.LESS_EQUAL
-GREATER = ComparisonSense.GREATER_EQUAL
+LESS_EQUAL = ComparisonSense.LESS_EQUAL
+GREATER_EQUAL = ComparisonSense.GREATER_EQUAL
 EQUAL = ComparisonSense.EQUAL
+LESS = ComparisonSense.LESS
+GREATER = ComparisonSense.GREATER
+NOT_EQUAL = ComparisonSense.NOT_EQUAL
 PAIR = "piecewise(0, x[1]) <= piecewise(1, x[2])"
 OPERANDS = [
-    (le, "e", "f", ("e", LESS, "f"), "exp(x[0]) <= log(x[1])"),
-    (ge, "e", "f", ("e", GREATER, "f"), "exp(x[0]) >= log(x[1])"),
+    (le, "e", "f", ("e", LESS_EQUAL, "f"), "exp(x[0]) <= log(x[1])"),
+    (ge, "e", "f", ("e", GREATER_EQUAL, "f"), "exp(x[0]) >= log(x[1])"),
     (eq, "e", "f", ("e", EQUAL, "f"), "exp(x[0]) == log(x[1])"),
-    (le, "e", "p", ("e", LESS, "p"), "exp(x[0]) <= piecewise(0, x[1])"),
-    (ge, "e", "p", ("e", GREATER, "p"), "exp(x[0]) >= piecewise(0, x[1])"),
+    (le, "e", "p", ("e", LESS_EQUAL, "p"), "exp(x[0]) <= piecewise(0, x[1])"),
+    (
+        ge,
+        "e",
+        "p",
+        ("e", GREATER_EQUAL, "p"),
+        "exp(x[0]) >= piecewise(0, x[1])",
+    ),
     (eq, "e", "p", ("e", EQUAL, "p"), "exp(x[0]) == piecewise(0, x[1])"),
-    (le, "p", "e", ("p", LESS, "e"), "piecewise(0, x[1]) <= exp(x[0])"),
-    (le, "v", "p", ("v", LESS, "p"), "x[2] <= piecewise(0, x[1])"),
-    (le, "p", "v", ("p", LESS, "v"), "piecewise(0, x[1]) <= x[2]"),
-    (le, "p", "q", ("p", LESS, "q"), PAIR),
+    (lt, "e", "f", ("e", LESS, "f"), "exp(x[0]) < log(x[1])"),
+    (gt, "e", "f", ("e", GREATER, "f"), "exp(x[0]) > log(x[1])"),
+    (ne, "e", "f", ("e", NOT_EQUAL, "f"), "exp(x[0]) != log(x[1])"),
+    (ne, "v", "p", ("v", NOT_EQUAL, "p"), "x[2] != piecewise(0, x[1])"),
+    (le, "p", "e", ("p", LESS_EQUAL, "e"), "piecewise(0, x[1]) <= exp(x[0])"),
+    (le, "v", "p", ("v", LESS_EQUAL, "p"), "x[2] <= piecewise(0, x[1])"),
+    (le, "p", "v", ("p", LESS_EQUAL, "v"), "piecewise(0, x[1]) <= x[2]"),
+    (le, "p", "q", ("p", LESS_EQUAL, "q"), PAIR),
 ]
 NUMBERS = [
-    (le, "e", 2, LESS, "exp(x[0]) <= 2"),
-    (ge, "e", 2, GREATER, "exp(x[0]) >= 2"),
+    (le, "e", 2, LESS_EQUAL, "exp(x[0]) <= 2"),
+    (ge, "e", 2, GREATER_EQUAL, "exp(x[0]) >= 2"),
     (eq, "e", 2, EQUAL, "exp(x[0]) == 2"),
-    (le, 2, "e", GREATER, "exp(x[0]) >= 2"),
-    (ge, 2, "e", LESS, "exp(x[0]) <= 2"),
+    (le, 2, "e", GREATER_EQUAL, "exp(x[0]) >= 2"),
+    (ge, 2, "e", LESS_EQUAL, "exp(x[0]) <= 2"),
     (eq, 2, "e", EQUAL, "exp(x[0]) == 2"),
+    (lt, "e", 2, LESS, "exp(x[0]) < 2"),
+    (gt, "e", 2, GREATER, "exp(x[0]) > 2"),
+    (ne, "e", 2, NOT_EQUAL, "exp(x[0]) != 2"),
+    (lt, 2, "e", GREATER, "exp(x[0]) > 2"),
+    (gt, 2, "e", LESS, "exp(x[0]) < 2"),
+    (ne, 2, "e", NOT_EQUAL, "exp(x[0]) != 2"),
 ]
 
 
@@ -187,7 +207,9 @@ def test_truth(x):
     with pytest.raises(TypeError, match="has no truth value"):
         bool(x[0] + 0 == x[1])
     with pytest.raises(TypeError, match="has no truth value"):
-        ne(x[0] + 0, x[1])
+        bool(x[0] + 0 != x[1])
+    with pytest.raises(TypeError, match="has no truth value"):
+        bool(x[0] < x[1])
     with pytest.raises(TypeError, match="has no truth value"):
         bool(x[0] == 1)
     with pytest.raises(TypeError, match="has no truth value"):
@@ -200,19 +222,25 @@ def test_same(env, x):
     assert x[0] == x[0]
     assert not x[0] == x[1]
     assert x[0] != x[1]
+    assert not ne(x[0], x[0])
+    assert not ne(x[0:2][1], x[1])
     assert {x[0]: 1}[x[0]] == 1
     assert x[0] in {x[1], x[0]}
     assert x[0] in [x[1], x[0]]
     assert [x[1], x[0]].index(x[0]) == 1
     with biyos.Model(env) as other:
         assert other.addvar(1)[0] != x[0]
+        assert not eq(other.addvar(1)[0], x[0])
 
 
 def test_refused(x):
     nan = float("nan")
     for bound in (nan, biyos.inf, -biyos.inf):
-        with pytest.raises(ValueError, match="refuses the bound"):
-            eq(x[0], bound)
+        for compare in (eq, ne, lt, gt):
+            with pytest.raises(ValueError, match="refuses the bound"):
+                compare(x[0], bound)
+            with pytest.raises(ValueError, match="refuses the bound"):
+                compare(bound, x[0])
     for bound in (nan, biyos.inf):
         with pytest.raises(ValueError, match="refuses the bound"):
             ge(x[0], bound)
@@ -234,18 +262,23 @@ def test_open(x):
 def test_foreign(x, other):
     assert not eq(x[0], other)
     assert not eq(other, x[0])
+    assert ne(x[0], other)
+    assert ne(other, x[0])
     assert x[0] in [other, x[0]]
     with pytest.raises(TypeError, match="compares with a number, not"):
         le(x[0], other)
     with pytest.raises(TypeError, match="compares with a number, not"):
         le(other, x[0])
+    with pytest.raises(TypeError, match="compares with a number, not"):
+        lt(x[0], other)
 
 
 def test_strict(x):
-    with pytest.raises(TypeError):
-        lt(x[0], x[1])
-    with pytest.raises(TypeError):
-        gt(x[0], 1)
+    assert parts(x[0] < x[1]) == (DIFFERENCE, -biyos.inf, 0.0)
+    assert parts(x[0] > 3) == (0, 3.0, biyos.inf)
+    assert parts(x[0] != 3) == (0, 3.0, 3.0)
+    assert parts(3 > x[0]) == parts(x[0] < 3)
+    assert repr(x[0] + 1 != x[1]) == "x[0] + 1 != x[1]"
 
 
 def test_hash(model, x):
@@ -289,3 +322,92 @@ def test_stale(model, x):
     fresh = model.addvar(1)
     with pytest.raises(ValueError, match="variable predates"):
         contains(fresh, view)
+
+
+def logic(cond):
+    if type(cond) is biyos.Comparison:
+        return (repr(cond.lhs), cond.sense, repr(cond.rhs))
+    assert type(cond) is biyos.Condition
+    return (cond.operator, *map(logic, cond.operands))
+
+
+def test_condition(x):
+    a = x[0] <= 1
+    b = x[1] >= 2
+    either = a | b
+    assert either.operator is Operator.OR
+    assert either.operands[0] is a
+    assert either.operands[1] is b
+    assert (a & b).operator is Operator.AND
+    assert (~a).operator is Operator.NOT
+    assert (~a).operands == (a,)
+
+
+def test_nested(x):
+    a = x[0] <= 1
+    b = x[1] >= 2
+    c = x[2] == 0
+    assert logic(~(a & b) | c) == (
+        Operator.OR,
+        (Operator.NOT, (Operator.AND, logic(a), logic(b))),
+        logic(c),
+    )
+
+
+CONDITIONS = [
+    "(x[0] <= 1) | (x[1] >= 2)",
+    "(x[0] <= 1) & (x[1] >= 2)",
+    "~(x[0] >= 1)",
+    "(x[0] < 1) | (x[1] != x[2])",
+    "~(x[0] > 1)",
+    "~~(x[0] >= 1)",
+    "~((x[0] >= 1) & (x[1] <= 0))",
+    "(x[0] <= 1) & (x[1] <= 1) & (x[2] <= 1)",
+    "(x[0] <= 1) & ((x[1] <= 1) & (x[2] <= 1))",
+    "(x[0] <= 1) | (x[1] <= 1) | (x[2] <= 1)",
+    "(x[0] <= 1) | ((x[1] <= 1) | (x[2] <= 1))",
+    "(x[0] <= 1) & (x[1] <= 1) | (x[2] <= 1)",
+    "(x[0] <= 1) | (x[1] <= 1) & (x[2] <= 1)",
+    "((x[0] <= 1) | (x[1] <= 1)) & (x[2] <= 1)",
+    "~(x[0] <= 1) & ~(x[1] <= 1)",
+    "~((x[0] <= 1) | (x[1] <= 1))",
+    "(exp(x[0]) == x[1] + 1) | (x[2] >= x[0]*x[1])",
+]
+
+
+@pytest.mark.parametrize("text", CONDITIONS)
+def test_written(x, text):
+    ns = {"exp": biyos.exp, "x": x}
+    assert repr(eval(text, ns)) == text
+
+
+def test_deep_condition(x):
+    cond = x[0] <= 0
+    depth = 10 * sys.getrecursionlimit()
+    for _ in range(depth):
+        cond = cond & (x[1] <= 0)
+    assert repr(cond) == "(x[0] <= 0)" + depth * " & (x[1] <= 0)"
+
+
+def unparenthesized(a, b):
+    return a <= 1 & b
+
+
+def test_precedence(x):
+    with pytest.raises(TypeError):
+        unparenthesized(x[0], x[1])
+    with pytest.raises(TypeError):
+        (x[0] <= 1) & x[1]
+    with pytest.raises(TypeError):
+        x[1] | (x[0] <= 1)
+    with pytest.raises(TypeError):
+        ~x[0]
+    with pytest.raises(TypeError):
+        (x[0] <= 1) | True
+
+
+def test_condition_truth(x):
+    with pytest.raises(TypeError, match="has no truth value"):
+        bool((x[0] <= 1) | (x[1] >= 2))
+    with pytest.raises(TypeError, match="has no truth value"):
+        bool(~(x[0] == x[1]))

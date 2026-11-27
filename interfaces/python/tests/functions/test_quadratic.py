@@ -273,13 +273,13 @@ def test_views(env, model):
         model.addquadterm([0], [0], y, [1.0])
     with pytest.raises(ValueError, match="fun is a block of another"):
         model.addquadterm(g, [0], [0], [1.0])
-    with pytest.raises(ValueError, match="idx is a block of another"):
+    with pytest.raises(ValueError, match="fun is a block of another"):
         model.getquadterm(g)
     with pytest.raises(TypeError, match="is a function, not a variable"):
         model.addquadterm([0], [f[0]], [0], [1.0])
     with pytest.raises(TypeError, match="fun is a block of variables"):
         model.addquadterm(x, [0, 0], [0, 0], [1.0, 1.0])
-    with pytest.raises(TypeError, match="idx is a variable, not a"):
+    with pytest.raises(TypeError, match="fun is a variable, not a"):
         model.getquadterm([x[0]])
     assert indexed(model.getquadterm(f)) == found
 
@@ -362,7 +362,7 @@ def test_numbers(model):
         model.addquadterm([0], [0], [0.0], [1.0])
     with pytest.raises(TypeError, match="an entry of fun must be an"):
         model.addquadterm([0.0], [0], [0], [1.0])
-    with pytest.raises(OverflowError, match="idx: 4294967296 does not fit"):
+    with pytest.raises(OverflowError, match="fun: 4294967296 does not fit"):
         model.getquadterm(range(2**32, 2**32 + 1))
     assert indexed(model.getquadterm()) == NONE
 

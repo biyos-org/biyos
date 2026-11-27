@@ -139,7 +139,7 @@ def test_views(env, model):
         model.setobjsense([p[0]], [MAX])
     with pytest.raises(ValueError, match="is a block of another model"):
         model.setobjsense(p, [MAX, MAX])
-    with pytest.raises(ValueError, match="idx is a block of another model"):
+    with pytest.raises(ValueError, match="obj is a block of another model"):
         model.getobj(p)
     c = model.addcon([0])
     with pytest.raises(TypeError, match="is a constraint, not an objective"):
@@ -382,7 +382,7 @@ def test_numbers(model):
         model.addobj([0], None, None, ["1"])
     with pytest.raises(TypeError, match="an entry of atol must be a"):
         model.setobjtol([0], [True])
-    with pytest.raises(OverflowError, match="idx: 4294967296 does not fit"):
+    with pytest.raises(OverflowError, match="obj: 4294967296 does not fit"):
         model.getobj(range(2**32, 2**32 + 1))
     assert model.getnobj() == 0
 

@@ -193,7 +193,7 @@ TEST(NlTest, Empty)
 
 TEST(NlTest, NotText)
 {
-    EXPECT_EQ(fault_of(kNotTextNlFile), bad(1, "the file does not start with 'g'"));
+    EXPECT_EQ(fault_of(kNotTextNlFile), bad(1, "the file does not start with 'g' or 'b'"));
 }
 
 TEST(NlTest, ShortHeader)

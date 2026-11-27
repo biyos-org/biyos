@@ -49,6 +49,7 @@ using biyos::SpecialOrderedSetKind;
 using biyos::Variable;
 using biyos::VariableKind;
 using biyos::widest;
+using biyos::word_of;
 using biyos::test::built;
 using biyos::test::Expressions;
 using biyos::test::failure;
@@ -300,7 +301,8 @@ std::string prefixed(const Case &family, Index index, const std::string &reason)
 std::string repeated(const Case &family, Index index)
 {
     const std::string noun(noun_of(family.family));
-    return "invalid argument: argument 'idx': " + noun + " " + std::to_string(index) +
+    const std::string word(word_of(family.family));
+    return "invalid argument: argument '" + word + "': " + noun + " " + std::to_string(index) +
            " is repeated";
 }
 
@@ -797,7 +799,7 @@ TEST(DeleteTest, Checks)
     EXPECT_EQ(refusal([&] { model.delete_functions(Indices{2, 4}); }),
               "invalid argument: function 4: unknown");
     EXPECT_EQ(refusal([&] { model.delete_functions(Indices{2, 2}); }),
-              "invalid argument: argument 'idx': function 2 is repeated");
+              "invalid argument: argument 'fun': function 2 is repeated");
     EXPECT_EQ(difference(model, before), "");
 }
 
@@ -898,6 +900,6 @@ TEST(DeleteTest, VariableChecks)
     EXPECT_EQ(refusal([&] { model.delete_variables(Indices{3, 5}); }),
               "invalid argument: variable 5: unknown");
     EXPECT_EQ(refusal([&] { model.delete_variables(Indices{3, 3}); }),
-              "invalid argument: argument 'idx': variable 3 is repeated");
+              "invalid argument: argument 'var': variable 3 is repeated");
     EXPECT_EQ(difference(model, before), "");
 }

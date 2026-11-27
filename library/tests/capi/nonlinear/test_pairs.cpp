@@ -320,6 +320,6 @@ TEST(PairTest, Refusals)
     EXPECT_EQ(env.message(), unknown);
     EXPECT_EQ(nnz, -1);
     EXPECT_EQ(BIYOS_getnquadtermsp(model.get(), 1, nullptr, &nnz), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'fun': is null");
     EXPECT_EQ(nnz, -1);
 }

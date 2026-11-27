@@ -57,6 +57,30 @@ std::string_view noun_of(Family family) noexcept
     return "record";
 }
 
+std::string_view word_of(Family family) noexcept
+{
+    switch (family)
+    {
+    case Family::Variable:
+        return "var";
+    case Family::Function:
+        return "fun";
+    case Family::Constraint:
+        return "con";
+    case Family::Objective:
+        return "obj";
+    case Family::Indicator:
+        return "ind";
+    case Family::SpecialOrderedSet:
+        return "sos";
+    case Family::Cone:
+        return "cone";
+    case Family::Complement:
+        return "ccon";
+    }
+    return {};
+}
+
 const std::string *Model::name() const noexcept
 {
     return name_.empty() ? nullptr : &name_;
