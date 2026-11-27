@@ -43,11 +43,14 @@ using biyos::weighted_gradient;
 using biyos::Workspace;
 using biyos::test::binary;
 using biyos::test::ChainRule;
+using biyos::test::cone_of;
 using biyos::test::constant;
 using biyos::test::default_tolerances;
 using biyos::test::every_operator;
 using biyos::test::gradient_of;
+using biyos::test::grow;
 using biyos::test::jacobian_of;
+using biyos::test::kBatchRoots;
 using biyos::test::kBudgets;
 using biyos::test::kRoots;
 using biyos::test::kVariables;
@@ -68,27 +71,17 @@ constexpr Real kBound = 1e-6;
 constexpr Real kRounding = 1e-12;
 constexpr Real kNan = (std::numeric_limits<Real>::quiet_NaN)();
 constexpr Real kInfinity = (std::numeric_limits<Real>::infinity)();
+constexpr Offset kWideGraph = 1200;
 
 std::vector<Index> reached(const Graph &graph, Offset root)
 {
-    std::vector<bool> seen(to_size(graph.size()), false);
-    std::vector<Offset> stack{root};
     std::vector<Index> variables;
-    while (!stack.empty())
+    for (const Offset node : cone_of(graph, root))
     {
-        const Offset node = stack.back();
-        stack.pop_back();
-        if (seen[to_size(node)])
-        {
-            continue;
-        }
-        seen[to_size(node)] = true;
         if (graph.op(node) == Operator::Variable)
         {
             variables.push_back(graph.variable(node));
         }
-        const auto children = graph.children(node);
-        stack.insert(stack.end(), children.begin(), children.end());
     }
     std::ranges::sort(variables);
     return variables;
@@ -564,6 +557,29 @@ TEST(DerivativeTest, Patterns)
             SCOPED_TRACE(r);
             EXPECT_EQ(pattern_of(tape, r), reached(graph, roots[r]));
         }
+    }
+}
+
+TEST(DerivativeTest, Batches)
+{
+    for (std::uint64_t seed = 1; seed <= 6; ++seed)
+    {
+        SCOPED_TRACE(seed);
+        Random random(seed);
+        Graph graph = random_graph(random);
+        while (graph.size() < kWideGraph)
+        {
+            grow(graph, random);
+        }
+        const std::vector<Offset> roots = picks(random, graph, kBatchRoots);
+        const Tape tape(graph, roots, kBudgets[random.below(kBudgets.size())]);
+        for (std::size_t r = 0; r < roots.size(); ++r)
+        {
+            SCOPED_TRACE(r);
+            EXPECT_EQ(pattern_of(tape, r), reached(graph, roots[r]));
+        }
+        const std::vector<Real> point = interior_point(random);
+        expect_rule(graph, roots, point, dense(tape, jacobian_of(tape, point), point.size()));
     }
 }
 

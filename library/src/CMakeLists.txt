@@ -71,6 +71,7 @@ add_library(biyos_internal STATIC
     expr/graph/points.cpp
     expr/graph/sharing.cpp
     expr/graph/uses.cpp
+    expr/sparsity/joiner.cpp
     expr/sparsity/memo.cpp
     expr/sparsity/radix.cpp
     expr/sparsity/reach.cpp
