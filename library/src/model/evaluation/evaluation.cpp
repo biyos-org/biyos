@@ -49,7 +49,8 @@ constexpr std::size_t kSpans = 4;
 
 Program program_of(const Model &model, Stream stream)
 {
-    const EntryTimer timer(stream, kModule, "evaluation");
+    TimingTree tree;
+    const Timer timer(stream, tree, kModule, "evaluation");
     std::vector<Index> rooted;
     std::vector<Offset> roots;
     const std::span<const Offset> all = model.roots(0, model.n_functions());
@@ -65,7 +66,7 @@ Program program_of(const Model &model, Stream stream)
     evaluation::Layout layout = layout_of(model, rooted, tape.pattern());
     std::vector<Real> linear = linear_of(model, layout);
     Entries entries = entries_of(model);
-    Hessian hessian(model.graph(), roots, entries.items);
+    Hessian hessian(model.graph(), roots, entries.items, {.stream = stream, .tree = tree});
     hessian.widen(model.n_variables());
     return Program{
         .rooted = std::move(rooted),

@@ -12,9 +12,15 @@ $$
 \sum_r w_r \nabla^2 f_r(x) = \sum_r w_r \sum_e c_e \nabla^2 f_e(x),
 $$ {#eq-hessian-elements}
 
-and $\nabla^2 f_e$ is nonzero only on the variables of $f_e$. Its pattern is the dense lower triangle over those variables. The pattern of the whole Hessian is the union of these triangles and of any entries the caller declares, such as the pairs of quadratic terms, as one lower triangle stored by columns with sorted rows. A map, found once, gives each entry of each element's triangle its position in that pattern.
+and $\nabla^2 f_e$ is nonzero only on the variables of $f_e$. An element over at most 16 variables, the widest workspace, takes as its pattern the dense lower triangle over them. A larger one takes its [exact pattern](#sec-hessian-exact), since most of its triangle can be structurally zero: $e^{x_0} \sum_i \sin x_i$ has $n(n+1)/2$ entries in its triangle and $2n - 1$ that can be nonzero. The pattern of the whole Hessian is the union of these element patterns and of any entries the caller declares, such as the pairs of quadratic terms, as one lower triangle stored by columns with sorted rows. A map, found once, gives each entry of each element's pattern its position in that pattern.
 
 The elements compile to a tape of their own ([Compiled tapes](#sec-tapes)), one root per element, so a node shared by several elements is pinned and computed once per sweep.
+
+## Exact patterns {#sec-hessian-exact}
+
+The exact pattern of an element comes from one reverse pass over its tape with no values, symbolic edge pushing [@gower2014]. Each node holds the set of nodes it pairs with, a pair standing for a nonlinear interaction. The pass visits the nodes from the root down. At node $i$, a pair $\{i, p\}$ with $p \neq i$ becomes $\{j, p\}$ for each operand $j$ of $i$, and the pair $\{i, i\}$ becomes $\{j, k\}$ for each two operands, equal or not. The node then adds the pairs its own second derivatives give: none for a sum, a negation, an absolute value, a maximum, a minimum, a piecewise linear function and a power of exponent 0 or 1; each two distinct factors of a product; $\{a, b\}$ and $\{b, b\}$ for a quotient $a / b$; each two operands for any other operator. When the pass ends, the pairs between variables are the pattern.
+
+The pattern holds every entry that can be nonzero at a point where the element is defined. The sweeps that fill it are those of the dense triangle, writing only the entries the pattern holds. The pass is timed as the phase `pattern` of module `expr`, a child of the phase that builds the Hessian.
 
 ## Second-order adjoints {#sec-hessian-adjoints}
 

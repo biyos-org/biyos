@@ -144,12 +144,11 @@ void angle(const Instruction &instruction,
 
 Real power_curve(Real exponent, Real base) noexcept
 {
-    const Real factor = exponent * (exponent - 1.0);
-    if (is_zero(factor))
+    if (!curved(exponent))
     {
         return 0.0;
     }
-    return factor * std::pow(base, exponent - 2.0);
+    return exponent * (exponent - 1.0) * std::pow(base, exponent - 2.0);
 }
 
 Real cross_curve(Real result, Real base, Real exponent) noexcept
@@ -193,12 +192,12 @@ void power(const Instruction &instruction,
 
 Real sign_curve(Real exponent, Real value) noexcept
 {
-    const Real factor = exponent * (exponent - 1.0);
-    if (is_zero(factor))
+    if (!curved(exponent))
     {
         return 0.0;
     }
-    return factor * std::copysign(std::pow(std::fabs(value), exponent - 2.0), value);
+    return exponent * (exponent - 1.0) *
+           std::copysign(std::pow(std::fabs(value), exponent - 2.0), value);
 }
 
 void curves_of(const Instruction &instruction,
@@ -366,6 +365,11 @@ std::size_t tangent_rows(const Tape &tape) noexcept
 Real scaled(Real tangent, Real factor) noexcept
 {
     return is_zero(tangent) ? 0.0 : tangent * factor;
+}
+
+bool curved(Real exponent) noexcept
+{
+    return !is_zero(exponent * (exponent - 1.0));
 }
 
 void partial_tangents(const Instruction &instruction,

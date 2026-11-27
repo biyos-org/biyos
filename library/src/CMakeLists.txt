@@ -49,6 +49,7 @@ add_library(biyos_internal STATIC
     expr/evaluation/derivatives/value.cpp
     expr/evaluation/hessian/elements.cpp
     expr/evaluation/hessian/hessian.cpp
+    expr/evaluation/hessian/pattern.cpp
     expr/evaluation/hessian/sweep.cpp
     expr/evaluation/hessian/tangents.cpp
     expr/evaluation/threads/levels.cpp

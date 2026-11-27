@@ -1,5 +1,7 @@
+#include "core/env/env.hpp"
 #include "core/env/pool.hpp"
 #include "core/numbers.hpp"
+#include "core/timing/timer.hpp"
 #include "expr/evaluation/hessian/elements.hpp"
 #include "expr/evaluation/hessian/hessian.hpp"
 #include "expr/graph/graph.hpp"
@@ -28,6 +30,7 @@ namespace
 using biyos::Bits;
 using biyos::elements_of;
 using biyos::Entry;
+using biyos::Env;
 using biyos::Graph;
 using biyos::Hessian;
 using biyos::Index;
@@ -38,17 +41,22 @@ using biyos::Operator;
 using biyos::Pool;
 using biyos::Real;
 using biyos::Tape;
+using biyos::Timer;
+using biyos::TimingTree;
 using biyos::to_size;
+using biyos::test::arrow;
 using biyos::test::binary;
 using biyos::test::gradient_of;
 using biyos::test::kBudgets;
 using biyos::test::kVariables;
+using biyos::test::kWide;
 using biyos::test::picks;
 using biyos::test::power;
 using biyos::test::Random;
 using biyos::test::random_graph;
 using biyos::test::refusal;
 using biyos::test::unary;
+using biyos::test::variables;
 
 using Values = std::vector<Real>;
 using Rows = std::vector<Values>;
@@ -240,16 +248,6 @@ Values random_weights(Random &random, std::size_t size)
     return weights;
 }
 
-std::vector<Offset> variables(Graph &graph, Index size)
-{
-    std::vector<Offset> nodes;
-    for (Index k = 0; k < size; ++k)
-    {
-        nodes.push_back(graph.add_variable(k));
-    }
-    return nodes;
-}
-
 Offset wide(Graph &graph, const std::vector<Offset> &x)
 {
     const std::vector<Real> ones(x.size(), 1.0);
@@ -259,10 +257,32 @@ Offset wide(Graph &graph, const std::vector<Offset> &x)
     return graph.add(Operator::Product, 1.0, std::array{wave, product});
 }
 
+std::size_t arrow_entries(Index size)
+{
+    Env env;
+    TimingTree tree;
+    Graph graph;
+    const Offset root = arrow(graph, variables(graph, size));
+    const Hessian hessian(graph, std::span(&root, 1), {}, {env.stream(), tree});
+    return hessian.pattern().rows.size();
+}
+
+Values ramp(Index size, Real first, Real step)
+{
+    Values values;
+    for (Index k = 0; k < size; ++k)
+    {
+        values.push_back(first + step * static_cast<Real>(k));
+    }
+    return values;
+}
+
 }
 
 TEST(HessianTest, Seeded)
 {
+    Env env;
+    TimingTree tree;
     std::size_t checked = 0;
     std::size_t entries = 0;
     Offset pinned = 0;
@@ -273,7 +293,7 @@ TEST(HessianTest, Seeded)
         const Graph graph = random_graph(random);
         const std::vector<Offset> roots = picks(random, graph, kPicked);
         const Offset budget = kBudgets[random.below(kBudgets.size())];
-        Hessian hessian(graph, roots, {}, kLanes, budget);
+        Hessian hessian(graph, roots, {}, {env.stream(), tree}, kLanes, budget);
         pinned += Tape(graph, elements_of(graph, roots).nodes, budget).pinned();
         for (int k = 0; k < 3; ++k)
         {
@@ -291,6 +311,8 @@ TEST(HessianTest, Seeded)
 
 TEST(HessianTest, Weights)
 {
+    Env env;
+    TimingTree tree;
     Graph graph;
     const Offset x = graph.add_variable(0);
     const Offset y = graph.add_variable(1);
@@ -299,7 +321,7 @@ TEST(HessianTest, Weights)
         graph.add(Operator::Product, 1.0, std::array{x, y}),
         unary(graph, Operator::Sqrt, y),
     };
-    Hessian hessian(graph, roots, {});
+    Hessian hessian(graph, roots, {}, {env.stream(), tree});
     const std::array point{-1.0, 4.0};
     const Rows quiet =
         dense(hessian.pattern(), values_of(hessian, point, std::array{0.0, 2.0, 3.0}), 2);
@@ -312,6 +334,8 @@ TEST(HessianTest, Weights)
 
 TEST(HessianTest, Masked)
 {
+    Env env;
+    TimingTree tree;
     Graph graph;
     const std::vector<Offset> x = variables(graph, 2);
     const Offset log = unary(graph, Operator::Log, x[0]);
@@ -323,41 +347,47 @@ TEST(HessianTest, Masked)
     for (const Offset node : inner)
     {
         const Offset root = vanished(graph, node, x[1]);
-        Hessian hessian(graph, std::span(&root, 1), {});
+        Hessian hessian(graph, std::span(&root, 1), {}, {env.stream(), tree});
         expect_zero(entry_of(hessian, std::array{-1.0, 2.0}, 1, 1));
     }
     const Offset grown = unary(graph, Operator::Exp, x[1]);
     const Offset fall = unary(graph, Operator::Log, unary(graph, Operator::Negation, grown));
     const Offset root = vanished(graph, fall, x[0]);
-    Hessian hessian(graph, std::span(&root, 1), {});
+    Hessian hessian(graph, std::span(&root, 1), {}, {env.stream(), tree});
     expect_zero(entry_of(hessian, std::array{2.0, 0.5}, 0, 0));
     expect_zero(entry_of(hessian, std::array{2.0, 0.5}, 1, 0));
 }
 
 TEST(HessianTest, Undefined)
 {
+    Env env;
+    TimingTree tree;
     Graph graph;
     const std::vector<Offset> x = variables(graph, 2);
     const Offset top = binary(graph, Operator::Max, x[1], unary(graph, Operator::Log, x[0]));
     const Offset root = vanished(graph, top, x[1]);
-    Hessian hessian(graph, std::span(&root, 1), {});
+    Hessian hessian(graph, std::span(&root, 1), {}, {env.stream(), tree});
     EXPECT_TRUE(std::isnan(entry_of(hessian, std::array{-1.0, 2.0}, 1, 1)));
 }
 
 TEST(HessianTest, Stale)
 {
+    Env env;
+    TimingTree tree;
     Graph graph;
     const Offset x = graph.add_variable(0);
     const Offset root = unary(graph, Operator::Abs, unary(graph, Operator::Log, x));
-    Hessian fresh(graph, std::span(&root, 1), {});
+    Hessian fresh(graph, std::span(&root, 1), {}, {env.stream(), tree});
     const Values wanted = values_of(fresh, std::array{2.0}, std::array{1.0});
-    Hessian used(graph, std::span(&root, 1), {});
+    Hessian used(graph, std::span(&root, 1), {}, {env.stream(), tree});
     EXPECT_TRUE(std::isnan(values_of(used, std::array{-1.0}, std::array{1.0})[0]));
     expect_same(values_of(used, std::array{2.0}, std::array{1.0}), wanted);
 }
 
 TEST(HessianTest, Shared)
 {
+    Env env;
+    TimingTree tree;
     Graph graph;
     const std::vector<Offset> x = variables(graph, 3);
     const Offset inner = graph.add(Operator::Product, 1.0, std::array{x[0], x[1]});
@@ -373,7 +403,7 @@ TEST(HessianTest, Shared)
     for (const Offset budget : kBudgets)
     {
         SCOPED_TRACE(budget);
-        Hessian hessian(graph, roots, {}, kLanes, budget);
+        Hessian hessian(graph, roots, {}, {env.stream(), tree}, kLanes, budget);
         const Rows rows = dense(hessian.pattern(), values_of(hessian, point, weights), 3);
         EXPECT_EQ(check_differences(graph, roots, point, weights, rows), 9U);
     }
@@ -382,6 +412,8 @@ TEST(HessianTest, Shared)
 
 TEST(HessianTest, Nested)
 {
+    Env env;
+    TimingTree tree;
     Graph graph;
     const std::vector<Offset> x = variables(graph, 2);
     const Offset cross = graph.add(Operator::Product, 1.0, std::array{x[0], x[1]});
@@ -391,7 +423,7 @@ TEST(HessianTest, Nested)
     const Offset outer = graph.add_sum(1.0, std::array{inner, grown}, std::array{2.0, 0.5});
     const Offset product = graph.add(Operator::Product, 2.0, std::array{x[0], x[0], x[1]});
     const std::array roots{outer, product};
-    Hessian hessian(graph, roots, {});
+    Hessian hessian(graph, roots, {}, {env.stream(), tree});
     const std::array point{0.4, -1.1};
     const Rows rows = dense(hessian.pattern(), values_of(hessian, point, std::array{1.0, 3.0}), 2);
     const Real e = std::exp(0.4);
@@ -400,25 +432,99 @@ TEST(HessianTest, Nested)
 
 TEST(HessianTest, Chunks)
 {
+    Env env;
+    TimingTree tree;
     Graph graph;
     const std::vector<Offset> x = variables(graph, 7);
     const std::array roots{wide(graph, x), unary(graph, Operator::Cos, x[3])};
     const Values point{0.9, 1.1, 0.8, 1.2, 0.7, 1.3, 1.05};
     const std::array weights{0.8, -1.5};
-    Hessian whole(graph, roots, {}, 8);
+    Hessian whole(graph, roots, {}, {env.stream(), tree}, 8);
     const Values once = values_of(whole, point, weights);
     for (const std::size_t lanes : {1U, 2U, 3U, 4U, 16U})
     {
         SCOPED_TRACE(lanes);
-        Hessian split(graph, roots, {}, lanes);
+        Hessian split(graph, roots, {}, {env.stream(), tree}, lanes);
         expect_same(values_of(split, point, weights), once);
     }
     const Rows rows = dense(whole.pattern(), once, point.size());
     EXPECT_EQ(check_differences(graph, roots, point, weights, rows), 49U);
 }
 
+TEST(HessianTest, Threshold)
+{
+    const auto lanes = static_cast<Index>(kLanes);
+    EXPECT_EQ(arrow_entries(lanes), kLanes * (kLanes + 1) / 2);
+    EXPECT_EQ(arrow_entries(lanes + 1), 2 * kLanes + 1);
+}
+
+TEST(HessianTest, Arrow)
+{
+    Env env;
+    TimingTree tree;
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, kWide);
+    const std::array roots{arrow(graph, x),
+                           graph.add(Operator::Product, 1.0, std::array{x[1], x.back()})};
+    const std::array declared{Entry{.row = kWide - 1, .column = 2}};
+    Hessian hessian(graph, roots, declared, {env.stream(), tree});
+    EXPECT_EQ(hessian.pattern().rows.size(), to_size(2 * kWide + 1));
+    const Values point = ramp(kWide, 0.1, 0.05);
+    const std::array weights{1.5, -2.0};
+    const Values out = values_of(hessian, point, weights);
+    const Rows rows = dense(hessian.pattern(), out, point.size());
+    EXPECT_EQ(check_differences(graph, roots, point, weights, rows), to_size(kWide * kWide));
+    const Values direction = ramp(kWide, -1.0, 0.1);
+    const Values found = product_of(hessian, point, weights, direction);
+    EXPECT_EQ(check_product(rows, direction, found), to_size(kWide));
+    for (const std::size_t lanes : {1U, 4U, 32U})
+    {
+        SCOPED_TRACE(lanes);
+        Hessian split(graph, roots, declared, {env.stream(), tree}, lanes);
+        expect_same(values_of(split, point, weights), out);
+    }
+}
+
+TEST(HessianTest, Timed)
+{
+    Env env;
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, kWide);
+    const Offset wide = arrow(graph, x);
+    const Offset narrow = arrow(graph, std::vector(x.begin(), x.begin() + 2));
+    TimingTree tree;
+    {
+        const Timer outer(env.stream(), tree, "model", "evaluation");
+        const Hessian hessian(graph, std::span(&wide, 1), {}, {env.stream(), tree});
+    }
+    const std::span<const TimingTree::Node> nodes = tree.nodes();
+    ASSERT_EQ(nodes.size(), 2U);
+    EXPECT_EQ(nodes[0].name, "evaluation");
+    EXPECT_EQ(nodes[1].name, "pattern");
+    EXPECT_EQ(nodes[1].parent, 0U);
+    TimingTree small;
+    const Hessian hessian(graph, std::span(&narrow, 1), {}, {env.stream(), small});
+    EXPECT_TRUE(small.nodes().empty());
+}
+
+TEST(HessianTest, Wide)
+{
+    Env env;
+    TimingTree tree;
+    Graph graph;
+    const std::array roots{wide(graph, variables(graph, kWide))};
+    Hessian hessian(graph, roots, {}, {env.stream(), tree});
+    EXPECT_EQ(hessian.pattern().rows.size(), to_size(kWide * (kWide + 1) / 2));
+    const Values point = ramp(kWide, 0.9, 0.01);
+    const std::array weights{0.7};
+    const Rows rows = dense(hessian.pattern(), values_of(hessian, point, weights), point.size());
+    EXPECT_EQ(check_differences(graph, roots, point, weights, rows), to_size(kWide * kWide));
+}
+
 TEST(HessianTest, Product)
 {
+    Env env;
+    TimingTree tree;
     std::size_t checked = 0;
     std::size_t entries = 0;
     for (std::uint64_t seed = 1; seed <= 30; ++seed)
@@ -428,7 +534,7 @@ TEST(HessianTest, Product)
         const Graph graph = random_graph(random);
         const std::vector<Offset> roots = picks(random, graph, kPicked);
         const Offset budget = kBudgets[random.below(kBudgets.size())];
-        Hessian hessian(graph, roots, {}, kLanes, budget);
+        Hessian hessian(graph, roots, {}, {env.stream(), tree}, kLanes, budget);
         const Values point = interior_point(random);
         const Values weights = random_weights(random, roots.size());
         const Values direction = random_weights(random, point.size());
@@ -442,6 +548,8 @@ TEST(HessianTest, Product)
 
 TEST(HessianTest, Direction)
 {
+    Env env;
+    TimingTree tree;
     Graph graph;
     const std::vector<Offset> x = variables(graph, 7);
     const std::array roots{wide(graph, x), unary(graph, Operator::Cos, x[3])};
@@ -451,7 +559,7 @@ TEST(HessianTest, Direction)
     for (const std::size_t lanes : {1U, 2U, 8U})
     {
         SCOPED_TRACE(lanes);
-        Hessian hessian(graph, roots, {}, lanes);
+        Hessian hessian(graph, roots, {}, {env.stream(), tree}, lanes);
         const Rows rows = dense(hessian.pattern(), values_of(hessian, point, weights), 8);
         const Values found = product_of(hessian, point, weights, direction);
         EXPECT_EQ(check_product(rows, direction, found), 8U);
@@ -461,6 +569,8 @@ TEST(HessianTest, Direction)
 
 TEST(HessianTest, Declared)
 {
+    Env env;
+    TimingTree tree;
     Graph graph;
     const std::vector<Offset> x = variables(graph, 3);
     const std::array roots{graph.add(Operator::Product, 1.0, std::array{x[1], x[2]})};
@@ -469,7 +579,7 @@ TEST(HessianTest, Declared)
         Entry{.row = 2, .column = 1},
         Entry{.row = 4, .column = 4},
     };
-    Hessian hessian(graph, roots, declared);
+    Hessian hessian(graph, roots, declared, {env.stream(), tree});
     const Lower &lower = hessian.pattern();
     EXPECT_EQ(lower.starts, (std::vector<Offset>{0, 1, 3, 4, 4, 5}));
     EXPECT_EQ(lower.rows, (std::vector<Index>{2, 1, 2, 2, 4}));
@@ -481,6 +591,8 @@ TEST(HessianTest, Declared)
 
 TEST(HessianTest, Pattern)
 {
+    Env env;
+    TimingTree tree;
     Graph graph;
     const std::vector<Offset> x = variables(graph, 4);
     const std::array roots{
@@ -490,7 +602,7 @@ TEST(HessianTest, Pattern)
                       std::array{1.0, 1.0}),
         graph.add(Operator::Product, 1.0, std::array{x[3], x[1]}),
     };
-    Hessian hessian(graph, roots, {});
+    Hessian hessian(graph, roots, {}, {env.stream(), tree});
     const Lower &lower = hessian.pattern();
     EXPECT_EQ(lower.starts, (std::vector<Offset>{0, 2, 4, 5, 6}));
     EXPECT_EQ(lower.rows, (std::vector<Index>{0, 3, 1, 3, 2, 3}));
@@ -498,10 +610,12 @@ TEST(HessianTest, Pattern)
 
 TEST(HessianTest, Widened)
 {
+    Env env;
+    TimingTree tree;
     Graph graph;
     const std::vector<Offset> x = variables(graph, 2);
     const std::array roots{unary(graph, Operator::Exp, x[0])};
-    Hessian hessian(graph, roots, {});
+    Hessian hessian(graph, roots, {}, {env.stream(), tree});
     hessian.widen(3);
     EXPECT_EQ(hessian.pattern().starts, (std::vector<Offset>{0, 1, 1, 1}));
     EXPECT_EQ(hessian.pattern().rows, (std::vector<Index>{0}));
@@ -513,11 +627,14 @@ TEST(HessianTest, Widened)
 
 TEST(HessianTest, Refused)
 {
+    Env env;
+    TimingTree tree;
     Graph graph;
     const std::vector<Offset> x = variables(graph, 2);
     const std::array roots{graph.add(Operator::Product, 1.0, std::array{x[0], x[1]})};
-    EXPECT_EQ(refusal([&] { Hessian(graph, roots, {}, 0); }), "invalid argument: lanes: zero");
-    Hessian hessian(graph, roots, {});
+    EXPECT_EQ(refusal([&] { Hessian(graph, roots, {}, {env.stream(), tree}, 0); }),
+              "invalid argument: lanes: zero");
+    Hessian hessian(graph, roots, {}, {env.stream(), tree});
     Values out(3);
     const std::array point{1.0, 2.0};
     const std::array weights{1.0};
@@ -538,6 +655,8 @@ TEST(HessianTest, Refused)
 
 TEST(LaneTest, Widest)
 {
+    Env env;
+    TimingTree tree;
     Graph graph;
     const std::vector<Offset> x = variables(graph, 2);
     const std::array roots{graph.add(Operator::Product, 1.0, std::array{x[0], x[1]})};
@@ -547,11 +666,11 @@ TEST(LaneTest, Widest)
     for (const std::size_t lanes : {kWidest + 1, (std::numeric_limits<std::size_t>::max)()})
     {
         SCOPED_TRACE(lanes);
-        EXPECT_EQ(refusal([&] { Hessian(graph, roots, {}, lanes); }),
+        EXPECT_EQ(refusal([&] { Hessian(graph, roots, {}, {env.stream(), tree}, lanes); }),
                   "invalid argument: lanes: " + std::to_string(lanes) + above);
     }
-    Hessian widest(graph, roots, {}, kWidest);
-    Hessian usual(graph, roots, {});
+    Hessian widest(graph, roots, {}, {env.stream(), tree}, kWidest);
+    Hessian usual(graph, roots, {}, {env.stream(), tree});
     const std::array point{1.5, -2.0};
     expect_same(values_of(widest, point, std::array{1.0}),
                 values_of(usual, point, std::array{1.0}));

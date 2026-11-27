@@ -1,7 +1,9 @@
+#include "core/env/env.hpp"
 #include "core/env/pool.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/identical.hpp"
 #include "core/numeric/zero.hpp"
+#include "core/timing/timer.hpp"
 #include "expr/evaluation/derivatives/reverse.hpp"
 #include "expr/evaluation/hessian/hessian.hpp"
 #include "expr/evaluation/threads/sweeps.hpp"
@@ -26,6 +28,7 @@ namespace
 {
 
 using biyos::Adjoints;
+using biyos::Env;
 using biyos::Graph;
 using biyos::Hessian;
 using biyos::Index;
@@ -36,6 +39,7 @@ using biyos::Pool;
 using biyos::Real;
 using biyos::Tape;
 using biyos::Team;
+using biyos::TimingTree;
 using biyos::to_size;
 using biyos::Worker;
 using biyos::test::kBudgets;
@@ -155,7 +159,9 @@ Sweeps sweep(const Case &test, std::size_t threads, Pool &pool)
 
 Second second(const Case &test, std::size_t threads, Pool &pool)
 {
-    Hessian hessian(test.graph, test.roots, {});
+    Env env;
+    TimingTree tree;
+    Hessian hessian(test.graph, test.roots, {}, {env.stream(), tree});
     hessian.fit(threads);
     Second found{.values = std::vector<Real>(hessian.pattern().rows.size()),
                  .product = std::vector<Real>(test.point.size())};

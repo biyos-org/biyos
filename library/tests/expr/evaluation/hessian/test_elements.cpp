@@ -17,6 +17,9 @@
 namespace
 {
 
+using biyos::add_dense;
+using biyos::Blocks;
+using biyos::dense_of;
 using biyos::Elements;
 using biyos::elements_of;
 using biyos::Entry;
@@ -126,34 +129,51 @@ TEST(ElementTest, Refused)
     EXPECT_EQ(refusal([&] { elements_of(graph, roots); }),
               "invalid argument: expression: node 1 is unknown");
     const std::array declared{Entry{.row = 1, .column = 0}, Entry{.row = 0, .column = -1}};
-    EXPECT_EQ(refusal([&] { lower_of(pattern_of({}), declared); }),
+    EXPECT_EQ(refusal([&] { lower_of(pattern_of({}), dense_of(pattern_of({})), declared); }),
               "invalid argument: entries: entry 1 has a negative index");
 }
 
 TEST(ElementTest, Union)
 {
-    const Pattern blocks = pattern_of({{0, 3}, {1, 3}, {}, {2}, {0, 3}});
-    const Lower lower = lower_of(blocks, {});
+    const Pattern pattern = pattern_of({{0, 3}, {1, 3}, {}, {2}, {0, 3}});
+    const Blocks blocks = dense_of(pattern);
+    const Lower lower = lower_of(pattern, blocks, {});
     expect_entries(lower, {{0, 0}, {3, 0}, {1, 1}, {3, 1}, {2, 2}, {3, 3}});
-    const Map map = map_of(lower, blocks, {});
+    const Map map = map_of(lower, pattern, blocks, {});
     EXPECT_EQ(map.starts, (std::vector<Offset>{0, 3, 6, 6, 7, 10}));
-    expect_blocks(lower, map, blocks);
+    expect_blocks(lower, map, pattern);
     EXPECT_TRUE(map.declared.empty());
 }
 
 TEST(ElementTest, Declared)
 {
-    const Pattern blocks = pattern_of({{1, 2}});
+    const Pattern pattern = pattern_of({{1, 2}});
+    const Blocks blocks = dense_of(pattern);
     const std::array declared{
         Entry{.row = 0, .column = 2},
         Entry{.row = 2, .column = 1},
         Entry{.row = 5, .column = 4},
         Entry{.row = 2, .column = 0},
     };
-    const Lower lower = lower_of(blocks, declared);
+    const Lower lower = lower_of(pattern, blocks, declared);
     expect_entries(lower, {{2, 0}, {1, 1}, {2, 1}, {2, 2}, {5, 4}});
     EXPECT_EQ(lower.starts.size(), 7U);
-    const Map map = map_of(lower, blocks, declared);
+    const Map map = map_of(lower, pattern, blocks, declared);
     EXPECT_EQ(map.declared, (std::vector<Offset>{0, 2, 4, 0}));
-    expect_blocks(lower, map, blocks);
+    expect_blocks(lower, map, pattern);
+}
+
+TEST(ElementTest, Sparse)
+{
+    const Pattern pattern = pattern_of({{0, 3}, {1, 2, 3}});
+    Blocks blocks{.starts = {0}, .entries = {}};
+    add_dense(2, blocks);
+    blocks.entries.push_back({.row = 0, .column = 0});
+    blocks.entries.push_back({.row = 2, .column = 0});
+    blocks.starts.push_back(5);
+    const Lower lower = lower_of(pattern, blocks, {});
+    expect_entries(lower, {{0, 0}, {3, 0}, {1, 1}, {3, 1}, {3, 3}});
+    const Map map = map_of(lower, pattern, blocks, {});
+    EXPECT_EQ(map.starts, (std::vector<Offset>{0, 3, 5}));
+    EXPECT_EQ(map.blocks, (std::vector<Offset>{0, 1, 4, 2, 3}));
 }

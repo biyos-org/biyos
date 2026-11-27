@@ -18,6 +18,7 @@ struct Tangents
 
 std::size_t tangent_rows(const Tape &tape) noexcept;
 Real scaled(Real tangent, Real factor) noexcept;
+bool curved(Real exponent) noexcept;
 void partial_tangents(const Instruction &instruction,
                       const Frame &frame,
                       const Tangents &tangents,

@@ -7,8 +7,10 @@
 #include "core/numbers.hpp"
 #include "core/numeric/zero.hpp"
 #include "core/text/text.hpp"
+#include "core/timing/timer.hpp"
 #include "expr/evaluation/derivatives/value.hpp"
 #include "expr/evaluation/hessian/elements.hpp"
+#include "expr/evaluation/hessian/pattern.hpp"
 #include "expr/evaluation/hessian/sweep.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/sparsity/reach.hpp"
@@ -17,6 +19,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <iterator>
 #include <limits>
 #include <span>
 #include <string>
@@ -56,11 +59,6 @@ void check_size(std::string_view object,
     }
 }
 
-std::span<const Index> variables_of(const Pattern &pattern, Offset e) noexcept
-{
-    return slice(std::span(pattern.variables), pattern.starts, to_size(e));
-}
-
 std::vector<std::size_t> widths_of(std::size_t lanes)
 {
     if (lanes > kWidest)
@@ -83,11 +81,6 @@ std::size_t class_of(std::span<const std::size_t> widths, std::size_t size) noex
                                 : static_cast<std::size_t>(fits - widths.begin());
 }
 
-std::size_t offset(std::size_t size, std::size_t column, std::size_t row) noexcept
-{
-    return column * size - column * (column - 1) / 2 + row - column;
-}
-
 void seed(std::span<const Index> variables, Chunk chunk, Pass &pass, Real value) noexcept
 {
     for (std::size_t l = 0; l < chunk.count; ++l)
@@ -103,6 +96,54 @@ void clear(std::span<const Index> variables, Pass &pass) noexcept
     {
         std::ranges::fill(row(std::span(pass.second.gradient), to_size(variable), pass.lanes), 0.0);
     }
+}
+
+bool large(std::size_t size) noexcept
+{
+    return size > kLanes;
+}
+
+bool any_large(const Pattern &pattern) noexcept
+{
+    for (std::size_t e = 0; e + 1 < pattern.starts.size(); ++e)
+    {
+        if (large(to_size(pattern.starts[e + 1] - pattern.starts[e])))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+void add_exact(Pusher &pusher, Offset e, Blocks &blocks)
+{
+    std::ranges::copy(pusher.shape(e).entries, std::back_inserter(blocks.entries));
+    blocks.starts.push_back(to_offset(blocks.entries.size()));
+}
+
+Blocks blocks_of(const Tape &tape, Timing timing)
+{
+    const Pattern &pattern = tape.pattern();
+    if (!any_large(pattern))
+    {
+        return dense_of(pattern);
+    }
+    const Timer timer(timing.stream, timing.tree, "expr", "pattern");
+    Pusher pusher(tape);
+    Blocks blocks{.starts = {0}, .entries = {}};
+    for (Offset e = 0; e < tape.roots(); ++e)
+    {
+        const std::size_t size = variables_of(pattern, e).size();
+        if (large(size))
+        {
+            add_exact(pusher, e, blocks);
+        }
+        else
+        {
+            add_dense(size, blocks);
+        }
+    }
+    return blocks;
 }
 
 std::vector<Offset> chunks_of(const Pattern &pattern)
@@ -149,11 +190,13 @@ void gather(std::span<const Real> parts,
 Hessian::Hessian(const Graph &graph,
                  std::span<const Offset> roots,
                  std::span<const Entry> declared,
+                 Timing timing,
                  std::size_t lanes,
                  Offset budget)
     : roots_(roots.size()), elements_(elements_of(graph, roots)),
-      tape_(graph, elements_.nodes, budget), lower_(lower_of(tape_.pattern(), declared)),
-      map_(map_of(lower_, tape_.pattern(), declared))
+      tape_(graph, elements_.nodes, budget), blocks_(blocks_of(tape_, timing)),
+      lower_(lower_of(tape_.pattern(), blocks_, declared)),
+      map_(map_of(lower_, tape_.pattern(), blocks_, declared))
 {
     const std::vector<std::size_t> widths = widths_of(lanes_of(lanes));
     std::vector<bool> used(widths.size(), false);
@@ -234,22 +277,20 @@ void Hessian::write_block(Offset e, Real scale, std::vector<Pass> &passes) noexc
 {
     Pass &pass = passes[classes_[to_size(e)]];
     const std::span<const Index> variables = variables_of(tape_.pattern(), e);
-    const std::size_t size = variables.size();
+    const std::span<const Entry> entries = entries_of(blocks_, e);
     const std::span<Real> parts = std::span(parts_).subspan(to_size(map_.starts[to_size(e)]));
-    for (std::size_t first = 0; first < size; first += pass.lanes)
+    std::size_t k = 0;
+    for (std::size_t first = 0; first < variables.size(); first += pass.lanes)
     {
-        const Chunk chunk{.first = first, .count = (std::min)(pass.lanes, size - first)};
+        const Chunk chunk{.first = first,
+                          .count = (std::min)(pass.lanes, variables.size() - first)};
         seed(variables, chunk, pass, 1.0);
         sweep(tape_, e, pass);
-        for (std::size_t l = 0; l < chunk.count; ++l)
+        for (; k < entries.size() && to_size(entries[k].column) < first + chunk.count; ++k)
         {
-            const std::size_t column = first + l;
-            for (std::size_t a = column; a < size; ++a)
-            {
-                const auto variable = to_size(variables[a]);
-                parts[offset(size, column, a)] =
-                    scale * pass.second.gradient[variable * pass.lanes + l];
-            }
+            const auto variable = to_size(variables[to_size(entries[k].row)]);
+            const std::size_t lane = to_size(entries[k].column) - first;
+            parts[k] = scale * pass.second.gradient[variable * pass.lanes + lane];
         }
         clear(variables, pass);
         seed(variables, chunk, pass, 0.0);

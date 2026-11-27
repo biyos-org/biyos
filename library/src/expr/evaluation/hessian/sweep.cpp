@@ -274,11 +274,6 @@ void hold(const Block &block, std::size_t output, Pass &pass) noexcept
     copy_row(pass.velocity.slots, slot, pass.velocity.shared, position, lanes);
 }
 
-const Block &block_of(std::span<const Block> blocks, Offset position) noexcept
-{
-    return *(std::ranges::upper_bound(blocks, position, {}, &Block::begin) - 1);
-}
-
 void rise(const Tape &tape, Offset element, Pass &pass) noexcept
 {
     const std::span<const Block> prepass = tape.blocks().first(to_size(tape.prepass()));
