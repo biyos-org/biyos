@@ -345,6 +345,35 @@ Model numbered()
     return model;
 }
 
+Model permuted()
+{
+    Model model;
+    model.add_variables(std::vector{continuous(0.0, kInfinity), continuous(-1.0, kInfinity)});
+    model.add_functions(std::vector{0.0, -1.0, 0.0, 0.0},
+                        std::vector<Offset>{0, 0, 2, 3, 4},
+                        {
+                            LinearTerm{.variable = 0, .coefficient = 1.0},
+                            LinearTerm{.variable = 1, .coefficient = 1.0},
+                            LinearTerm{.variable = 1, .coefficient = 1.0},
+                            LinearTerm{.variable = 0, .coefficient = 1.0},
+                        });
+    const Offset root = square_of(model, model.add_variable_node(1));
+    const Index function = 0;
+    model.attach_expressions(std::span(&function, 1), std::span(&root, 1));
+    model.add_constraints(
+        std::vector{Constraint{.function = 0, .lower = -kInfinity, .upper = 4.0}});
+    add_goal(model, 2, ObjectiveSense::Minimize);
+    model.add_complements(
+        std::vector{Complement{.function = 3, .lower = 0.0, .upper = kInfinity, .multiplier = 1}});
+    model.add_special_ordered_sets(std::vector{SpecialOrderedSetKind::One},
+                                   std::vector<Offset>{0, 2},
+                                   std::vector{
+                                       Member{.variable = 0, .weight = 1.0},
+                                       Member{.variable = 1, .weight = 5.0},
+                                   });
+    return model;
+}
+
 Model nonnegative()
 {
     Model model;
@@ -563,4 +592,9 @@ TEST(NlTest, EmptySet)
     const auto kind = SpecialOrderedSetKind::One;
     model.add_special_ordered_sets(std::span(&kind, 1), std::vector<Offset>{0, 0}, {});
     EXPECT_EQ(refusal(model), refused("set 2", "an empty set"));
+}
+
+TEST(NlTest, KeptColumns)
+{
+    expect_kept(permuted(), std::vector{0.5, -0.25});
 }
