@@ -51,7 +51,6 @@ void forward(const Tape &tape,
              Workspace &workspace,
              std::span<Real> values);
 void broadcast(std::span<const Real> point, std::size_t lanes, std::span<Real> points);
-void repeat(std::span<const Real> point, std::size_t lanes, std::span<Real> points) noexcept;
 void seed_directions(std::span<const Index> variables,
                      std::size_t lanes,
                      std::span<Real> directions);

@@ -19,22 +19,25 @@ namespace biyos
 namespace
 {
 
-struct Pair
+struct Running
 {
-    std::span<Real> value;
+    Real value;
     std::span<Real> tangent;
 };
 
-std::span<Real> part(std::span<Real> items, std::size_t k, const Frame &frame) noexcept
+std::span<Real> part(std::span<Real> items, std::size_t k, const Tangents &tangents) noexcept
 {
-    return row(items, k, frame.lanes);
+    return row(items, k, tangents.lanes);
 }
 
-std::span<const Real> tangent(const Tangents &tangents,
-                              std::uint32_t slot,
-                              const Frame &frame) noexcept
+std::span<const Real> tangent(const Tangents &tangents, std::uint32_t slot) noexcept
 {
-    return row(tangents.slots, slot, frame.lanes);
+    return row(tangents.slots, slot, tangents.lanes);
+}
+
+Real operand(const Frame &frame, std::uint32_t slot) noexcept
+{
+    return frame.slots[slot];
 }
 
 Real unsigned_zero(Real value) noexcept
@@ -55,21 +58,21 @@ void curve(const Instruction &instruction,
            std::span<Real> out,
            F f) noexcept
 {
-    const std::span<const Real> x = row(frame, instruction.first);
-    const std::span<const Real> t = tangent(tangents, instruction.first, frame);
-    for (std::size_t l = 0; l < frame.lanes; ++l)
+    const Real factor = f(operand(frame, instruction.first), frame.result[0], partials[0]);
+    const std::span<const Real> t = tangent(tangents, instruction.first);
+    for (std::size_t l = 0; l < tangents.lanes; ++l)
     {
-        out[l] = scaled(t[l], f(x[l], frame.result[l], partials[l]));
+        out[l] = scaled(t[l], factor);
     }
 }
 
-void advance(Pair running, std::span<const Real> x, std::span<const Real> t) noexcept
+void advance(Running &running, Real x, std::span<const Real> t) noexcept
 {
-    for (std::size_t l = 0; l < x.size(); ++l)
+    for (std::size_t l = 0; l < t.size(); ++l)
     {
-        running.tangent[l] = scaled(running.tangent[l], x[l]) + scaled(t[l], running.value[l]);
-        running.value[l] *= x[l];
+        running.tangent[l] = scaled(running.tangent[l], x) + scaled(t[l], running.value);
     }
+    running.value *= x;
 }
 
 void product(const Instruction &instruction,
@@ -78,27 +81,25 @@ void product(const Instruction &instruction,
              std::span<Real> out) noexcept
 {
     const std::span<const std::uint32_t> factors = listed(instruction, frame.operands);
-    const Pair running{.value = part(tangents.spare, 0, frame),
-                       .tangent = part(tangents.spare, 1, frame)};
-    std::ranges::fill(running.value, constant_of(instruction));
+    Running running{.value = constant_of(instruction), .tangent = tangents.running};
     std::ranges::fill(running.tangent, 0.0);
     for (std::size_t k = 0; k < factors.size(); ++k)
     {
-        std::ranges::copy(running.value, part(tangents.spare, k + 2, frame).begin());
-        std::ranges::copy(running.tangent, part(out, k, frame).begin());
-        advance(running, row(frame, factors[k]), tangent(tangents, factors[k], frame));
+        tangents.prefix[k] = running.value;
+        std::ranges::copy(running.tangent, part(out, k, tangents).begin());
+        advance(running, operand(frame, factors[k]), tangent(tangents, factors[k]));
     }
-    std::ranges::fill(running.value, 1.0);
+    running.value = 1.0;
     std::ranges::fill(running.tangent, 0.0);
     for (std::size_t k = factors.size(); k > 0; --k)
     {
-        const std::span<const Real> prefix = part(tangents.spare, k + 1, frame);
-        const std::span<Real> mine = part(out, k - 1, frame);
-        for (std::size_t l = 0; l < frame.lanes; ++l)
+        const Real prefix = tangents.prefix[k - 1];
+        const std::span<Real> mine = part(out, k - 1, tangents);
+        for (std::size_t l = 0; l < tangents.lanes; ++l)
         {
-            mine[l] = scaled(mine[l], running.value[l]) + scaled(running.tangent[l], prefix[l]);
+            mine[l] = scaled(mine[l], running.value) + scaled(running.tangent[l], prefix);
         }
-        advance(running, row(frame, factors[k - 1]), tangent(tangents, factors[k - 1], frame));
+        advance(running, operand(frame, factors[k - 1]), tangent(tangents, factors[k - 1]));
     }
 }
 
@@ -108,35 +109,35 @@ void quotient(const Instruction &instruction,
               std::span<const Real> partials,
               std::span<Real> out) noexcept
 {
-    const std::span<const Real> tx = tangent(tangents, instruction.first, frame);
-    const std::span<const Real> ty = tangent(tangents, instruction.second, frame);
-    const std::span<Real> first = part(out, 0, frame);
-    const std::span<Real> second = part(out, 1, frame);
-    for (std::size_t l = 0; l < frame.lanes; ++l)
+    const std::span<const Real> tx = tangent(tangents, instruction.first);
+    const std::span<const Real> ty = tangent(tangents, instruction.second);
+    const std::span<Real> first = part(out, 0, tangents);
+    const std::span<Real> second = part(out, 1, tangents);
+    const Real inverse = partials[0];
+    const Real square = inverse * inverse;
+    const Real across = 2.0 * frame.result[0] * square;
+    for (std::size_t l = 0; l < tangents.lanes; ++l)
     {
-        const Real inverse = partials[l];
-        const Real square = inverse * inverse;
         first[l] = -scaled(ty[l], square);
-        second[l] = scaled(ty[l], 2.0 * frame.result[l] * square) - scaled(tx[l], square);
+        second[l] = scaled(ty[l], across) - scaled(tx[l], square);
     }
 }
 
 void angle(const Instruction &instruction,
-           const Frame &frame,
            const Tangents &tangents,
            std::span<const Real> partials,
            std::span<Real> out) noexcept
 {
-    const std::span<const Real> ty = tangent(tangents, instruction.first, frame);
-    const std::span<const Real> tx = tangent(tangents, instruction.second, frame);
-    const std::span<const Real> along_y = row(partials, 0, frame.lanes);
-    const std::span<const Real> along_x = row(partials, 1, frame.lanes);
-    const std::span<Real> first = part(out, 0, frame);
-    const std::span<Real> second = part(out, 1, frame);
-    for (std::size_t l = 0; l < frame.lanes; ++l)
+    const std::span<const Real> ty = tangent(tangents, instruction.first);
+    const std::span<const Real> tx = tangent(tangents, instruction.second);
+    const Real along_y = partials[0];
+    const Real along_x = partials[1];
+    const std::span<Real> first = part(out, 0, tangents);
+    const std::span<Real> second = part(out, 1, tangents);
+    const Real cross = 2.0 * along_y * along_x;
+    const Real bend = along_x * along_x - along_y * along_y;
+    for (std::size_t l = 0; l < tangents.lanes; ++l)
     {
-        const Real cross = 2.0 * along_y[l] * along_x[l];
-        const Real bend = along_x[l] * along_x[l] - along_y[l] * along_y[l];
         first[l] = scaled(ty[l], cross) + scaled(tx[l], bend);
         second[l] = scaled(ty[l], bend) - scaled(tx[l], cross);
     }
@@ -175,18 +176,20 @@ void power(const Instruction &instruction,
            const Tangents &tangents,
            std::span<Real> out) noexcept
 {
-    const std::span<const Real> base = row(frame, instruction.first);
-    const std::span<const Real> exponent = row(frame, instruction.second);
-    const std::span<const Real> tx = tangent(tangents, instruction.first, frame);
-    const std::span<const Real> ty = tangent(tangents, instruction.second, frame);
-    const std::span<Real> first = part(out, 0, frame);
-    const std::span<Real> second = part(out, 1, frame);
-    for (std::size_t l = 0; l < frame.lanes; ++l)
+    const Real base = operand(frame, instruction.first);
+    const Real exponent = operand(frame, instruction.second);
+    const Real x = unsigned_zero(base);
+    const Real cross = cross_curve(frame.result[0], x, exponent);
+    const Real along_x = power_curve(exponent, x);
+    const Real along_y = exponent_curve(frame.result[0], base);
+    const std::span<const Real> tx = tangent(tangents, instruction.first);
+    const std::span<const Real> ty = tangent(tangents, instruction.second);
+    const std::span<Real> first = part(out, 0, tangents);
+    const std::span<Real> second = part(out, 1, tangents);
+    for (std::size_t l = 0; l < tangents.lanes; ++l)
     {
-        const Real x = unsigned_zero(base[l]);
-        const Real cross = cross_curve(frame.result[l], x, exponent[l]);
-        first[l] = scaled(tx[l], power_curve(exponent[l], x)) + scaled(ty[l], cross);
-        second[l] = scaled(tx[l], cross) + scaled(ty[l], exponent_curve(frame.result[l], base[l]));
+        first[l] = scaled(tx[l], along_x) + scaled(ty[l], cross);
+        second[l] = scaled(tx[l], cross) + scaled(ty[l], along_y);
     }
 }
 
@@ -227,7 +230,7 @@ void curves_of(const Instruction &instruction,
         quotient(instruction, frame, tangents, partials, out);
         return;
     case Operator::Atan2:
-        angle(instruction, frame, tangents, partials, out);
+        angle(instruction, tangents, partials, out);
         return;
     case Operator::ConstantPower:
         curve(instruction,
@@ -346,7 +349,7 @@ void curves_of(const Instruction &instruction,
 
 }
 
-std::size_t tangent_rows(const Tape &tape) noexcept
+std::size_t widest_product(const Tape &tape) noexcept
 {
     std::size_t widest = 0;
     for (const Block &block : tape.blocks())
@@ -359,7 +362,7 @@ std::size_t tangent_rows(const Tape &tape) noexcept
             }
         }
     }
-    return widest + 2;
+    return widest;
 }
 
 Real scaled(Real tangent, Real factor) noexcept

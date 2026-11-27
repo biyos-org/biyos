@@ -198,6 +198,14 @@ void check_seeds(std::span<const Index> variables, std::size_t lanes, std::size_
     }
 }
 
+void repeat(std::span<const Real> point, std::size_t lanes, std::span<Real> points) noexcept
+{
+    for (std::size_t k = 0; k < point.size(); ++k)
+    {
+        std::ranges::fill(row(points, k, lanes), point[k]);
+    }
+}
+
 }
 
 void evaluate(const Instruction &instruction, const Frame &frame) noexcept
@@ -445,14 +453,6 @@ void broadcast(std::span<const Real> point, std::size_t lanes, std::span<Real> p
         refuse("points", size + ", not the point size " + text_of(point.size()) + in_lanes(lanes));
     }
     repeat(point, lanes, points);
-}
-
-void repeat(std::span<const Real> point, std::size_t lanes, std::span<Real> points) noexcept
-{
-    for (std::size_t k = 0; k < point.size(); ++k)
-    {
-        std::ranges::fill(row(points, k, lanes), point[k]);
-    }
 }
 
 void seed_directions(std::span<const Index> variables,

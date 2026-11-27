@@ -42,15 +42,24 @@ class Hessian
                  Pool &pool);
 
   private:
+    struct Products;
+
     void check(std::span<const Real> point, std::span<const Real> weights) const;
-    void spread(std::span<const Real> point, std::size_t worker, std::size_t passes) noexcept;
     void weigh(std::span<const Real> weights) noexcept;
-    void fill_blocks(std::size_t chunk, std::size_t worker) noexcept;
+    void fill_blocks(std::size_t chunk, std::size_t worker, std::span<const Real> point) noexcept;
     void fill_products(std::size_t chunk,
                        std::size_t worker,
+                       std::span<const Real> point,
                        std::span<const Real> direction) noexcept;
-    void write_block(Offset e, Real scale, std::vector<Pass> &passes) noexcept;
-    void write_product(Offset e, Real scale, std::span<const Real> direction, Pass &pass) noexcept;
+    void write_block(Offset e,
+                     Real scale,
+                     std::span<const Real> point,
+                     std::vector<Pass> &passes) noexcept;
+    void write_product(Offset e,
+                       Real scale,
+                       std::span<const Real> point,
+                       std::span<const Real> direction,
+                       Pass &pass) noexcept;
 
     std::size_t roots_;
     Elements elements_;
