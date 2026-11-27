@@ -202,6 +202,15 @@ def constraints(mdl: Model) -> None:
     mdl.setconname(one, names)  # type: ignore[call-overload]
 
 
+def expressions(mdl: Model, x: Variables) -> None:
+    assert_type(mdl.addcon(x[0] * x[1], reals, reals), Constraints)
+    assert_type(mdl.addcon(x[0], ub=reals), Constraints)
+    assert_type(mdl.addcon([x[0] * x[1], x[1] * x[1]], reals), Constraints)
+    assert_type(mdl.addcon([x[0], x[1]], ub=reals), Constraints)
+    assert_type(mdl.addcon(x[0] <= real), Constraints)
+    mdl.addcon(x[0] * x[1], real, real)  # type: ignore[arg-type]
+
+
 def objectives(mdl: Model) -> None:
     sense = ObjectiveSense.MAXIMIZE
     mdl.setobjsense(one, sense)
