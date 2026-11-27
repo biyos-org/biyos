@@ -74,6 +74,7 @@ set_tests_properties(NameTest.LocalBuffer PROPERTIES
 
 biyos_add_test(test_expr
     expr/analysis/curvature/draws.cpp
+    expr/analysis/curvature/test_angle.cpp
     expr/analysis/curvature/test_bends.cpp
     expr/analysis/curvature/test_curvature.cpp
     expr/analysis/curvature/test_segments.cpp
