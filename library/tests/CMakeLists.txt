@@ -23,8 +23,10 @@ function(biyos_add_test name)
 endfunction()
 
 biyos_add_test(test_core
+    core/env/test_check.cpp
     core/env/test_env.cpp
     core/env/test_error.cpp
+    core/env/test_pool.cpp
     core/env/test_status.cpp
     core/env/test_thread.cpp
     core/env/test_version.cpp
@@ -37,13 +39,11 @@ biyos_add_test(test_core
     core/memory/test_slice.cpp
     core/memory/test_usage.cpp
     core/numeric/test_identical.cpp
-    core/options/test_check.cpp
+    core/numeric/test_numbers.cpp
     core/options/test_flags.cpp
     core/options/test_options.cpp
     core/options/test_settings.cpp
     core/options/test_tolerances.cpp
-    core/pool/test_pool.cpp
-    core/test_numbers.cpp
     core/text/test_bignum.cpp
     core/text/test_chars.cpp
     core/text/test_name.cpp
@@ -52,19 +52,19 @@ biyos_add_test(test_core
     core/text/test_utf8.cpp
     core/timing/test_clock.cpp
     core/timing/test_timer.cpp)
-target_include_directories(test_core PRIVATE core)
+target_include_directories(test_core PRIVATE core/utils)
 target_link_libraries(test_core PRIVATE biyos_internal)
 
 biyos_add_test(test_allocation
-    core/allocations.cpp
     core/memory/test_allocation.cpp
+    core/utils/allocations.cpp
     expr/test_allocation.cpp
     model/evaluation/test_allocation.cpp
     model/test_allocation.cpp)
-target_include_directories(test_allocation PRIVATE core)
+target_include_directories(test_allocation PRIVATE core/utils)
 target_link_libraries(test_allocation PRIVATE biyos_internal)
 
-add_library(local_name OBJECT EXCLUDE_FROM_ALL core/local_name.cpp)
+add_library(local_name OBJECT EXCLUDE_FROM_ALL core/text/local_name.cpp)
 target_link_libraries(local_name PRIVATE biyos_internal)
 add_test(NAME NameTest.LocalBuffer
     COMMAND ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR}
@@ -144,7 +144,7 @@ biyos_add_test(test_model
     model/session/test_warnings.cpp
     model/test_gather.cpp
     model/test_tolerances.cpp)
-target_include_directories(test_model PRIVATE core model)
+target_include_directories(test_model PRIVATE core/utils model)
 target_link_libraries(test_model PRIVATE biyos_internal)
 
 biyos_add_test(test_io
