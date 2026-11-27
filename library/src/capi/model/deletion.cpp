@@ -96,7 +96,7 @@ template <typename Selection>
 void delete_callbacks(Session &session, Selection selection, BIYOS_index *map)
 {
     Model &model = writable(session);
-    const auto chosen = selected("callback", model.n_callbacks(), selection);
+    const auto chosen = selected("callback", "cb", model.n_callbacks(), selection);
     write_array(delete_chosen<&Model::delete_callbacks>(session, model, chosen), map);
 }
 

@@ -99,6 +99,69 @@ Curvature extreme(const Operands &operands,
     return active <= 1 ? Curvature::Affine : spread;
 }
 
+Curvature along_x(Interval y, Interval x) noexcept
+{
+    const bool nonnegative = x.lower() >= 0.0;
+    const bool nonpositive = x.upper() <= 0.0;
+    const bool negative = x.upper() < 0.0;
+    switch (sign_of(y))
+    {
+    case Sign::Positive:
+        return curvature_of(nonnegative, nonpositive);
+    case Sign::Negative:
+        return curvature_of(nonpositive, nonnegative);
+    case Sign::Zero:
+        return nonnegative || negative ? Curvature::Affine : Curvature::Unknown;
+    case Sign::Mixed:
+        return Curvature::Unknown;
+    }
+    return Curvature::Unknown;
+}
+
+Curvature along_y(Interval y, Interval x) noexcept
+{
+    const bool nonnegative = y.lower() >= 0.0;
+    const bool nonpositive = y.upper() <= 0.0;
+    const bool positive = y.lower() > 0.0;
+    const bool negative = y.upper() < 0.0;
+    switch (sign_of(x))
+    {
+    case Sign::Positive:
+        return curvature_of(nonpositive, nonnegative);
+    case Sign::Negative:
+        return curvature_of(nonnegative, negative);
+    case Sign::Zero:
+        return positive || negative ? Curvature::Affine : Curvature::Unknown;
+    case Sign::Mixed:
+        return Curvature::Unknown;
+    }
+    return Curvature::Unknown;
+}
+
+Curvature angle_bend(Interval y, Interval x) noexcept
+{
+    if (is_point(y) && is_point(x))
+    {
+        return Curvature::Affine;
+    }
+    if (is_point(y))
+    {
+        return along_x(y, x);
+    }
+    return is_point(x) ? along_y(y, x) : Curvature::Unknown;
+}
+
+Monotonicity y_monotonicity(Interval y, Interval x) noexcept
+{
+    const bool one_side = y.lower() >= 0.0 || y.upper() < 0.0;
+    return monotonicity_of(x.lower() >= 0.0, x.upper() < 0.0 && one_side);
+}
+
+Monotonicity x_monotonicity(Interval y) noexcept
+{
+    return monotonicity_of(y.upper() < 0.0, y.lower() >= 0.0);
+}
+
 }
 
 Curvature sum_curvature(std::span<const Real> weights, std::span<Argument> arguments) noexcept
@@ -169,6 +232,15 @@ Curvature quotient_curvature(Interval numerator,
     const bool nonpositive = numerator.upper() <= 0.0;
     return positive ? curvature_of(nonnegative, nonpositive)
                     : curvature_of(nonpositive, nonnegative);
+}
+
+Curvature angle_curvature(Interval y, Interval x, std::span<Argument> arguments) noexcept
+{
+    const Curvature curvature = angle_bend(y, x);
+    const bool level = curvature == Curvature::Affine;
+    arguments[0] = {.monotonicity = level ? Monotonicity::Constant : y_monotonicity(y, x)};
+    arguments[1] = {.monotonicity = level ? Monotonicity::Constant : x_monotonicity(y)};
+    return curvature;
 }
 
 Curvature largest_curvature(const Operands &operands, std::span<Argument> arguments) noexcept

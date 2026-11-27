@@ -308,7 +308,7 @@ TEST(CApiTest, NullCones)
     EXPECT_EQ(BIYOS_getnconefunrg(held, 0, 1, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'nnz': is null");
     EXPECT_EQ(BIYOS_getnconeprmsp(held, 1, nullptr, &nnz), BIYOS_ERR_BADARG);
-    EXPECT_EQ(env.message(), "invalid argument: argument 'idx': is null");
+    EXPECT_EQ(env.message(), "invalid argument: argument 'cone': is null");
     EXPECT_EQ(BIYOS_getncone(held, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env.message(), "invalid argument: argument 'n': is null");
     EXPECT_EQ(n_cones(model), 1);

@@ -16,8 +16,7 @@ using biyos::test::nl::tiny_with;
 namespace
 {
 
-constexpr std::string_view kBinaryNlFile = R"(b3 1 1 0
-)";
+constexpr std::string_view kFormats = "hzBGHZ";
 
 constexpr std::string_view kFunctionsTail = R"(F0 1 -1 myfunc
 )";
@@ -116,9 +115,13 @@ b
 
 }
 
-TEST(NlTest, Binary)
+TEST(NlTest, Formats)
 {
-    EXPECT_EQ(fault_of(kBinaryNlFile), refused(1, "binary NL"));
+    for (const char format : kFormats)
+    {
+        const std::string key(1, format);
+        EXPECT_EQ(fault_of(key + "3 1 1 0\n"), refused(1, "NL format '" + key + "'"));
+    }
 }
 
 TEST(NlTest, Functions)

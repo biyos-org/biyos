@@ -204,7 +204,7 @@ def test_views(env, model):
         model.addcone([ConeKind.NONNEGATIVE], [1], [x[0]])
     with pytest.raises(ValueError, match="is a cone of another model"):
         model.getcone([d[0]])
-    with pytest.raises(ValueError, match="idx is a block of another model"):
+    with pytest.raises(ValueError, match="cone is a block of another model"):
         model.getconeprm(d)
     with pytest.raises(TypeError, match="is a function, not a cone"):
         model.getcone([f[0]])
@@ -307,7 +307,7 @@ def test_numbers(model):
         model.addcone([ConeKind.NONNEGATIVE], [1], [0.0])
     with pytest.raises(TypeError, match="an entry of prm must be a number"):
         model.addcone([ConeKind.POWER], [2], [0, 1], [1], ["1"])
-    with pytest.raises(OverflowError, match="idx: 4294967296 does not fit"):
+    with pytest.raises(OverflowError, match="cone: 4294967296 does not fit"):
         model.getcone(range(2**32, 2**32 + 1))
     assert model.getncone() == 0
     model.addcone((Number(1),), (Number(2),), array.array("i", [1, 0]))
