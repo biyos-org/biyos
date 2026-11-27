@@ -101,6 +101,13 @@ add_library(biyos_internal STATIC
     io/nl/source/source.cpp
     io/nl/source/text.cpp
     io/nl/tokens.cpp
+    io/nl/writer/defined.cpp
+    io/nl/writer/entries.cpp
+    io/nl/writer/layout.cpp
+    io/nl/writer/printer.cpp
+    io/nl/writer/refusals.cpp
+    io/nl/writer/usage.cpp
+    io/nl/writer/writer.cpp
     io/native/native.cpp
     io/native/parts.cpp
     io/native/print.cpp
