@@ -63,6 +63,7 @@ using biyos::test::arrow;
 using biyos::test::band;
 using biyos::test::binary;
 using biyos::test::bits;
+using biyos::test::branch;
 using biyos::test::clique;
 using biyos::test::default_tolerances;
 using biyos::test::every_operator;
@@ -459,6 +460,18 @@ TEST(PushingTest, Chosen)
     const std::array roots{listed(graph, Operator::Max, {x[0], unary(graph, Operator::Exp, x[1])}),
                            listed(graph, Operator::Max, {x[2], unary(graph, Operator::Log, x[3])})};
     expect_tape(Tape(graph, roots), std::array{0.0, 1.0, 0.0, -1.0});
+}
+
+TEST(PushingTest, Branches)
+{
+    Graph graph;
+    const std::vector<Offset> x = variables(graph, 3);
+    const Offset above = binary(graph, Operator::Greater, x[0], x[1]);
+    const Offset curved = graph.add(Operator::Product, 1.0, std::array{x[0], x[1]});
+    const std::array roots{branch(graph, above, curved, unary(graph, Operator::Exp, x[2]))};
+    const Tape tape(graph, roots);
+    expect_tape(tape, std::array{0.9, 0.4, 0.2});
+    expect_tape(tape, std::array{0.4, 0.9, 0.2});
 }
 
 TEST(PushingTest, Marked)
