@@ -43,7 +43,7 @@ The readers return lists, in the order of the C call's arrays, and a block for a
 | `getexpr(fun)` | counts, codes, arguments, values |
 | `getcon(con)` | `Functions`, lower bounds, upper bounds |
 | `getobj(obj)` | `Functions`, senses, priorities, weights |
-| `getind(idx)` | `Variables`, values, `Functions`, lower bounds, upper bounds |
+| `getind(ind)` | `Variables`, values, `Functions`, lower bounds, upper bounds |
 | `getsos(idx)` | kinds, counts, `Variables`, weights |
 | `getcone(idx)` | kinds, counts, `Functions` |
 | `getccon(idx)` | bounded `Functions`, complementary `Functions`, lower bounds, upper bounds |

@@ -3732,7 +3732,7 @@ class Model:
     @overload
     def setindbnd(
         self,
-        idx: One[Indicator],
+        ind: One[Indicator],
         lb: Real | None = None,
         ub: Real | None = None,
     ) -> None: ...
@@ -3740,14 +3740,14 @@ class Model:
     @overload
     def setindbnd(
         self,
-        idx: Many[Indicator, Indicators],
+        ind: Many[Indicator, Indicators],
         lb: Sequence[Real] | None = None,
         ub: Sequence[Real] | None = None,
     ) -> None: ...
 
     def setindbnd(
         self,
-        idx: Selection[Indicator, Indicators],
+        ind: Selection[Indicator, Indicators],
         lb: Real | Sequence[Real] | None = None,
         ub: Real | Sequence[Real] | None = None,
     ) -> None:
@@ -3755,7 +3755,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        ind
             The indicators.
             An index or a view stands for one indicator, and each other argument
             is then a scalar.
@@ -3767,7 +3767,7 @@ class Model:
         BIYOS_setindbndsp
         BIYOS_setindbndrg
         """
-        one, n, chosen = self._selected("BIYOS_setindbnd", Indicators, idx)
+        one, n, chosen = self._selected("BIYOS_setindbnd", Indicators, ind)
         arrays = (
             doubles("lb", lb, n, one),
             doubles("ub", ub, n, one),
@@ -3775,21 +3775,21 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getindbnd(self, idx: One[Indicator]) -> tuple[Real, Real]: ...
+    def getindbnd(self, ind: One[Indicator]) -> tuple[Real, Real]: ...
 
     @overload
     def getindbnd(
-        self, idx: Many[Indicator, Indicators]
+        self, ind: Many[Indicator, Indicators]
     ) -> tuple[list[Real], list[Real]]: ...
 
     def getindbnd(
-        self, idx: Selection[Indicator, Indicators]
+        self, ind: Selection[Indicator, Indicators]
     ) -> tuple[Real, Real] | tuple[list[Real], list[Real]]:
         """Read the bounds of indicators.
 
         Parameters
         ----------
-        idx
+        ind
             The indicators, in any order, any of them more than once.
             An index or a view stands for one indicator, and each result is then
             a scalar.
@@ -3807,13 +3807,13 @@ class Model:
         BIYOS_getindbndrg
         """
         bounds = (c_real, c_real)
-        lb, ub = self._getlist("BIYOS_getindbnd", Indicators, idx, *bounds)
+        lb, ub = self._getlist("BIYOS_getindbnd", Indicators, ind, *bounds)
         return lb, ub
 
     @overload
     def setindvar(
         self,
-        idx: One[Indicator],
+        ind: One[Indicator],
         var: One[Variable] | None = None,
         val: int | None = None,
     ) -> None: ...
@@ -3821,14 +3821,14 @@ class Model:
     @overload
     def setindvar(
         self,
-        idx: Many[Indicator, Indicators],
+        ind: Many[Indicator, Indicators],
         var: Many[Variable, Variables] | None = None,
         val: Sequence[int] | None = None,
     ) -> None: ...
 
     def setindvar(
         self,
-        idx: Selection[Indicator, Indicators],
+        ind: Selection[Indicator, Indicators],
         var: Selection[Variable, Variables] | None = None,
         val: int | Sequence[int] | None = None,
     ) -> None:
@@ -3836,7 +3836,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        ind
             The indicators.
             An index or a view stands for one indicator, and each other argument
             is then a scalar.
@@ -3852,7 +3852,7 @@ class Model:
         BIYOS_setindvarsp
         BIYOS_setindvarrg
         """
-        one, n, chosen = self._selected("BIYOS_setindvar", Indicators, idx)
+        one, n, chosen = self._selected("BIYOS_setindvar", Indicators, ind)
         arrays = (
             indices_of(self, Variables, "var", var, n, one),
             ints("val", val, n, one),
@@ -3860,15 +3860,15 @@ class Model:
         self._call(*chosen, *arrays)
 
     @overload
-    def getindvar(self, idx: One[Indicator]) -> tuple[Variable, int]: ...
+    def getindvar(self, ind: One[Indicator]) -> tuple[Variable, int]: ...
 
     @overload
     def getindvar(
-        self, idx: Many[Indicator, Indicators]
+        self, ind: Many[Indicator, Indicators]
     ) -> tuple[Variables, list[int]]: ...
 
     def getindvar(
-        self, idx: Selection[Indicator, Indicators]
+        self, ind: Selection[Indicator, Indicators]
     ) -> tuple[Variable, int] | tuple[Variables, list[int]]:
         """Read the variables that switch indicators on, and their values.
 
@@ -3877,7 +3877,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        ind
             The indicators, in any order, any of them more than once.
             An index or a view stands for one indicator, and each result is then
             a scalar.
@@ -3896,7 +3896,7 @@ class Model:
         BIYOS_getindvarrg
         """
         pair = (Variables, c_integer)
-        found = self._getlist("BIYOS_getindvar", Indicators, idx, *pair)
+        found = self._getlist("BIYOS_getindvar", Indicators, ind, *pair)
         variables, values = found
         return variables, values
 
@@ -3918,16 +3918,16 @@ class Model:
 
     @overload
     def getind(
-        self, idx: One[Indicator]
+        self, ind: One[Indicator]
     ) -> tuple[Variable, int, Function, Real, Real]: ...
 
     @overload
     def getind(
-        self, idx: Many[Indicator, Indicators] | None = None
+        self, ind: Many[Indicator, Indicators] | None = None
     ) -> tuple[Variables, list[int], Functions, list[Real], list[Real]]: ...
 
     def getind(
-        self, idx: Selection[Indicator, Indicators] | None = None
+        self, ind: Selection[Indicator, Indicators] | None = None
     ) -> (
         tuple[Variable, int, Function, Real, Real]
         | tuple[Variables, list[int], Functions, list[Real], list[Real]]
@@ -3940,7 +3940,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        ind
             The indicators, in any order, any of them more than once; every
             indicator by default.
             An index or a view stands for one indicator, and each result is then
@@ -3966,57 +3966,57 @@ class Model:
         BIYOS_getindsp
         BIYOS_getindrg
         """
-        every = range(self.getnind()) if idx is None else idx
+        every = range(self.getnind()) if ind is None else ind
         types = (Variables, c_integer, Functions, c_real, c_real)
         found = self._getlist("BIYOS_getind", Indicators, every, *types)
         variables, values, functions, lower, upper = found
         return variables, values, functions, lower, upper
 
     @overload
-    def setindname(self, idx: One[Indicator], name: str) -> None: ...
+    def setindname(self, ind: One[Indicator], name: str) -> None: ...
 
     @overload
     def setindname(
-        self, idx: Many[Indicator, Indicators], name: Sequence[str]
+        self, ind: Many[Indicator, Indicators], name: Sequence[str]
     ) -> None: ...
 
     def setindname(
-        self, idx: Selection[Indicator, Indicators], name: str | Sequence[str]
+        self, ind: Selection[Indicator, Indicators], name: str | Sequence[str]
     ) -> None:
         """Name indicators of the model, as ``setvarname`` names variables.
 
         Parameters
         ----------
-        idx
+        ind
             The indicators to name.
             An index or a view stands for one indicator, and each other argument
             is then a scalar.
         name
-            The new name of each, as many as ``idx``.
+            The new name of each, as many as ``ind``.
 
         See Also
         --------
         BIYOS_setindnamesp
         BIYOS_setindnamerg
         """
-        self._setname("BIYOS_setindname", Indicators, idx, name)
+        self._setname("BIYOS_setindname", Indicators, ind, name)
 
     @overload
-    def getindname(self, idx: One[Indicator]) -> str | None: ...
+    def getindname(self, ind: One[Indicator]) -> str | None: ...
 
     @overload
     def getindname(
-        self, idx: Many[Indicator, Indicators]
+        self, ind: Many[Indicator, Indicators]
     ) -> list[str | None]: ...
 
     def getindname(
-        self, idx: Selection[Indicator, Indicators]
+        self, ind: Selection[Indicator, Indicators]
     ) -> str | None | list[str | None]:
         """Return the names of indicators, as ``getvarname`` does.
 
         Parameters
         ----------
-        idx
+        ind
             The indicators to read.
             An index or a view stands for one indicator, and the result is then
             a scalar.
@@ -4031,7 +4031,7 @@ class Model:
         BIYOS_getindnamesp
         BIYOS_getindnamerg
         """
-        return self._getname("BIYOS_getindname", Indicators, idx)
+        return self._getname("BIYOS_getindname", Indicators, ind)
 
     def getindidx(self, name: Sequence[str]) -> Indicators:
         """Return the named indicators, as ``getvaridx`` does.
@@ -4043,7 +4043,7 @@ class Model:
 
         Returns
         -------
-        idx
+        ind
             The indicator that alone holds each name, as a ``Indicators`` block.
 
         See Also
@@ -4052,12 +4052,12 @@ class Model:
         """
         return self._getidx(lib.BIYOS_getindidx, Indicators, name)
 
-    def delindname(self, idx: Selection[Indicator, Indicators]) -> None:
+    def delindname(self, ind: Selection[Indicator, Indicators]) -> None:
         """Remove the names of indicators, as ``delvarname`` does.
 
         Parameters
         ----------
-        idx
+        ind
             The indicators that lose their names.
             An index or a view stands for one indicator.
 
@@ -4066,9 +4066,9 @@ class Model:
         BIYOS_delindnamesp
         BIYOS_delindnamerg
         """
-        self._delname("BIYOS_delindname", Indicators, idx)
+        self._delname("BIYOS_delindname", Indicators, ind)
 
-    def delind(self, idx: Selection[Indicator, Indicators]) -> list[Index]:
+    def delind(self, ind: Selection[Indicator, Indicators]) -> list[Index]:
         """Delete indicators.
 
         The indicators left keep their order and are numbered from 0 again. A
@@ -4078,7 +4078,7 @@ class Model:
 
         Parameters
         ----------
-        idx
+        ind
             The indicators to delete, in any order, none of them twice.
             An index or a view stands for one indicator.
 
@@ -4093,7 +4093,7 @@ class Model:
         BIYOS_delindsp
         BIYOS_delindrg
         """
-        return self._delete("BIYOS_delind", Indicators, idx)
+        return self._delete("BIYOS_delind", Indicators, ind)
 
     def addsos(
         self,
