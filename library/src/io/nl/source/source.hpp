@@ -3,10 +3,12 @@
 #include "core/env/error.hpp"
 #include "core/events/stream.hpp"
 #include "core/numbers.hpp"
+#include "io/nl/header.hpp"
 #include "io/utils/lines.hpp"
 
 #include <cstddef>
 #include <istream>
+#include <memory>
 #include <string>
 #include <string_view>
 
@@ -42,5 +44,9 @@ class Source
 
 [[noreturn]] void reject(const Source &source, const Error &error);
 Offset size_of(std::istream &input);
+std::unique_ptr<Source> source_of(Lines &lines,
+                                  std::istream &input,
+                                  Encoding encoding,
+                                  Offset bytes);
 
 }

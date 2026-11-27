@@ -3,13 +3,18 @@
 #include "core/env/error.hpp"
 #include "core/numbers.hpp"
 #include "core/text/text.hpp"
+#include "io/nl/header.hpp"
+#include "io/nl/source/binary.hpp"
+#include "io/nl/source/text.hpp"
 #include "io/nl/tokens.hpp"
 #include "io/utils/lines.hpp"
 #include "io/utils/records.hpp"
 #include "io/utils/report.hpp"
 
+#include <bit>
 #include <ios>
 #include <istream>
+#include <memory>
 #include <string>
 #include <string_view>
 
@@ -58,6 +63,23 @@ Offset size_of(std::istream &input)
     const std::streamoff size = input.tellg() - start;
     input.seekg(start);
     return size;
+}
+
+std::unique_ptr<Source> source_of(Lines &lines,
+                                  std::istream &input,
+                                  Encoding encoding,
+                                  Offset bytes)
+{
+    switch (encoding)
+    {
+    case Encoding::Text:
+        return std::make_unique<TextSource>(lines);
+    case Encoding::Little:
+        return std::make_unique<BinarySource>(input, lines.file(), std::endian::little, bytes);
+    case Encoding::Big:
+        return std::make_unique<BinarySource>(input, lines.file(), std::endian::big, bytes);
+    }
+    throw Error(ErrorKind::Internal, "io", "the NL encoding is unknown");
 }
 
 }

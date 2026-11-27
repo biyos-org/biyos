@@ -9,6 +9,13 @@
 namespace biyos::nl
 {
 
+enum class Encoding
+{
+    Text,
+    Little,
+    Big,
+};
+
 struct Header
 {
     Index variables;
@@ -16,6 +23,7 @@ struct Header
     Index objectives;
     Index defined;
     std::vector<VariableKind> kinds;
+    Encoding encoding;
 };
 
 Header read_header(Lines &lines, Offset bytes);

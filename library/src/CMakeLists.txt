@@ -96,6 +96,7 @@ add_library(biyos_internal STATIC
     io/nl/nl.cpp
     io/nl/operators.cpp
     io/nl/pieces.cpp
+    io/nl/source/binary.cpp
     io/nl/source/bounds.cpp
     io/nl/source/source.cpp
     io/nl/source/text.cpp

@@ -9,7 +9,6 @@
 #include "io/nl/header.hpp"
 #include "io/nl/source/bounds.hpp"
 #include "io/nl/source/source.hpp"
-#include "io/nl/source/text.hpp"
 #include "io/utils/records.hpp"
 #include "io/utils/report.hpp"
 #include "model/model.hpp"
@@ -95,7 +94,7 @@ class NlReader
 
 NlReader::NlReader(Stream stream, std::istream &input, const std::string &file, Offset bytes)
     : stream_(stream), lines_(input, file), header_(read_header(lines_, bytes)),
-      owned_(std::make_unique<TextSource>(lines_)), source_(*owned_),
+      owned_(source_of(lines_, input, header_.encoding, bytes)), source_(*owned_),
       expressions_(source_, model_, header_.variables, header_.defined),
       bodies_(header_.constraints + header_.objectives),
       senses_(to_size(header_.objectives), ObjectiveSense::Minimize)
