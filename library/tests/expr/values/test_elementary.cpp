@@ -1,8 +1,8 @@
 #include "bounds.hpp"
 #include "core/numbers.hpp"
-#include "expr/intervals/elementary.hpp"
-#include "expr/intervals/interval.hpp"
-#include "expr/intervals/rounding.hpp"
+#include "expr/analysis/intervals/elementary.hpp"
+#include "expr/analysis/intervals/interval.hpp"
+#include "expr/analysis/intervals/rounding.hpp"
 
 #include <gtest/gtest.h>
 

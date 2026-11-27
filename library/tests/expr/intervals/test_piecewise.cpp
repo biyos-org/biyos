@@ -1,9 +1,9 @@
 #include "bounds.hpp"
 #include "core/numbers.hpp"
 #include "core/numeric/zero.hpp"
+#include "expr/analysis/intervals/interval.hpp"
+#include "expr/analysis/intervals/piecewise.hpp"
 #include "expr/graph/points.hpp"
-#include "expr/intervals/interval.hpp"
-#include "expr/intervals/piecewise.hpp"
 
 #include <gtest/gtest.h>
 

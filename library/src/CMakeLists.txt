@@ -29,17 +29,31 @@ add_library(biyos_internal STATIC
     core/timing/clock.cpp
     core/timing/deadline.cpp
     core/timing/timer.cpp
-    expr/curvature/arithmetic.cpp
-    expr/curvature/bends.cpp
-    expr/curvature/curvature.cpp
-    expr/curvature/exponents.cpp
-    expr/curvature/segments.cpp
-    expr/curvature/shape.cpp
-    expr/curvature/waves.cpp
-    expr/derivatives/derivative.cpp
-    expr/derivatives/partials.cpp
-    expr/derivatives/reverse.cpp
-    expr/derivatives/value.cpp
+    expr/analysis/curvature/arithmetic.cpp
+    expr/analysis/curvature/bends.cpp
+    expr/analysis/curvature/curvature.cpp
+    expr/analysis/curvature/exponents.cpp
+    expr/analysis/curvature/segments.cpp
+    expr/analysis/curvature/shape.cpp
+    expr/analysis/curvature/waves.cpp
+    expr/analysis/intervals/elementary.cpp
+    expr/analysis/intervals/enclosure.cpp
+    expr/analysis/intervals/interval.cpp
+    expr/analysis/intervals/periodic.cpp
+    expr/analysis/intervals/piecewise.cpp
+    expr/analysis/intervals/powers.cpp
+    expr/analysis/intervals/rounding.cpp
+    expr/evaluation/derivatives/derivative.cpp
+    expr/evaluation/derivatives/partials.cpp
+    expr/evaluation/derivatives/reverse.cpp
+    expr/evaluation/derivatives/value.cpp
+    expr/evaluation/hessian/elements.cpp
+    expr/evaluation/hessian/hessian.cpp
+    expr/evaluation/hessian/sweep.cpp
+    expr/evaluation/hessian/tangents.cpp
+    expr/evaluation/threads/levels.cpp
+    expr/evaluation/threads/sweeps.cpp
+    expr/evaluation/threads/team.cpp
     expr/forms/canonical.cpp
     expr/forms/terms.cpp
     expr/graph/builder.cpp
@@ -50,17 +64,6 @@ add_library(biyos_internal STATIC
     expr/graph/points.cpp
     expr/graph/sharing.cpp
     expr/graph/uses.cpp
-    expr/hessian/elements.cpp
-    expr/hessian/hessian.cpp
-    expr/hessian/sweep.cpp
-    expr/hessian/tangents.cpp
-    expr/intervals/elementary.cpp
-    expr/intervals/enclosure.cpp
-    expr/intervals/interval.cpp
-    expr/intervals/periodic.cpp
-    expr/intervals/piecewise.cpp
-    expr/intervals/powers.cpp
-    expr/intervals/rounding.cpp
     expr/sparsity/memo.cpp
     expr/sparsity/radix.cpp
     expr/sparsity/reach.cpp
@@ -69,9 +72,6 @@ add_library(biyos_internal STATIC
     expr/tape/plan.cpp
     expr/tape/reads.cpp
     expr/tape/tape.cpp
-    expr/threads/levels.cpp
-    expr/threads/sweeps.cpp
-    expr/threads/team.cpp
     io/codes.cpp
     io/directory.cpp
     io/draft/column_shape.cpp

@@ -1,11 +1,11 @@
 #include "chords.hpp"
 #include "core/numbers.hpp"
-#include "expr/curvature/bends.hpp"
-#include "expr/curvature/shape.hpp"
+#include "expr/analysis/curvature/bends.hpp"
+#include "expr/analysis/curvature/shape.hpp"
+#include "expr/analysis/intervals/interval.hpp"
+#include "expr/analysis/intervals/rounding.hpp"
 #include "expr/graph/graph.hpp"
 #include "expr/graph/node.hpp"
-#include "expr/intervals/interval.hpp"
-#include "expr/intervals/rounding.hpp"
 #include "sampling.hpp"
 
 #include <gtest/gtest.h>
