@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from check_layers import check, read_layers
+from layers import check, read_layers
 
 LAYERS = """core:
 linalg: core
