@@ -13,7 +13,7 @@ The copy belongs to the environment it was made on and reports there. It keeps t
 
 ## Comparing {#sec-copy-compare}
 
-`BIYOS_cmpmdl` tells whether two models hold the same problem. When they differ, it sends the first difference as an info message ([The events biyos sends](#sec-events-sent)). In Python, `Model.compare` returns that text.
+`BIYOS_cmpmdl` tells whether two models hold the same problem, as `Model.same` does in Python. When they differ, it sends the first difference as an info message ([The events biyos sends](#sec-events-sent)).
 
 Numbers match bit for bit, so `0.0` and `-0.0` differ. The example compares the bounds of the copy with those of the source:
 
