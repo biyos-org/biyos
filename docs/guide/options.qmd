@@ -1,97 +1,71 @@
 # Options {#sec-options}
 
-Options are set on an environment and shared by every model made on it, and a model may hold its own value of an option, which it reads before the environment's. Each option has a name, a number and a kind, and biyos checks every value as it is set, so a value that would mean nothing is refused at once rather than ignored. The code of this chapter is `examples/code/c/options.c` and `examples/code/python/options.py`.
+Options are set on an environment, and every model made on it reads them. biyos checks each value as it is set and refuses one outside the option's range. [Options](#sec-option-table) lists every option with its default and range.
 
 ## Names, ids and kinds {#sec-options-kinds}
 
-An option is known by its name, such as `maxtime`, and by its id, a number that the macros `BIYOS_OPT_*` of `biyos/biyos.h` give, such as `BIYOS_OPT_MAXTIME`. An id keeps its number for good, and a new option takes the next free one. `BIYOS_getoptid` finds the id of a name at run time, which lets a program set options it reads from a file or a command line.
+An option has a name, such as `maxtime`, and an id, such as `BIYOS_OPT_MAXTIME`. `BIYOS_getoptid` finds the id of a name, so a program can set options it reads from a file.
 
-The kind of an option decides which calls set and get it:
-
-| Kind | Set with | Get with |
-| --- | --- | --- |
-| `BIYOS_OPTKND_BOOL` | `BIYOS_setenvboolopt` | `BIYOS_getenvboolopt` |
-| `BIYOS_OPTKND_INT` | `BIYOS_setenvintopt` | `BIYOS_getenvintopt` |
-| `BIYOS_OPTKND_DBL` | `BIYOS_setenvdblopt` | `BIYOS_getenvdblopt` |
-| `BIYOS_OPTKND_STR` | `BIYOS_setenvstropt` | `BIYOS_getenvstropt` |
-| `BIYOS_OPTKND_ENUM` | `BIYOS_setenvintopt`, with a macro of the option's group | `BIYOS_getenvintopt` |
-| `BIYOS_OPTKND_FLG` | `BIYOS_setenvflgopt`, with two masks of the option's parts | `BIYOS_getenvflgopt` |
-
-A call of another kind is refused: nothing is converted, so an int option refuses `BIYOS_setenvdblopt` and an enum option refuses `BIYOS_setenvstropt`. The values of an enum option are macros of a group named after it, numbered from 1, so `checking` takes `BIYOS_CHK_NONE`, `BIYOS_CHK_CHEAP` or `BIYOS_CHK_FULL`, and a mistyped value fails to compile. A value keeps its number for good, as an id does. `BIYOS_getoptknd` gives the kind of an id. The reference lists every option with its kind, default and range ([Options](#sec-option-table)).
+The kind of an option decides which call sets it: `BIYOS_setenvdblopt` for a double, `BIYOS_setenvintopt` for an int or an enum, and so on ([Options in the C API](#sec-capi-options)). Nothing is converted, so an int option refuses `BIYOS_setenvdblopt`. The values of an enum option are macros, such as `BIYOS_CHK_FULL` for `checking`.
 
 ## Setting and reading {#sec-options-set}
 
-This code sets a double option by its id, a bool option, and an enum option whose id it finds by name:
+This code sets a double option, a bool option, and an enum option found by name:
 
 ```{.c file="examples/code/c/options.c" item="set_options"}
 ```
 
-A set is checked before it changes anything. An int or double value must lie in the option's range, ends included, compared exactly with no tolerance; NaN lies outside every range. An enum value must be the number of one of the option's macros. A failed set leaves the option as it was and returns `BIYOS_ERR_BADARG`, with a message that says why ([Errors](#sec-errors)).
-
-Reading is the mirror image:
+A refused value leaves the option as it was, and the call returns `BIYOS_ERR_BADARG` with a message saying why ([Errors](#sec-errors)). Reading takes the same ids:
 
 ```{.c file="examples/code/c/options.c" item="read_options"}
 ```
 
-A string read with `BIYOS_getenvstropt` stays valid until the environment is freed, one read with `BIYOS_getmdlstropt` until the model is freed. Setting the option again, at either level, leaves it valid. A string set with `BIYOS_setenvstropt` is copied, so the caller's buffer may change afterwards.
-
 ## Two levels {#sec-options-levels}
 
-An option set on an environment is shared by every model made on it, and a model may hold its own value instead. Each call that sets or reads an option on the environment has a twin on a model, named with `mdl` in place of `env`, such as `BIYOS_setmdldblopt` beside `BIYOS_setenvdblopt`. A model's value is checked as the environment's is, and a failed set leaves the model as it was. A model reads its own value when it holds one, else the environment's, else the default, so a change on the environment reaches every model that holds no value of its own. `BIYOS_delmdlopt` drops the model's value, and the model shares the environment's again; on an option the model holds no value of, it changes nothing and succeeds. `BIYOS_delenvopt` drops the environment's value in the same way, and every model without its own value reads the default again. `BIYOS_getmdloptsrc` tells where the value a model reads comes from: `BIYOS_OPTSRC_MDL`, `BIYOS_OPTSRC_ENV` or `BIYOS_OPTSRC_DEFAULT`.
+A model may hold its own value of an option, which it reads before the environment's. Each call on the environment has a twin on a model, with `mdl` in place of `env`, such as `BIYOS_setmdldblopt`. `BIYOS_delmdlopt` drops the model's value, so it reads the environment's again, and `BIYOS_getmdloptsrc` tells where the value it reads comes from:
 
 ```{.c file="examples/code/c/options.c" item="model_options"}
 ```
 
-A model's value of a flags option replaces the environment's pair of masks whole, so a part in neither of the model's masks keeps its default, whatever the environment forces. Setting or dropping a model's value is a change to that model: it may run beside calls on the other models of the environment ([Threads](#sec-threads)), and is refused while the environment delivers an event. A copy keeps the model's own values ([Copying models](#sec-copy)).
-
-An option of environment scope belongs to the environment as a whole and is set there only: every model call on it, reading included, fails with `BIYOS_ERR_BADARG` and a message such as `invalid argument: option 'threads': has environment scope`. `threads` is the one option of this release with environment scope.
+`threads` belongs to the environment alone, and every model call on it fails.
 
 ## Flags {#sec-options-flags}
 
-A flags option switches the parts of an algorithm. Each part is a bit macro of a group named after the option, written as a shift such as `((BIYOS_mask)1 << 0)`, and the option holds a pair of masks of `BIYOS_mask`. `BIYOS_setenvflgopt(env, opt, on, off)` forces the parts in `on` on and the parts in `off` off. A part in neither keeps its default, which the reference states for each part: on, off, or automatic, decided per problem. The default value is `(0, 0)`, every part at its default. A bit that is none of the option's parts, or a bit in both masks, is refused with `BIYOS_ERR_BADARG`. `BIYOS_getenvflgopt` gives back the masks as set, never what a solve ran.
-
-Two masks, because one bit holds two states and a part has three. With one mask, a program that sets it fixes every part: a part that a later release adds would change state under it, and a part decided per problem could not be handed back to biyos. With the pair a program names only the parts it forces, so a part added later is in neither mask and keeps its default. A part keeps its bit for good, as an id keeps its number, and an option holds at most 64 parts. No option of this release is a flags option.
+A flags option switches the parts of an algorithm on or off. It holds two masks: the parts forced on and the parts forced off. A part in neither keeps its default.
 
 ## Versions {#sec-options-versions}
 
-Each option records the version of biyos that added it and, once it is no longer wanted, the versions that deprecated and retired it. `BIYOS_getoptver` reads all three:
+`BIYOS_getoptver` gives the versions that added, deprecated and retired an option:
 
 ```{.c file="examples/code/c/options.c" item="describe"}
 ```
 
-A version comes back as one number, $10000 \cdot \text{major} + 100 \cdot \text{minor} + \text{patch}$, so 0.1.0 is 100, and 0 stands for never. Minor and patch numbers stay below 100, so two versions compare as their numbers do.
-
-A deprecated option still works. Setting it sets it and sends a warning on the event stream, from module `core`, whose text names the version that deprecated it and the option to use instead, such as `option 'old': deprecated in 0.2.0, use 'new'`. Setting a retired option, by any call, fails and changes nothing, and reading it still gives its value. An option is deprecated before it is retired, and the option to use instead is neither. Every option today was added in 0.1.0, and none is deprecated or retired.
+A deprecated option still works, and setting it sends a warning naming the option to use instead. A retired option can be read but no longer set.
 
 ## Tolerances {#sec-options-tolerances}
 
-Four options say when a value of a model, such as a variable or a constraint function at a point, meets a bound, equals another value, is zero or is integral: `feastol_abs`, `feastol_rel`, `zerotol` and `inttol`. With $\epsilon_{\mathrm{abs}}$ for `feastol_abs` and $\epsilon_{\mathrm{rel}}$ for `feastol_rel`, a finite value $v$ meets a finite lower bound $l$ unless
+`feastol_abs` and `feastol_rel` say when a value meets a bound or equals another value, `zerotol` when it is zero, and `inttol` when it is integral. With $\epsilon_{\mathrm{abs}}$ for `feastol_abs` and $\epsilon_{\mathrm{rel}}$ for `feastol_rel`, a value $v$ meets a lower bound $l$ unless
 
 $$
-\begin{aligned}
-l - v &> \epsilon_{\mathrm{abs}} \quad\text{and} \\
-l - v &> \epsilon_{\mathrm{rel}} \cdot \max(1, |l|),
-\end{aligned}
+l - v > \epsilon_{\mathrm{abs}} \quad\text{and}\quad l - v > \epsilon_{\mathrm{rel}} \cdot \max(1, |l|),
 $$
 
-and an upper bound alike. Two finite values $y$ and $z$ are equal unless they differ by more than both $\epsilon_{\mathrm{abs}}$ and $\epsilon_{\mathrm{rel}} \max(1, |y|, |z|)$. Infinities take no tolerance: when the value or the bound is infinite, the value meets a lower bound exactly when it is at least the bound, and an upper bound exactly when it is at most the bound. An infinite value equals only itself and is not integral, and NaN is not zero, not integral, equal to no value and meets no bound.
+and an upper bound alike. Two values $y$ and $z$ are equal unless they differ by more than both $\epsilon_{\mathrm{abs}}$ and $\epsilon_{\mathrm{rel}} \max(1, |y|, |z|)$. An infinite value or bound takes no tolerance, and NaN meets no bound and equals nothing.
 
-The comparisons of an expression, such as $e_1 \le e_2$ in a condition, take `cmptol_abs` and `cmptol_rel` in place of `feastol_abs` and `feastol_rel`, with the same rule. Both pairs default to $10^{-6}$, so a condition and a constraint on the same values agree. Setting `cmptol_abs` and `cmptol_rel` to 0 makes comparisons exact and leaves feasibility as it was; setting only one changes nothing, since a gap either accepts is accepted.
+Comparisons inside an expression, such as $e_1 \le e_2$ in a condition, follow the same rule with `cmptol_abs` and `cmptol_rel`. Both pairs default to $10^{-6}$, so a condition and a constraint on the same values agree. Setting both `cmptol` options to 0 makes comparisons exact.
 
 ## Time limits {#sec-options-limits}
 
-`maxtime` limits the wall time of a solve and `maxcputime` its CPU time, both in seconds and read once as the solve starts. The CPU time is that of the thread that made the call, so solves running at once on other threads, on the same environment or another, never spend each other's budget. A solve that reaches a limit stops with the termination `BIYOS_TRM_TIMELIM` or `BIYOS_TRM_CPULIM`, an outcome rather than an error code.
+`maxtime` limits the wall time of a solve and `maxcputime` its CPU time, both in seconds. The CPU time counted is that of the calling thread, so solves on other threads never spend each other's budget.
 
 ## Options in Python {#sec-options-python}
 
-Python reads and sets options by name, with `env.getopt` and `env.setopt`. The value's Python type must match the kind: a `bool` for a bool option, an `int` for an int option, a number for a double option, a `str` for a string option, and for an enum option a member of its class, such as `Checking.FULL`, or its number. A flags option takes a `Masks(on, off)` or any pair of `int`, and a mask that is negative or wider than 64 bits raises `OverflowError`. A mismatch raises `TypeError` before C is called. `getopt` returns the value of an enum option as a member of its class, and that of a flags option as a `Masks`.
+Python sets and reads options by name, with `setopt` and `getopt` on an environment or a model. The value's type must match the kind: an enum option takes a member of its class, such as `Checking.FULL`, and a flags option a `Masks(on, off)`. A mismatch raises `TypeError`.
 
 ```{.python file="examples/code/python/options.py"}
 ```
 
-`getoptver` returns the three versions as strings, `None` standing for never. A model has its own `setopt` and `getopt`, which take and give values as the environment's do, with `delopt` to drop its value and `getoptsrc` to tell where the value it reads comes from, as an `OptionSource` ([Two levels](#sec-options-levels)). The environment's `delopt` drops its own value. `getoptver` is on the environment alone.
-
 ::: {.callout-note}
-## Read, checked and stored
-Nothing acts on the options yet, since biyos solves nothing: they are checked, stored and read back. The time limits, the tolerances and `presolve` take effect with the solvers.
+## Not used yet
+biyos solves nothing yet, so options are only checked, stored and read back.
 :::
