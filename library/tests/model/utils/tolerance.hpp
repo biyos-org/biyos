@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/numbers.hpp"
+#include "core/numeric/limits.hpp"
 #include "model/compare/compare.hpp"
 #include "model/model.hpp"
 #include "model/parts/attributes/records.hpp"
@@ -72,7 +73,6 @@ inline void expect_own(Model model, Family family)
 
 inline void expect_refused(Model model, Family family)
 {
-    constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
     set_tolerances(model, family, {0}, {1.0}, {2.0});
     EXPECT_EQ(tolerance_refusal(model, family, {0, 1}, {3.0, -0.5}, {}),
               refused(family, 1, "absolute tolerance -0.5 is negative"));

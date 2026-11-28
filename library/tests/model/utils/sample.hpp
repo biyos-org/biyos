@@ -2,11 +2,11 @@
 
 #include "biyos/biyos.h"
 #include "core/numbers.hpp"
+#include "core/numeric/limits.hpp"
 #include "expr/forms/terms.hpp"
 #include "model/model.hpp"
 
 #include <cstddef>
-#include <limits>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -85,7 +85,6 @@ struct Parts
 
 inline Parts sample()
 {
-    constexpr Real kInfinity = std::numeric_limits<Real>::infinity();
     return Parts{
         .variables =
             {
