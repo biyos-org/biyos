@@ -112,7 +112,7 @@ def test_repro(env, tmp_path):
         with biyos.Env() as other:
             other.setopt("maxtime", 5.0)
             with biyos.Model.readrepro(other, str(path)) as back:
-                assert model.compare(back) is None
+                assert model.same(back)
                 assert back.getopt("presolve") is False
                 assert back.getoptsrc("presolve") is OptionSource.MODEL
             assert other.getopt("seed") == 7
