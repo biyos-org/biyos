@@ -6,8 +6,8 @@ project:
     - ../tools/docs/options/options_page.py --library ../library --out reference/_options
     - quartodoc build
   post-render:
-    - ../tools/docs/book/references_page.py --page references.html
-    - ../tools/docs/book/chapter_numbers.py
+    - ../tools/docs/book/references.py --page references.html
+    - ../tools/docs/book/chapters.py
 
 book:
   title: biyos

@@ -1,6 +1,6 @@
 import unittest
 
-import references_page
+import references
 
 ENTRY = (
     '<div id="ref-boyd2004" class="csl-entry" role="listitem">\n'
@@ -12,19 +12,19 @@ ENTRY = (
 
 class ReferencesPageTest(unittest.TestCase):
     def test_book(self):
-        html = references_page.dress(ENTRY.format(kind="Book"))
+        html = references.dress(ENTRY.format(kind="Book"))
         self.assertIn('<i class="bi bi-book" aria-hidden="true"></i>', html)
         self.assertIn('<div class="ref-kind">Book</div>', html)
         self.assertNotIn('<div class="csl-block">Book</div>', html)
 
     def test_unknown(self):
-        html = references_page.dress(ENTRY.format(kind="Thesis"))
+        html = references.dress(ENTRY.format(kind="Thesis"))
         self.assertIn("bi-file-earmark-text", html)
         self.assertIn('<div class="ref-kind">Thesis</div>', html)
 
     def test_twice(self):
-        once = references_page.dress(ENTRY.format(kind="Book"))
-        self.assertEqual(references_page.dress(once), once)
+        once = references.dress(ENTRY.format(kind="Book"))
+        self.assertEqual(references.dress(once), once)
 
 
 if __name__ == "__main__":
