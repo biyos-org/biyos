@@ -47,17 +47,9 @@ Build the library, state a model in C or Python, set options, read events and ha
 ::: {}
 [Part II]{.label}
 
-[Method](method/form.qmd)
-
-The mathematics: the problem form and the expression graph.
-:::
-
-::: {}
-[Part III]{.label}
-
 [Reference](reference/capi.qmd)
 
-Every function, type and constant of the C API, every option, every code and event, and the Python API.
+Every function, type and constant of the C API, every option, every code and event, the Python API, the problem form and the expression graph.
 :::
 :::
 :::
@@ -73,6 +65,6 @@ biyos is at its start. It holds a model and checks every part of it, and inside 
 
 ## Reading this book {.unnumbered}
 
-The User guide walks through the tasks of a program that uses biyos, in C and in Python. Each piece of code it shows is part of a program, under `examples/code/c/` in C and `examples/code/python/` in Python, that the runners in `examples/test/` run, so what the guide shows works. The Method part states the mathematics with no reference to the code, for readers who want to know what biyos computes and what it proves. The Reference part is generated from the header, a specification of the C API and the option table, so it holds every public name and stays in step with the code.
+The User guide walks through the tasks of a program that uses biyos, in C and in Python. Each piece of code it shows is part of a program, under `examples/code/c/` in C and `examples/code/python/` in Python, that the runners in `examples/test/` run, so what the guide shows works. The Reference part is generated from the header, a specification of the C API and the option table, so it holds every public name and stays in step with the code. Its last two chapters state the mathematics: the problem form and the expression graph.
 
 Every public C name starts with `BIYOS_`: functions and types in lowercase, such as `BIYOS_addvar` and `BIYOS_env`, and constants in uppercase, with their group, such as `BIYOS_ERR_NOMEMORY`. Python uses the same words without the prefix, such as `model.addvars`, so one name serves both languages and this book.
