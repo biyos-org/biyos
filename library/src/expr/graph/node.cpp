@@ -205,11 +205,16 @@ void check_shape(Operator op, Payload payload, Offset children)
     }
 }
 
+bool is_condition(Operator op)
+{
+    return shape_of(op).condition;
+}
+
 void check_operand(Operator op, std::size_t k, Offset child, Operator found)
 {
     const Shape shape = shape_of(op);
     const bool wanted = shape.connective || (shape.guarded && k == 0);
-    if (wanted && !shape_of(found).condition)
+    if (wanted && !is_condition(found))
     {
         const std::string phrase = shape.connective ? "conditions" : "a condition first";
         const std::string node = "node " + text_of(child) + " is " + operator_name(found);

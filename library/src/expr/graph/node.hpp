@@ -70,6 +70,7 @@ enum class Payload
 std::string_view fault(Real value) noexcept;
 std::optional<Operator> operator_of(int code) noexcept;
 Payload payload_of(Operator op);
+bool is_condition(Operator op);
 void check_shape(Operator op, Payload payload, Offset children);
 void check_child(Offset child, Offset size);
 void check_operand(Operator op, std::size_t k, Offset child, Operator found);
