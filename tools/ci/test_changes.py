@@ -1,6 +1,6 @@
 import unittest
 
-from ci_changes import AREAS, flags
+from changes import AREAS, flags
 
 
 def on(paths, everything=False):

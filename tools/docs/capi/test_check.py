@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from check_docs import check, main
+from check import check, main
 
 HEADER = """#pragma once
 
@@ -246,7 +246,7 @@ class DocTest(unittest.TestCase):
     def test_arguments(self):
         self.page("")
         argv = [
-            "check_docs.py",
+            "check.py",
             "--headers",
             str(self.headers),
             "--doc",

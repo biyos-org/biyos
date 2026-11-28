@@ -3,7 +3,7 @@ import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
 
-import capi_page
+import page
 from spec import Entry, Group
 
 
@@ -33,7 +33,7 @@ VALUES = {"BIYOS_OK": 0, "BIYOS_ERR_X": -100}
 class PageTest(unittest.TestCase):
     def render(self, *entries):
         group = Group("env", "Environment", ["Text."], list(entries))
-        return capi_page.render(group, VALUES, DECLARED)
+        return page.render(group, VALUES, DECLARED)
 
     def test_function(self):
         text = self.render(function())
@@ -68,7 +68,7 @@ class PageTest(unittest.TestCase):
         entry.params.append(("at", "in", "The first."))
         group = Group("env", "Environment", [], [entry, table()])
         with redirect_stderr(io.StringIO()) as err:
-            text = capi_page.render(group, VALUES, declared)
+            text = page.render(group, VALUES, declared)
         self.assertEqual(err.getvalue(), "")
         heading = "### `BIYOS_freeenv`, `BIYOS_freeenvrg` [since 0.1.0]"
         self.assertIn(heading, text)
@@ -82,7 +82,7 @@ class PageTest(unittest.TestCase):
         declared["BIYOS_freeenvrg"] = "BIYOS_status BIYOS_freeenvrg(int env);"
         group = Group("env", "Environment", [], [entry, function()])
         with redirect_stderr(io.StringIO()):
-            text = capi_page.render(group, VALUES, declared)
+            text = page.render(group, VALUES, declared)
         row = "| `BIYOS_freeenv` [`BIYOS_freeenvrg`]{.under} | Free it. |"
         self.assertIn(row, text)
 
@@ -139,7 +139,7 @@ class PageTest(unittest.TestCase):
             Group("codes", "Codes", [], [table()]),
             Group("env", "E", [], [function()]),
         ]
-        found = capi_page.targets(groups, Path("reference"))
+        found = page.targets(groups, Path("reference"))
         self.assertEqual(found["BIYOS_OK"], "reference/codes.qmd#BIYOS_OK")
         self.assertEqual(
             found["BIYOS_freeenv"], "reference/capi.qmd#BIYOS_freeenv"

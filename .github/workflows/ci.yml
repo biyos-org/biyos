@@ -36,9 +36,9 @@ jobs:
           ALL: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci') }}
         run: |
           if [ "$ALL" = true ]; then
-            python3 tools/ci/ci_changes.py --all < /dev/null >> "$GITHUB_OUTPUT"
+            python3 tools/ci/changes.py --all < /dev/null >> "$GITHUB_OUTPUT"
           else
-            git diff --name-only HEAD^1 HEAD | python3 tools/ci/ci_changes.py >> "$GITHUB_OUTPUT"
+            git diff --name-only HEAD^1 HEAD | python3 tools/ci/changes.py >> "$GITHUB_OUTPUT"
           fi
       - id: pick
         env:
@@ -101,16 +101,16 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: >-
-          python3 library/tools/check_layers.py
+          python3 library/tools/layers.py
           --sources library/src
           --layers library/tools/layers.txt
           --roles library/tools/roles.txt
       - run: >-
-          python3 tools/docs/capi/check_docs.py
+          python3 tools/docs/capi/check.py
           --headers library/include/biyos
           --doc docs/reference/capi.txt
       - run: >-
-          python3 tools/ci/check_copies.py
+          python3 tools/ci/copies.py
           --licence LICENSE
           --copies $(git ls-files '*LICENSE')
           --format library/.clang-format

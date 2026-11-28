@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from check_layers import check, main, read_layers
+from layers import check, main, read_layers
 
 
 class LayerTest(unittest.TestCase):
@@ -100,7 +100,7 @@ class LayerTest(unittest.TestCase):
         roles = self.root / "roles.txt"
         roles.write_text("")
         argv = [
-            "check_layers.py",
+            "layers.py",
             "--sources",
             str(self.sources),
             "--layers",

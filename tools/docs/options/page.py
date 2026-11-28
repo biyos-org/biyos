@@ -2,7 +2,7 @@ import argparse
 import json
 from pathlib import Path
 
-import option_table
+import table
 
 PAGE = "options.qmd"
 INFINITE = {"infinity": "∞", "-infinity": "−∞"}
@@ -94,7 +94,7 @@ def targets(options, folder):
 
 def main():
     given = arguments()
-    options = option_table.read(given.library)
+    options = table.read(given.library)
     given.out.mkdir(exist_ok=True)
     text = "\n\n".join(entry(option) for option in options) + "\n"
     (given.out / "options.md").write_text(text)
