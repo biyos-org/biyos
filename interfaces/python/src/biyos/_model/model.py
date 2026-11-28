@@ -11,7 +11,6 @@ from ctypes import (
     sizeof,
 )
 from enum import IntEnum
-from functools import partial
 from math import isnan
 from os import PathLike, fspath
 from typing import (
@@ -262,11 +261,6 @@ def _checked_env(env: Env) -> Env:
     return env
 
 
-def _kept(found: list[str], event: Event) -> None:
-    if event.level == EventLevel.INFO:
-        found.append(event.text)
-
-
 def _or_none(value: Real) -> Real | None:
     return None if isnan(value) else value
 
@@ -466,8 +460,8 @@ class Model:
         copy._hold()
         return copy
 
-    def compare(self, other: "Model") -> str | None:
-        """Compare the model with another.
+    def same(self, other: "Model") -> bool:
+        """Tell whether the model holds the same problem as another.
 
         Two models are the same when they hold the same name and the same
         variables, functions, constraints, objectives, indicators, special
@@ -476,10 +470,9 @@ class Model:
         bit, so ``0.0`` and ``-0.0`` differ. Options and hooks are not
         compared. The other model may belong to any environment.
 
-        The difference is sent as an info message to the hooks of the model
-        and of its environment, never to those of ``other``. The call reads
-        it through a hook of its own, added and removed on the model, which
-        uses up one hook id.
+        When the models differ, the call sends the first difference as an
+        info message from module ``model`` to the hooks of the model and of
+        its environment, never to those of ``other``.
 
         Parameters
         ----------
@@ -488,16 +481,13 @@ class Model:
 
         Returns
         -------
-        difference
-            ``None`` when the models are the same, otherwise the first
-            difference found, as the info message the call sends.
+        same
+            ``True`` when the models are the same.
 
         Raises
         ------
         TypeError
             When ``other`` is not a ``Model``.
-        Error
-            While the environment of the model delivers an event.
         ValueError
             When either model is closed.
 
@@ -506,19 +496,10 @@ class Model:
         BIYOS_cmpmdl
         """
         other = self._peer("other", other)
-        found: list[str] = []
-        idx = c_index()
         same = c_integer()
-        kind = EventKind.MESSAGE
-        level = EventLevel.INFO
         with self._env._busy(), other._env._busy(), other._entered():
-            self._addhook(partial(_kept, found), kind, level, idx)
-            try:
-                self._run(lib.BIYOS_cmpmdl, other._handle, byref(same))
-            finally:
-                if self._open():
-                    self._delhook(idx.value)
-        return None if same.value else found[0]
+            self._run(lib.BIYOS_cmpmdl, other._handle, byref(same))
+        return bool(same.value)
 
     @classmethod
     def read(

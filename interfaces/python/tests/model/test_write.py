@@ -49,7 +49,7 @@ def test_native(env, tmp_path):
     with biyos.Model.read(env, source, FileFormat.MPS) as model:
         model.write(path, FileFormat.BYS)
         with biyos.Model.read(env, path, FileFormat.BYS) as back:
-            assert model.compare(back) is None
+            assert model.same(back)
 
 
 def structure(model):
@@ -93,7 +93,7 @@ def test_nl(env, tmp_path):
     with biyos.Model.read(env, source, FileFormat.NL) as model:
         model.write(path, FileFormat.NL)
         with biyos.Model.read(env, path, FileFormat.NL) as back:
-            assert model.compare(back) is None
+            assert model.same(back)
 
 
 def test_refused(env, tmp_path):

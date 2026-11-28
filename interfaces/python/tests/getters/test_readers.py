@@ -92,7 +92,7 @@ def renamed(model, other, short, block):
     names = [f"new{k}" for k in range(len(block))]
     getattr(model, f"set{short}name")(block, names)
     getattr(other, f"set{short}name")(block.indices(), names)
-    assert model.compare(other) is None
+    assert model.same(other)
 
 
 def stale(model, *blocks):
@@ -224,7 +224,7 @@ def test_copied_terms(model):
         target.addquadterm(
             fun.on(target), var1.on(target), var2.on(target), coef
         )
-        assert model.compare(target) is None
+        assert model.same(target)
 
 
 def member_array(name, count, size):

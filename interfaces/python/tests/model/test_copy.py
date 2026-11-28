@@ -17,7 +17,6 @@ BUSY = (
 CLOSED = "the model is closed"
 SWAPPED = "variable 0: absolute tolerance 0.25 against 0.5"
 TOLERANCE = "variable 0: absolute tolerance 0.5 against 0.25"
-READ_ONLY = "invalid argument: model: is read-only while delivering an event"
 REFUSED = -100
 
 
@@ -115,11 +114,8 @@ def closed(handles, event):
         handle.close()
 
 
-def compare_inside(seen, model, event):
-    try:
-        model.compare(model)
-    except biyos.Error as error:
-        seen.append(str(error))
+def same_inside(seen, model, event):
+    seen.append(model.same(model))
 
 
 @pytest.fixture(params=["env", "other"])
@@ -319,11 +315,11 @@ def test_source_gap(other, monkeypatch):
 
 def test_compare_same(env, model):
     blank = biyos.Model(env)
-    assert blank.compare(biyos.Model(env)) is None
-    assert model.compare(model) is None
+    assert blank.same(biyos.Model(env))
+    assert model.same(model)
     copy = model.copy()
-    assert model.compare(copy) is None
-    assert copy.compare(model) is None
+    assert model.same(copy)
+    assert copy.same(model)
 
 
 def test_compare_differ(env, model):
@@ -331,8 +327,8 @@ def test_compare_differ(env, model):
     env.addhook(partial(kept, heard), EventKind.MESSAGE, EventLevel.DEBUG)
     copy = model.copy()
     copy.setvartol([0], [0.25])
-    assert model.compare(copy) == TOLERANCE
-    assert copy.compare(model) == SWAPPED
+    assert not model.same(copy)
+    assert not copy.same(model)
     assert heard == [("model", TOLERANCE), ("model", SWAPPED)]
 
 
@@ -340,32 +336,32 @@ def test_compare_other(env, other, model):
     heard = []
     other.addhook(partial(kept, heard), EventKind.MESSAGE, EventLevel.DEBUG)
     copy = model.copy(other)
-    assert model.compare(copy) is None
+    assert model.same(copy)
     copy.setvartol([0], [0.25])
-    assert model.compare(copy) == TOLERANCE
+    assert not model.same(copy)
     assert heard == []
 
 
 def test_compare_hooks(model):
     first = model.addhook(print, EventKind.MESSAGE, EventLevel.ERROR)
-    model.compare(model)
+    model.same(model)
     after = model.addhook(print, EventKind.MESSAGE, EventLevel.ERROR)
-    assert after == first + 2
+    assert after == first + 1
     assert len(model._hooks._functions) == 2
 
 
 def test_compare_wrong(model):
     with pytest.raises(TypeError, match="other must be a Model, not int"):
-        model.compare(1)
+        model.same(1)
 
 
 def test_compare_closed(env, model):
     copy = model.copy()
     copy.close()
     with pytest.raises(ValueError, match=CLOSED):
-        model.compare(copy)
+        model.same(copy)
     with pytest.raises(ValueError, match=CLOSED):
-        copy.compare(model)
+        copy.same(model)
 
 
 def test_compare_close(env, model):
@@ -373,7 +369,7 @@ def test_compare_close(env, model):
     copy.setvartol([0], [0.25])
     shut = partial(closed, [model, copy])
     model.addhook(shut, EventKind.MESSAGE, EventLevel.INFO)
-    assert model.compare(copy) == TOLERANCE
+    assert not model.same(copy)
     assert len(env._models._live) == 0
 
 
@@ -382,15 +378,15 @@ def test_compare_close_env(place, model):
     copy.setvartol([0], [0.25])
     shut = partial(closed, [place])
     model.addhook(shut, EventKind.MESSAGE, EventLevel.INFO)
-    assert model.compare(copy) == TOLERANCE
+    assert not model.same(copy)
     assert not place._open()
     assert not place._free.alive
 
 
 def test_compare_inside(env, model):
     seen = []
-    inside = partial(compare_inside, seen, model)
+    inside = partial(same_inside, seen, model)
     env.addhook(inside, EventKind.MESSAGE, EventLevel.ERROR)
     with pytest.raises(biyos.Error):
         env.setopt("seed", -1)
-    assert seen == [READ_ONLY]
+    assert seen == [True]
