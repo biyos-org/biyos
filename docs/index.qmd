@@ -41,7 +41,7 @@ a shorthand in which $f_0, f_1, \dots$ form one table of functions that objectiv
 
 [User guide](guide/start.qmd)
 
-Build the library, state a model in C or Python, set options, read events and handle errors.
+Install biyos, state a model in C or Python, set options, read events and handle errors.
 :::
 
 ::: {}
