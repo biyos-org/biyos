@@ -1,6 +1,6 @@
 # The expression graph {#sec-graph}
 
-The expression $e$ of a function, the part of its nonlinear part $\varphi$ that biyos can read (@eq-nonlinear), is a node of the model's expression graph; callbacks supply the rest. This chapter defines the graph, its 41 operators and their domains, and the way an expression is split into the parts of a function.
+The expression $e$ of a function, the part of its nonlinear part $\varphi$ that biyos can read (@eq-nonlinear), is a node of the model's expression graph; callbacks supply the rest. This chapter defines the graph, its 41 operators, their domains and derivatives, and the way an expression is split into the parts of a function.
 
 ## Nodes and sharing {#sec-graph-nodes}
 
@@ -64,6 +64,15 @@ If takes a condition first and two branches, either of which may be a condition 
 Entropy and sign power could be written with the other operators, as a product with a logarithm and as a product of a sign and a power. They are operators of their own because each, taken whole, is a simple function with a known shape: entropy is convex on its domain, and sign power is increasing and continuous since its exponent is positive. Split into pieces, that shape is lost, and the bounds and relaxations built from the pieces are much weaker.
 
 A piecewise linear node names a pwl: points $(x_0, y_0), \dots, (x_n, y_n)$ with $n \ge 1$, finite coordinates, $x_0 < x_1 < \dots < x_n$, and a finite width $x_i - x_{i-1}$, height difference $y_i - y_{i-1}$ and slope on every segment. The graph keeps the points in a table of its own, beside the nodes, and the node holds only the index of its pwl, so several nodes share one pwl by naming the same index. $p$ is linear between neighbouring points and extends its first and last segments past both ends. Each value is computed from the left point of its segment, or from $x_n$ past the last point, so $p(x_i) = y_i$ exactly, a $-0$ height included. Far past an end, where $t - x_i$ overflows, the value is $y_i + (s t - s x_i)$ for the slope $s$. A flat segment gives its height everywhere on it, at an infinite argument too. A pwl is never removed: copying or compacting a graph keeps the whole table, and only undoing a failed call drops the pwls it added.
+
+## Derivatives {#sec-graph-derivatives}
+
+The derivatives of an expression follow from those of its operators by the chain rule, with four rules where the textbook formula would mislead:
+
+- Where an operator's value is NaN, outside its domain, each of its partials is NaN too. The derivative of $\log x$ at $x = -1$ is NaN, not $-1$.
+- A part of an expression whose derivative is multiplied by an exact zero adds nothing, even where that derivative is infinite or NaN. The zero may be another factor of a product, or the weight of a function in the Lagrangian. So $x_0 \sqrt{x_1}$ at $x_0 = x_1 = 0$ has the derivative 0 in $x_1$.
+- The derivative of $e^c$ is 0 when $c$ is exactly 0, even where $e = 0$. The derivative of $e_1^{e_2}$ in $e_2$ is 0 where $e_1^{e_2}$ is 0.
+- At an inner point $x_i$ of a pwl, the slope is that of the segment starting at $x_i$. Before $x_1$ the slope is that of the first segment, from $x_{n-1}$ on that of the last. The second derivative of a pwl is 0 everywhere.
 
 ## Splitting an expression {#sec-graph-split}
 
