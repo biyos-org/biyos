@@ -39,11 +39,6 @@ book:
       chapters:
         - method/form.qmd
         - method/graph.qmd
-        - method/tapes.qmd
-        - method/derivatives.qmd
-        - method/hessian.qmd
-        - method/intervals.qmd
-        - method/curvature.qmd
     - part: Reference
       chapters:
         - reference/capi.qmd
