@@ -35,15 +35,6 @@ book:
         - guide/errors.qmd
         - guide/threads.qmd
         - guide/python.qmd
-    - part: Method
-      chapters:
-        - method/form.qmd
-        - method/graph.qmd
-        - method/tapes.qmd
-        - method/derivatives.qmd
-        - method/hessian.qmd
-        - method/intervals.qmd
-        - method/curvature.qmd
     - part: Reference
       chapters:
         - reference/capi.qmd
@@ -51,6 +42,8 @@ book:
         - reference/codes.qmd
         - reference/formats.qmd
         - reference/python.qmd
+        - reference/form.qmd
+        - reference/graph.qmd
     - references.qmd
 
 number-sections: true

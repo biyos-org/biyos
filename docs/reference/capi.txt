@@ -2781,7 +2781,7 @@ see BIYOS_addcb BIYOS_delfunsp BIYOS_delvarsp
 since 0.1.0
 
 group evaluation Evaluation
-text The calls of this group evaluate a model's functions and their derivatives at a point, and read the patterns of the derivatives, as a solver does. The first of them after a change of the model builds what they need, timed as the phase `evaluation` of module `model`, with the [exact Hessian pattern](#sec-hessian-exact) of a large element timed within it as the phase `pattern` of module `expr`, and the model keeps it until its next change, so later calls skip the build.
+text The calls of this group evaluate a model's functions and their derivatives at a point, and read the patterns of the derivatives, as a solver does. The first of them after a change of the model builds what they need, timed as the phase `evaluation` of module `model`, with the Hessian pattern of a large element timed within it as the phase `pattern` of module `expr`, and the model keeps it until its next change, so later calls skip the build.
 text The Jacobian holds the first derivatives of each function, a row for each function and a column for each variable. Its pattern lists, for each function, the variables it may depend on, sorted. The Hessian of the Lagrangian $\sum_k w_k \nabla^2 f_k(x)$ is symmetric, so its pattern lists the lower triangle alone: for each variable $j$, the variables $i \ge j$ whose entry $(i, j)$ may be nonzero, sorted. An entry is in a pattern when some part of a function may give it a value: a linear or quadratic term, an expression or the pattern a callback declares. It stays in the pattern where its value at a point is 0.
 text Each call changes no data of the model, but it runs alone on the model, as a change does, so a call on another thread that would overlap it fails with `BIYOS_ERR_BUSY`. While an evaluation runs a callback, a call from the callback that would change the model, evaluate it or read a pattern fails with `BIYOS_ERR_BUSY` too; one that only reads the model runs.
 text A callback that returns a positive value leaves NaN in every output it computes for that call, and the call still returns `BIYOS_OK`, so a solver steps back. A negative value stops the call with `BIYOS_ERR_CALLBACK`, and its message names the callback, the part it was asked for and the value, such as `callback: callback 0: function returned -3`.
@@ -2824,7 +2824,7 @@ error BIYOS_ERR_BADARG `x`, `w` or `h` is null while the model or the pattern ha
 error BIYOS_ERR_UNSUPPORTED A callback of the model has no `BIYOS_cbh`.
 error BIYOS_ERR_CALLBACK A callback returned a negative value, or a value that is not finite when checks are on.
 note `BIYOS_getnhpatrg` from 0 to the number of variables gives the number of values.
-note The call sends the span `hessian` from module `model`, and within it the span `pushing` from module `expr` when an element takes [edge pushing](#sec-hessian-pushing) ([Events biyos sends](#sec-capi-sent)).
+note The call sends the span `hessian` from module `model`, and within it the span `pushing` from module `expr` when a large element is computed by edge pushing ([Events biyos sends](#sec-capi-sent)).
 see BIYOS_gethpatrg BIYOS_evalhv BIYOS_setcbh
 since 0.1.0
 
@@ -3011,7 +3011,7 @@ value BIYOS_CLM_GLOBAL What the termination says holds for the whole model.
 since 0.1.0
 
 group sent Events biyos sends
-text A field is a name and a value, both text. The messages so far are an error when a call fails, a warning when a deprecated option is set, the warnings of `BIYOS_readmdl`, `BIYOS_writemdl` and `BIYOS_readrepro` from module `io`, an info message when two compared models differ, and a debug message from module `expr` naming the method each large Hessian element takes ([Edge pushing](#sec-hessian-pushing)). A debug message's text and fields may change in any release.
+text A field is a name and a value, both text. The messages so far are an error when a call fails, a warning when a deprecated option is set, the warnings of `BIYOS_readmdl`, `BIYOS_writemdl` and `BIYOS_readrepro` from module `io`, an info message when two compared models differ, and a debug message from module `expr` naming the method each large Hessian element takes. A debug message's text and fields may change in any release.
 text A call on an environment that fails sends an error message, unless the environment is delivering an event. Its level is `BIYOS_EVTLVL_ERR`, its module `capi`, its text the message `BIYOS_lasterror` reads for the failure, and its one field `code` the returned status as decimal text, such as `-100`, so a hook can tell the group from the range.
 text Setting a deprecated option sends a warning message at level `BIYOS_EVTLVL_WARN` from module `core`, with a text such as `option 'old': deprecated in 0.2.0, use 'new'` and the fields `option`, `deprecated` and `replacement`, in that order: the name of the option, the version that deprecated it and the name of the option to use instead. A failed set sends no warning. No option is deprecated yet.
 text `BIYOS_cmpmdl` sends an info message at level `BIYOS_EVTLVL_INFO` from module `model` when the two models differ. Its text names the first difference, such as `variable 0: upper bound 1 against 2` or `model name 'a' against none`, and it has no fields.
