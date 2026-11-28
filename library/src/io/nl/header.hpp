@@ -23,6 +23,7 @@ struct Header
     Index objectives;
     Index defined;
     Index complements;
+    Index logical;
     std::vector<VariableKind> kinds;
     Encoding encoding;
 };

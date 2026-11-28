@@ -29,7 +29,8 @@ constexpr std::size_t kNonlinear = 3;
 constexpr std::size_t kArcs = 4;
 constexpr std::size_t kDiscrete = 5;
 constexpr std::size_t kCommon = 8;
-constexpr std::size_t kColumns = 5;
+constexpr std::size_t kColumns = 6;
+constexpr std::size_t kLogical = 5;
 constexpr std::size_t kArith = 2;
 constexpr Offset kLineBytes = 2;
 constexpr Offset kRecordByte = 1;
@@ -183,7 +184,8 @@ std::vector<VariableKind> kinds_of(const Layout &layout, Index variables)
 Index defined_of(const Lines &lines, const Rows &rows)
 {
     const std::array<Index, kColumns> &common = rows[kCommon];
-    const Offset defined = std::accumulate(common.begin(), common.end(), Offset{0});
+    const auto end = common.begin() + kWidths[kCommon];
+    const Offset defined = std::accumulate(common.begin(), end, Offset{0});
     if (defined > kMostIndex - rows[kSizes][0])
     {
         bad_file(lines, "the header counts more variables than a model holds");
@@ -193,7 +195,8 @@ Index defined_of(const Lines &lines, const Rows &rows)
 
 void check_functions(const Lines &lines, const Rows &rows)
 {
-    if (Offset{rows[kSizes][1]} + rows[kSizes][2] > kMostIndex)
+    const std::array<Index, kColumns> &sizes = rows[kSizes];
+    if (Offset{sizes[1]} + sizes[2] + sizes[kLogical] > kMostIndex)
     {
         bad_file(lines, "the header counts more functions than a model holds");
     }
@@ -213,7 +216,7 @@ Index complements_of(const Lines &lines, const Rows &rows)
 void check_room(const Lines &lines, const Rows &rows, Index defined, Offset room)
 {
     const std::array<Index, kColumns> &sizes = rows[kSizes];
-    const Offset records = Offset{sizes[0]} + sizes[1] + sizes[2] + defined;
+    const Offset records = Offset{sizes[0]} + sizes[1] + sizes[2] + sizes[kLogical] + defined;
     if (records > room)
     {
         bad_file(lines, "the header counts more records than the file holds");
@@ -247,6 +250,7 @@ Header read_header(Lines &lines, Offset bytes)
         .objectives = rows[kSizes][2],
         .defined = defined,
         .complements = complements,
+        .logical = rows[kSizes][kLogical],
         .kinds = kinds_of(layout, variables),
         .encoding = encoding,
     };

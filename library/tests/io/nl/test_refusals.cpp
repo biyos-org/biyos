@@ -25,10 +25,6 @@ constexpr std::string_view kSosnoTail = R"(S4 1 sosno
 0 1.5
 )";
 
-constexpr std::string_view kLogicalTail = R"(L0
-n1
-)";
-
 constexpr std::string_view kRemainderTail = R"(C0
 o4
 v0
@@ -116,11 +112,6 @@ TEST(NlTest, Functions)
 TEST(NlTest, Sets)
 {
     EXPECT_EQ(tiny_fault(kSosnoTail), refused(11, "real values of suffix 'sosno'"));
-}
-
-TEST(NlTest, Logical)
-{
-    EXPECT_EQ(tiny_fault(kLogicalTail), refused(11, "logical constraints"));
 }
 
 TEST(NlTest, Remainder)
