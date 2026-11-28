@@ -31,7 +31,7 @@ A model may hold its own value of an option, which it reads before the environme
 
 ## Flags {#sec-options-flags}
 
-A flags option switches the parts of an algorithm on or off. It holds two masks: the parts forced on and the parts forced off. A part in neither keeps its default, so a program names only the parts it cares about, and a part added in a later release does not change its behaviour. No option of this release is a flags option.
+A flags option switches the parts of an algorithm on or off. It holds two masks: the parts forced on and the parts forced off. A part in neither keeps its default.
 
 ## Versions {#sec-options-versions}
 
