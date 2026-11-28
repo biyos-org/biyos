@@ -2880,7 +2880,7 @@ param mdl in The model.
 param beg in In the `rg` form, the first variable of the range.
 param end in In the `rg` form, one past the last variable of the range.
 param n in In the `sp` form, the number of entries.
-param fun in In the `sp` form, the variable of each entry, its column, in any order and any of them more than once; may be null when `n` is 0.
+param col in In the `sp` form, the variable of each entry, its column, in any order and any of them more than once; may be null when `n` is 0.
 param nnz out Receives the number of rows in the columns of the entries, a column counted each time it appears.
 return `BIYOS_OK`, with the number in `*nnz`.
 error BIYOS_ERR_BADARG `n` or `beg` is negative, `end` is less than `beg`, an index is not that of a variable, the range ends past the last variable, or `nnz` is null.
@@ -2894,11 +2894,11 @@ param mdl in The model.
 param beg in In the `rg` form, the first variable of the range.
 param end in In the `rg` form, one past the last variable of the range.
 param n in In the `sp` form, the number of entries.
-param fun in In the `sp` form, the variable of each entry, its column, in any order and any of them more than once; may be null when `n` is 0.
-param cap in The number of rows `var` holds.
+param col in In the `sp` form, the variable of each entry, its column, in any order and any of them more than once; may be null when `n` is 0.
+param cap in The number of rows `row` holds.
 param cnt out Receives a count for each entry, `n` of them, `end - beg` in the `rg` form; skipped when null.
-param var out Receives the rows of each entry's column, sorted, each at least the column's variable; skipped when null.
-return `BIYOS_OK` once the arrays are written: in the `sp` form the rows of `fun[0]`, then those of `fun[1]`, and so on; in the `rg` form those of `beg`, then those of `beg + 1`, and so on, `cnt[k]` for entry `k`.
+param row out Receives the rows of each entry's column, sorted, each at least the column's variable; skipped when null.
+return `BIYOS_OK` once the arrays are written: in the `sp` form the rows of `col[0]`, then those of `col[1]`, and so on; in the `rg` form those of `beg`, then those of `beg + 1`, and so on, `cnt[k]` for entry `k`.
 error BIYOS_ERR_BADARG `n`, `beg` or `cap` is negative, `end` is less than `beg`, an index is not that of a variable, the range ends past the last variable, or `cap` is less than the number `BIYOS_getnhpatsp` gives.
 note A refused call writes nothing. The order of `BIYOS_gethpatrg` from 0 to the number of variables is the order of the values `BIYOS_evalh` writes.
 see BIYOS_getnhpatsp BIYOS_evalh

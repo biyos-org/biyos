@@ -524,14 +524,15 @@ static BIYOS_status read_patterns(BIYOS_model *model)
     BIYOS_offset nnz = -1;
     BIYOS_offset cnt[2] = {-1, -1};
     BIYOS_index var[2] = {-1, -1};
+    BIYOS_index row[2] = {-1, -1};
     if (BIYOS_getngpatsp(model, 1, &first, &nnz) != BIYOS_OK || nnz != 2 ||
         BIYOS_getngpatrg(model, 0, 1, &nnz) != BIYOS_OK || nnz != 2 ||
         BIYOS_getgpatsp(model, 1, &first, 2, cnt, var) != BIYOS_OK || cnt[0] != 2 || var[1] != 1 ||
         BIYOS_getgpatrg(model, 0, 1, 2, cnt, var) != BIYOS_OK ||
         BIYOS_getnhpatsp(model, 1, &first, &nnz) != BIYOS_OK || nnz != 1 ||
         BIYOS_getnhpatrg(model, 0, 2, &nnz) != BIYOS_OK || nnz != 1 ||
-        BIYOS_gethpatsp(model, 1, &first, 1, cnt, var) != BIYOS_OK || var[0] != 1 ||
-        BIYOS_gethpatrg(model, 0, 2, 1, cnt, var) != BIYOS_OK || cnt[1] != 0)
+        BIYOS_gethpatsp(model, 1, &first, 1, cnt, row) != BIYOS_OK || row[0] != 1 ||
+        BIYOS_gethpatrg(model, 0, 2, 1, cnt, row) != BIYOS_OK || cnt[1] != 0)
     {
         return BIYOS_ERR_INTERNAL;
     }
