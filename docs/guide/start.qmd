@@ -1,48 +1,16 @@
 # Getting started {#sec-start}
 
-biyos is a C library with a C++ core. It builds with CMake, links into a program through one C header, and comes with a Python package that calls the same library. This chapter builds it, links a first program and runs it from Python.
+biyos is a C library. A program includes one header, `biyos/biyos.h`, which needs only `<stddef.h>` and `<stdint.h>`. A Python package calls the same library.
 
-## Building {#sec-start-build}
+## Installing {#sec-start-install}
 
-biyos needs CMake 3.25 or later and a compiler for C99 and C++20. Continuous integration builds it with GCC on Ubuntu 24.04, Clang on macOS 15 and MSVC on Windows Server 2022. From a clone of the repository:
+The C library comes as `libbiyos.so` on Linux, `libbiyos.dylib` on macOS and `biyos.dll` on Windows. Its folder, the prefix below, holds the header in `include/biyos`, the library in `lib` (the DLL in `bin`) and a CMake package.
 
-```sh
-cmake -S library -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --parallel
-ctest --test-dir build --output-on-failure
-```
-
-The configure step downloads GoogleTest for the tests. Three options change the build:
-
-| Option | Default | Effect |
-| ------------------------ | -------- | ---------------------------------------- |
-| `BUILD_SHARED_LIBS` | `ON` | build `biyos` as a shared library; `OFF` builds a static one |
-| `BIYOS_BUILD_TESTS` | `ON` | build the tests and register them with CTest |
-| `BIYOS_WARNINGS_AS_ERRORS` | `OFF` | treat every compiler warning as an error |
-
-The library lands in `build/lib`, as `libbiyos.so` on Linux and `libbiyos.dylib` on macOS. On Windows `biyos.dll` lands in `build/bin` and its import library in `build/lib`, each in a folder named for the configuration when the generator is Visual Studio. The header stays in `library/include/biyos`.
-
-The install step copies the library, the header and a CMake package into a prefix:
+The Python package needs Python 3.10 or later and nothing else:
 
 ```sh
-cmake --install build --prefix "$PWD/install"
+python -m pip install biyos
 ```
-
-The examples in `examples` are a project of their own: the programs in `examples/code`, the runners that test them in `examples/test`. The C programs are built and tested against such a prefix:
-
-```sh
-cmake -S examples -B build/examples -DCMAKE_PREFIX_PATH="$PWD/install"
-cmake --build build/examples
-ctest --test-dir build/examples --output-on-failure
-```
-
-## The library and its header {#sec-start-layers}
-
-A program sees one header, `biyos/biyos.h`, which includes only `<stddef.h>` and `<stdint.h>`. The shared library exports the functions of that header and nothing else: the C++ code behind them is compiled into the library with hidden symbols, so no C++ type or exception ever reaches the caller. The Python package loads the same library and calls the same functions.
-
-![The layers of biyos. Each arrow points from a part to one it uses. Only `biyos.h` crosses the library's boundary.](../figures/layers.svg){#fig-layers}
-
-Inside, each module may use only the modules below it, as @fig-layers shows. The repository's `library/tools/layers.txt` holds this order as data, and a check run by continuous integration refuses any include that breaks it.
 
 ## A first program {#sec-start-program}
 
@@ -51,11 +19,11 @@ This program prints the version of the library, then creates an environment and 
 ```{.c file="examples/code/c/start.c"}
 ```
 
-An environment holds the options, the event stream and the last error of each thread, and every model is made on one. Every call that acts returns a status, `BIYOS_OK` on success, and [Errors](#sec-errors) explains the others.
+An environment holds the options, the events and the last error of each thread. Every model is made on one. Every call returns `BIYOS_OK` when it succeeds ([Errors](#sec-errors)).
 
 ### With CMake
 
-A CMake project finds an installed biyos as a package. The package accepts only the exact version it was built as:
+A CMake project finds biyos as a package, of exactly the version it was built as:
 
 ```cmake
 cmake_minimum_required(VERSION 3.25)
@@ -67,33 +35,25 @@ add_executable(app app.c)
 target_link_libraries(app PRIVATE biyos::biyos)
 ```
 
-Configured with `-DCMAKE_PREFIX_PATH=$PWD/install`, the project builds against that copy.
-
-The target `biyos::biyos` carries the include directory, so `#include <biyos/biyos.h>` works as written. Built as a static library, with `BUILD_SHARED_LIBS` set to `OFF`, it also carries the definition `BIYOS_STATIC`, which a program on Windows needs so that it does not look for the functions in a DLL.
+Configure it with `-DCMAKE_PREFIX_PATH=<prefix>`. The target `biyos::biyos` brings the include directory.
 
 ### Without CMake
 
-On Linux, a program compiles against the header and links the library from the build tree:
+On Linux, compile against the header and link the library:
 
 ```sh
-cc -std=c99 start.c -I biyos/include -L biyos/build/lib -lbiyos \
-   -Wl,-rpath,"$PWD/biyos/build/lib" -o start
+cc -std=c99 start.c -I <prefix>/include -L <prefix>/lib -lbiyos \
+   -Wl,-rpath,<prefix>/lib -o start
 ./start
 ```
 
-which prints `biyos 0.1.0`.
+It prints `biyos 0.1.0`.
 
 ## From Python {#sec-start-python}
 
-The Python package lives in `interfaces/python`. It builds against an installed biyos of the same version, found as a CMake package, and places a copy of its library inside the package. That install is the shared library of a Release build, as [Building](#sec-start-build) makes it:
-
-```sh
-CMAKE_PREFIX_PATH="$PWD/install" python -m pip install ./interfaces/python
-```
-
-It needs Python 3.10 or later and no other package at run time. Each call goes through `ctypes` to the C API, so Python and C share every rule of this book. The first program becomes
+The package calls the C API through `ctypes`, so every rule of this book holds in Python too. The first program becomes:
 
 ```{.python file="examples/code/python/start.py"}
 ```
 
-The `with` block frees the environment when it ends. With the package installed, `pytest examples/test/python` runs every Python example. [The Python package](#sec-python) covers the package.
+The `with` block frees the environment when it ends. [The Python package](#sec-python) covers the rest.
