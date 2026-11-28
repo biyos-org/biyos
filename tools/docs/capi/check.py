@@ -6,7 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import spec
-from capi_page import page_of
+from page import page_of
 
 MASKED = re.compile(
     r'"(?:\\.|[^"\\\n])*"'

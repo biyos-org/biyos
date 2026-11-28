@@ -106,7 +106,7 @@ jobs:
           --layers library/tools/layers.txt
           --roles library/tools/roles.txt
       - run: >-
-          python3 tools/docs/capi/check_docs.py
+          python3 tools/docs/capi/check.py
           --headers library/include/biyos
           --doc docs/reference/capi.txt
       - run: >-
