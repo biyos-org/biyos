@@ -19,7 +19,7 @@ function(biyos_add_test name)
         BIYOS_EXPECTED_VERSION="${PROJECT_VERSION}")
     set_target_properties(${name} PROPERTIES CXX_EXTENSIONS OFF)
     biyos_set_warnings(${name})
-    gtest_discover_tests(${name} PROPERTIES TIMEOUT 120)
+    gtest_discover_tests(${name} DISCOVERY_TIMEOUT 60 PROPERTIES TIMEOUT 120)
 endfunction()
 
 biyos_add_test(test_core
