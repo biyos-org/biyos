@@ -119,8 +119,8 @@ def central(function, x, j):
 def lower(model, x, w):
     n = model.getnvar()
     dense = [[0.0] * n for _ in range(n)]
-    cnt, var = model.gethpat()
-    for j, i, value in zip(rows(cnt), var, model.evalh(x, w)):
+    cnt, row = model.gethpat()
+    for j, i, value in zip(rows(cnt), row, model.evalh(x, w)):
         dense[i][j] = value
     return dense
 
@@ -173,12 +173,12 @@ def test_patterns(model):
     assert model.getngpat([2, 0, 2]) == 6
     assert model.getngpat(funs) == 7
     assert model.getngpat(range(1, 3)) == 4
-    assert model.getnhpat([3, 1]) == 3
+    assert model.getnhpat(col=[3, 1]) == 3
     assert model.getnhpat(range(2, 4)) == 2
     assert indexed(model.getgpat([2, 0, 2])) == ([1, 4, 1], [1, 0, 1, 2, 3, 1])
     assert indexed(model.getgpat(funs)) == indexed(model.getgpat(range(2)))
     assert indexed(model.getgpat(range(1, 3))) == ([3, 1], [1, 2, 3, 1])
-    assert indexed(model.gethpat([3, 1])) == ([1, 2], [3, 1, 2])
+    assert indexed(model.gethpat(col=[3, 1])) == ([1, 2], [3, 1, 2])
     columns = indexed(model.gethpat([0, 1, 2, 3]))
     assert indexed(model.gethpat(range(4))) == columns
     assert len(model.evalg(POINTS[0])) == 8

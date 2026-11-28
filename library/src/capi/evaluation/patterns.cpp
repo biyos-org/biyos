@@ -11,6 +11,7 @@
 
 #include <cstddef>
 #include <span>
+#include <string_view>
 
 using biyos::Evaluation;
 using biyos::Family;
@@ -18,6 +19,7 @@ using biyos::Gathered;
 using biyos::gathered;
 using biyos::Index;
 using biyos::Lower;
+using biyos::noun_of;
 using biyos::Offset;
 using biyos::Pattern;
 using biyos::Session;
@@ -46,6 +48,7 @@ struct Records
 struct Jacobian
 {
     static constexpr Family kFamily = Family::Function;
+    static constexpr std::string_view kWord = "fun";
 
     static Records read(const Evaluation &evaluation)
     {
@@ -57,6 +60,7 @@ struct Jacobian
 struct Hessian
 {
     static constexpr Family kFamily = Family::Variable;
+    static constexpr std::string_view kWord = "col";
 
     static Records read(const Evaluation &evaluation)
     {
@@ -86,7 +90,8 @@ template <typename Of, typename Selection>
 void n_pattern(Session &session, Selection selection, BIYOS_offset *nnz)
 {
     BIYOS_offset *out = require(nnz, "nnz");
-    const auto chosen = selected(Of::kFamily, session.model().n_of(Of::kFamily), selection);
+    const auto chosen =
+        selected(noun_of(Of::kFamily), Of::kWord, session.model().n_of(Of::kFamily), selection);
     check_known(Of::kFamily, session.model().n_of(Of::kFamily), chosen);
     const Records records = Of::read(evaluation_of(session));
     *out = to_offset(count_of(records, chosen));
@@ -99,7 +104,8 @@ void get_pattern(Session &session,
                  BIYOS_offset *counts,
                  BIYOS_index *items)
 {
-    const auto chosen = selected(Of::kFamily, session.model().n_of(Of::kFamily), selection);
+    const auto chosen =
+        selected(noun_of(Of::kFamily), Of::kWord, session.model().n_of(Of::kFamily), selection);
     check_known(Of::kFamily, session.model().n_of(Of::kFamily), chosen);
     const Records records = Of::read(evaluation_of(session));
     const Gathered<Index> found = gathered(chosen, [&](Index i) { return record(records, i); });
@@ -145,10 +151,10 @@ BIYOS_status BIYOS_getgpatrg(BIYOS_model *mdl,
 
 BIYOS_status BIYOS_getnhpatsp(BIYOS_model *mdl,
                               BIYOS_index n,
-                              const BIYOS_index *fun,
+                              const BIYOS_index *col,
                               BIYOS_offset *nnz)
 {
-    return guarded<n_pattern<Hessian, List>>(mdl, List{n, fun}, nnz);
+    return guarded<n_pattern<Hessian, List>>(mdl, List{n, col}, nnz);
 }
 
 BIYOS_status BIYOS_getnhpatrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end, BIYOS_offset *nnz)
@@ -158,12 +164,12 @@ BIYOS_status BIYOS_getnhpatrg(BIYOS_model *mdl, BIYOS_index beg, BIYOS_index end
 
 BIYOS_status BIYOS_gethpatsp(BIYOS_model *mdl,
                              BIYOS_index n,
-                             const BIYOS_index *fun,
+                             const BIYOS_index *col,
                              BIYOS_offset cap,
                              BIYOS_offset *cnt,
-                             BIYOS_index *var)
+                             BIYOS_index *row)
 {
-    return guarded<get_pattern<Hessian, List>>(mdl, List{n, fun}, cap, cnt, var);
+    return guarded<get_pattern<Hessian, List>>(mdl, List{n, col}, cap, cnt, row);
 }
 
 BIYOS_status BIYOS_gethpatrg(BIYOS_model *mdl,
@@ -171,7 +177,7 @@ BIYOS_status BIYOS_gethpatrg(BIYOS_model *mdl,
                              BIYOS_index end,
                              BIYOS_offset cap,
                              BIYOS_offset *cnt,
-                             BIYOS_index *var)
+                             BIYOS_index *row)
 {
-    return guarded<get_pattern<Hessian, Range>>(mdl, Range{beg, end}, cap, cnt, var);
+    return guarded<get_pattern<Hessian, Range>>(mdl, Range{beg, end}, cap, cnt, row);
 }

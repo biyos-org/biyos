@@ -1281,7 +1281,7 @@ BIYOS_API BIYOS_status BIYOS_getgpatrg(BIYOS_model *mdl,
                                        BIYOS_index *var);
 BIYOS_API BIYOS_status BIYOS_getnhpatsp(BIYOS_model *mdl,
                                         BIYOS_index n,
-                                        const BIYOS_index *fun,
+                                        const BIYOS_index *col,
                                         BIYOS_offset *nnz);
 BIYOS_API BIYOS_status BIYOS_getnhpatrg(BIYOS_model *mdl,
                                         BIYOS_index beg,
@@ -1289,16 +1289,16 @@ BIYOS_API BIYOS_status BIYOS_getnhpatrg(BIYOS_model *mdl,
                                         BIYOS_offset *nnz);
 BIYOS_API BIYOS_status BIYOS_gethpatsp(BIYOS_model *mdl,
                                        BIYOS_index n,
-                                       const BIYOS_index *fun,
+                                       const BIYOS_index *col,
                                        BIYOS_offset cap,
                                        BIYOS_offset *cnt,
-                                       BIYOS_index *var);
+                                       BIYOS_index *row);
 BIYOS_API BIYOS_status BIYOS_gethpatrg(BIYOS_model *mdl,
                                        BIYOS_index beg,
                                        BIYOS_index end,
                                        BIYOS_offset cap,
                                        BIYOS_offset *cnt,
-                                       BIYOS_index *var);
+                                       BIYOS_index *row);
 
 #define BIYOS_TRM_NONE 0
 #define BIYOS_TRM_OPTIMAL 101

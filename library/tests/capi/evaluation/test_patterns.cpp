@@ -174,6 +174,9 @@ TEST_F(PatternTest, Nulls)
     EXPECT_EQ(BIYOS_getngpatrg(model_.get(), 0, 3, nullptr), BIYOS_ERR_BADARG);
     EXPECT_EQ(env_.message(), "invalid argument: argument 'nnz': is null");
     EXPECT_EQ(BIYOS_getnhpatsp(model_.get(), 1, nullptr, nullptr), BIYOS_ERR_BADARG);
+    BIYOS_offset nnz = -1;
+    EXPECT_EQ(BIYOS_getnhpatsp(model_.get(), 1, nullptr, &nnz), BIYOS_ERR_BADARG);
+    EXPECT_EQ(env_.message(), "invalid argument: argument 'col': is null");
     EXPECT_EQ(BIYOS_getngpatrg(nullptr, 0, 3, nullptr), BIYOS_ERR_BADARG);
 }
 

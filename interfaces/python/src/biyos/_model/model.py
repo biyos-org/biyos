@@ -5674,14 +5674,14 @@ class Model:
         return self._pattern("gpat", Functions, every)
 
     def getnhpat(
-        self, var: Sequence[Index | Variable] | Variables | None = None
+        self, col: Sequence[Index | Variable] | Variables | None = None
     ) -> Offset:
         """Count the entries of the Hessian pattern in columns of its lower
         triangle.
 
         Parameters
         ----------
-        var
+        col
             The variables whose columns to count, in any order, any of them
             more than once; every variable by default.
 
@@ -5696,11 +5696,11 @@ class Model:
         BIYOS_getnhpatsp
         BIYOS_getnhpatrg
         """
-        every = range(self.getnvar()) if var is None else var
-        return self._count("BIYOS_getnhpat", Variables, every)
+        every = range(self.getnvar()) if col is None else col
+        return self._count("BIYOS_getnhpat", Variables, every, "col")
 
     def gethpat(
-        self, var: Sequence[Index | Variable] | Variables | None = None
+        self, col: Sequence[Index | Variable] | Variables | None = None
     ) -> tuple[list[Offset], Variables]:
         """Read the Hessian pattern in columns of its lower triangle.
 
@@ -5709,7 +5709,7 @@ class Model:
 
         Parameters
         ----------
-        var
+        col
             The variables whose columns to read, in any order, any of them
             more than once; every variable by default.
 
@@ -5717,17 +5717,17 @@ class Model:
         -------
         cnt
             The number of rows in each column.
-        var
+        row
             The rows of each column, sorted, each at least the column's
-            variable, those of ``var[0]`` first, as a ``Variables`` block.
+            variable, those of ``col[0]`` first, as a ``Variables`` block.
 
         See Also
         --------
         BIYOS_gethpatsp
         BIYOS_gethpatrg
         """
-        every = range(self.getnvar()) if var is None else var
-        return self._pattern("hpat", Variables, every)
+        every = range(self.getnvar()) if col is None else col
+        return self._pattern("hpat", Variables, every, "col")
 
     def _compared(
         self,
@@ -5821,8 +5821,9 @@ class Model:
         family: type[Block[View]],
         idx: Sequence[SupportsIndex] | Block[View],
         outputs: int = 0,
+        word: str | None = None,
     ) -> tuple[Callable[..., int], Index, object]:
-        name = _WORDS[family]
+        name = _WORDS[family] if word is None else word
         span = span_of(self, family, name, sequence(name, idx))
         if span is None:
             n = len(idx)
@@ -5935,9 +5936,10 @@ class Model:
         call: str,
         family: type[Block[View]],
         idx: Sequence[SupportsIndex] | Block[View],
+        word: str | None = None,
     ) -> Offset:
         nnz = c_offset()
-        self._call(*self._chosen(call, family, idx), byref(nnz))
+        self._call(*self._chosen(call, family, idx, word=word), byref(nnz))
         return nnz.value
 
     def _addterms(
@@ -6024,11 +6026,12 @@ class Model:
         name: str,
         family: type[Block[View]],
         idx: Sequence[SupportsIndex] | Block[View],
+        word: str | None = None,
     ) -> tuple[list[Offset], Variables]:
-        nnz = self._count(f"BIYOS_getn{name}", family, idx)
+        nnz = self._count(f"BIYOS_getn{name}", family, idx, word)
         cnt = (c_offset * len(idx))()
         var = index_view(nnz)
-        chosen = self._chosen(f"BIYOS_get{name}", family, idx)
+        chosen = self._chosen(f"BIYOS_get{name}", family, idx, word=word)
         self._call(*chosen, nnz, cnt, index_array(var))
         return list(cnt), Variables(self, var, self._gen)
 
