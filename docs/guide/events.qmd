@@ -1,83 +1,76 @@
 # Events and timing {#sec-events}
 
-Whatever biyos has to say, a message, a failed check or the time a phase took, it sends as an event on the environment's stream; it writes nothing to standard output or standard error. A program decides what to do with each event by attaching a function to it, a hook. Logging, timing and debugging are this one mechanism. When nobody listens, an event is not even built. The code of this chapter is `examples/code/c/events.c` and `examples/code/python/events.py`.
+biyos never writes to standard output or standard error. Everything it has to say, a message, a failed check or the time a phase took, is an event on the environment's stream. A program receives events by attaching a function to them, a hook. An event no hook wants is not built.
 
 ## Kinds and levels {#sec-events-kinds}
 
-Every event has a kind and a level:
+Every event has a kind:
 
 | Kind | Carries |
-| ------------ | ------------------------------------ |
-| `BIYOS_EVTKND_MSG` | a message: a level, the module that sent it, a text and fields |
-| `BIYOS_EVTKND_INV` | a failed check: the invariant that does not hold, the object it was checked on and the values involved |
-| `BIYOS_EVTKND_SPAN` | a phase beginning or ending, with the wall and CPU time |
+| --- | --- |
+| `BIYOS_EVTKND_MSG` | a message |
+| `BIYOS_EVTKND_INV` | a failed check |
+| `BIYOS_EVTKND_SPAN` | a phase beginning or ending, with its time |
 
-The levels, from least to most severe, are `BIYOS_EVTLVL_DBG`, `BIYOS_EVTLVL_INFO`, `BIYOS_EVTLVL_WARN` and `BIYOS_EVTLVL_ERR`; a larger value is more severe. An event also has the name of the module that sent it, such as `capi` or `core`, a text and a list of fields, each a name and a value, both text.
+It also has a level, from `BIYOS_EVTLVL_DBG` up to `BIYOS_EVTLVL_ERR`, the module that sent it, such as `capi`, a text and a list of named fields.
 
 ## Hooks {#sec-events-hooks}
 
-A hook is a function of the event and of a pointer the program chose, of type `BIYOS_hook`. `BIYOS_addenvhook` attaches it to one kind of event at a lowest level, and it then receives every event of that kind at that level or a more severe one. This helper adds a hook on messages:
+`BIYOS_addenvhook` attaches a hook to one kind of event at a lowest level. The hook then receives every event of that kind at that level or above:
 
 ```{.c file="examples/code/c/events.c" item="hook"}
 ```
 
-The call writes an id for the hook, and `BIYOS_delenvhook` removes it by that id. Ids count from 1 in each environment and are never reused. The hooks of an environment receive an event in the order they were added, and run one at a time even when events come from several threads ([Threads](#sec-threads)). biyos keeps the function and the pointer until the hook is removed or the environment is freed, and passes the pointer back as given, so it may be null.
+The call gives an id, and `BIYOS_delenvhook` removes the hook by it. Hooks receive an event in the order they were added, one at a time even when events come from several threads ([Threads](#sec-threads)).
 
-A hook can also belong to one model. `BIYOS_addmdlhook` attaches it as `BIYOS_addenvhook` does, and it then receives the events of calls on that model alone:
+`BIYOS_addmdlhook` attaches a hook to one model instead. It receives the events of calls on that model, before the hooks of the environment do:
 
 ```{.c file="examples/code/c/events.c" item="hook_model"}
 ```
 
-`BIYOS_delmdlhook` removes it. Ids count from 1 in each model, apart from the ids of the environment. An event of a call on a model reaches the hooks of that model first, in the order they were added, and then the hooks of its environment. That holds for every event of the call: its error message, its warnings, its failed checks and its spans, such as those of writing or evaluating the model. `BIYOS_newmdl`, `BIYOS_readmdl` and `BIYOS_readrepro` are calls on the environment, since the model they make does not exist until they return, so their events reach no model's hooks. `BIYOS_copymdl` is a call on its source: its events reach the hooks of the source and of the source's environment, and when the copy is made on another environment, that environment receives none. A model's hooks are freed with it, and a copy of the model has none of them ([Copying models](#sec-copy)).
-
-The example adds two hooks to the environment and one to a model, and then makes a call on the model fail:
+A model's hooks are freed with it, and a copy does not inherit them ([Copying models](#sec-copy)). The example adds two hooks to the environment and one to a model, then makes a call on the model fail:
 
 ```{.c file="examples/code/c/events.c" item="main"}
 ```
 
 ## Formatting an event {#sec-events-format}
 
-Two calls write an event as one line, for people or for tools. They work like `snprintf`, with one difference in order: the caller gives the size of a buffer first and the buffer after it, as every call takes its inputs before its outputs. The call writes as much of the line as fits, followed by a NUL, and `len` receives the length of the whole line. A size of 0 writes nothing and only reports the length, so a hook can size its buffer exactly:
+`BIYOS_fmttext` writes an event as one line for people, and `BIYOS_fmtjson` as one JSON object for tools. Both work like `snprintf`, with the size before the buffer. A size of 0 only reports the length, so a hook can size its buffer exactly:
 
 ```{.c file="examples/code/c/events.c" item="print_json"}
 ```
 
-`BIYOS_fmttext` writes the time, the level, the module, the text and the fields; `BIYOS_fmtjson` writes one JSON object with the members `time`, `kind`, `level`, `module`, `text` and `fields`. The failed call of the example gives lines like these, the time aside:
+The failed call of the example gives these lines:
 
 ```text
 0.000125 error capi: invalid argument: option 'seed': -1 is outside [0, 2147483647] code=-100
 {"time":0.000125,"kind":"message","level":"error","module":"capi","text":"invalid argument: option 'seed': -1 is outside [0, 2147483647]","fields":{"code":"-100"}}
 ```
 
-The time is the wall time since the environment was created, in seconds with six decimals, whatever the locale. A line never holds a line break: a byte below 0x20 is written as an escape such as `\n`. JSON output is always valid: bytes that are not well-formed UTF-8 become U+FFFD there, while text output passes them through.
+The time is in seconds since the environment was created.
 
 ## Reading an event {#sec-events-read}
 
-A hook can also read the parts of an event one by one, with `BIYOS_getevtknd`, `BIYOS_getevtlvl`, `BIYOS_getevtmod`, `BIYOS_getevttext`, `BIYOS_getnevtfld` and the field readers, and `BIYOS_getevtmdl` gives the model of the call that sent it, or null for a call on the environment. These calls cannot fail: a null event or a field number out of range gives 0, null or an empty string. This function finds the status code an error message carries:
+A hook can also read an event part by part, with `BIYOS_getevtknd`, `BIYOS_getevtlvl`, `BIYOS_getevttext` and the other readers of [Events](#sec-capi-events). This function finds the status code an error message carries:
 
 ```{.c file="examples/code/c/events.c" item="code_of"}
 ```
 
 ## The events biyos sends {#sec-events-sent}
 
-A call that fails sends an error message, at level error from module `capi`, whose text is the call's error message and whose one field `code` is the returned status as decimal text, so a hook sees every failure without checking every call. Setting a deprecated option sends a warning from module `core` ([Versions](#sec-options-versions)). Reading or writing a file sends a warning from module `io` for each oddity read past or part left out ([File formats](#sec-formats)). `BIYOS_cmpmdl` sends an info message from module `model` when two models differ, whose text names the first difference, such as `variable 0: upper bound 1 against 2`.
+Every failed call sends an error message from `capi`, with the status in its field `code`, so one hook sees every failure. Other messages come from deprecated options ([Versions](#sec-options-versions)), from oddities met while reading or writing a file ([File formats](#sec-formats)) and from `BIYOS_cmpmdl` when two models differ.
 
-An invariant event reports an invariant that does not hold, found by a check that the option `checking` runs; the call then fails. A span event marks a phase beginning or ending, such as presolve, and phases nest. The fields of a span event, `edge`, `wall` and `cpu`, give `begin` or `end` and the wall time since the environment was created and the CPU time of the thread that sent the event, both in nanoseconds. biyos adds up the time of each phase in a timing tree, nested as the phases are, and leaves out the time spent delivering span events, so a hook never changes it. Outside a solve, a call whose cost grows with the model, such as reading a file, times itself as one phase, and its entry in the reference names its span. [Error codes and events](#sec-codes) describes each event field by field.
-
-::: {.callout-note}
-## Not yet sent
-The one check so far is that of an evaluation: a callback that returns 0 must leave every output it computes finite. The other invariant events arrive with the solvers.
-:::
+A failed check is sent when `checking` finds an invariant that does not hold, and the call then fails. Today the one check is that a callback leaves its outputs finite. A span marks a phase, such as reading a file, beginning or ending, with its wall and CPU time. [Error codes and events](#sec-codes) describes every event field by field.
 
 ## Inside a hook {#sec-events-inside}
 
-While a hook runs, whether it belongs to the environment or to one of its models, the environment is delivering an event and is read-only to the hook's thread, together with every model made on it. The hook may read options, the last error, the event and the models. A call that would change the environment or one of its models, setting or dropping an option, adding or removing a hook, creating, changing or freeing a model, fails with `BIYOS_ERR_BADARG` and changes nothing. Such a failure keeps its message, so `BIYOS_lasterror` explains it, but sends no event, and when the hook returns the last error is again what it was before. The event and every string read from it are valid only until the hook returns.
+While a hook runs, the environment and its models are read-only to the hook's thread. The hook may read options, the last error, the event and the models, and a call that would change any of them fails with `BIYOS_ERR_BADARG`. The event and the strings read from it are valid only until the hook returns.
 
 ## Events in Python {#sec-events-python}
 
-In Python, `env.addhook` attaches any callable that takes one `Event` and returns an id for `env.delhook`. `model.addhook` and `model.delhook` do the same for the hooks of one model. The event's properties, such as `kind`, `level`, `text` and `model`, read its parts, and `fmttext` and `fmtjson` give its lines. Forwarding events to Python's `logging` module takes a few lines:
+`env.addhook` attaches any callable that takes one `Event`, and `model.addhook` does the same for one model. The event's properties, such as `kind`, `level` and `text`, read its parts, and `fmttext` and `fmtjson` give its lines. Forwarding events to Python's `logging` takes a few lines:
 
 ```{.python file="examples/code/python/events.py"}
 ```
 
-An exception raised by a hook does not escape into C. biyos keeps the first one and raises it in the program once the call that sent the event returns, in place of any error of the call itself. The event is valid only while the hook runs: reading it afterwards raises `ValueError`.
+An exception raised in a hook does not escape into C. biyos raises it in the program once the call that sent the event returns.
