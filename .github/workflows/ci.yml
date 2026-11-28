@@ -36,9 +36,9 @@ jobs:
           ALL: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci') }}
         run: |
           if [ "$ALL" = true ]; then
-            python3 tools/ci/ci_changes.py --all < /dev/null >> "$GITHUB_OUTPUT"
+            python3 tools/ci/changes.py --all < /dev/null >> "$GITHUB_OUTPUT"
           else
-            git diff --name-only HEAD^1 HEAD | python3 tools/ci/ci_changes.py >> "$GITHUB_OUTPUT"
+            git diff --name-only HEAD^1 HEAD | python3 tools/ci/changes.py >> "$GITHUB_OUTPUT"
           fi
       - id: pick
         env:
