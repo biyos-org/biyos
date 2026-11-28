@@ -61,10 +61,10 @@ biyos is at its start. It holds a model and checks every part of it, and inside 
 - A model holds variables of five kinds, functions made of a constant, linear and quadratic terms and a nonlinear part given by expressions or callbacks, constraints that bound functions, indicators that switch them on, complements that pair functions, cones, special ordered sets, and objectives in priority order. It is built, read back and copied through the C API and the Python package ([Building a model](#sec-model)).
 - Options are typed, checked when set and versioned, so a caller learns when an option appeared and when it stops working ([Options](#sec-options)).
 - One stream of events carries messages, failed checks and timings; nothing goes to standard output or standard error, and a hook decides what to do with each event ([Events and timing](#sec-events)).
-- Inside, an expression graph of 31 operators ([The expression graph](#sec-graph)) is compiled into tapes that evaluate values and derivatives, and evaluated over boxes with outward rounding.
+- Inside, an expression graph of 41 operators ([The expression graph](#sec-graph)) is compiled into tapes that evaluate values and derivatives, and evaluated over boxes with outward rounding.
 
 ## Reading this book {.unnumbered}
 
 The User guide walks through the tasks of a program that uses biyos, in C and in Python. Each piece of code it shows is part of a program, under `examples/code/c/` in C and `examples/code/python/` in Python, that the runners in `examples/test/` run, so what the guide shows works. The Reference part is generated from the header, a specification of the C API and the option table, so it holds every public name and stays in step with the code. Its last two chapters state the mathematics: the problem form and the expression graph.
 
-Every public C name starts with `BIYOS_`: functions and types in lowercase, such as `BIYOS_addvar` and `BIYOS_env`, and constants in uppercase, with their group, such as `BIYOS_ERR_NOMEMORY`. Python uses the same words without the prefix, such as `model.addvars`, so one name serves both languages and this book.
+Every public C name starts with `BIYOS_`: functions and types in lowercase, such as `BIYOS_addvar` and `BIYOS_env`, and constants in uppercase, with their group, such as `BIYOS_ERR_NOMEMORY`. Python uses the same words without the prefix, such as `model.addvar`, so one name serves both languages and this book.
