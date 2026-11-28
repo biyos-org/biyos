@@ -1,6 +1,6 @@
 # Getting started {#sec-start}
 
-biyos is a C library. A program uses it through one C header, and a Python package calls the same library.
+biyos is a C library. A program includes one header, `biyos/biyos.h`, which needs only `<stddef.h>` and `<stdint.h>`. A Python package calls the same library.
 
 ## Installing {#sec-start-install}
 
@@ -11,12 +11,6 @@ The Python package needs Python 3.10 or later and nothing else:
 ```sh
 python -m pip install biyos
 ```
-
-## The library and its header {#sec-start-layers}
-
-A program includes one header, `biyos/biyos.h`, which needs only `<stddef.h>` and `<stdint.h>`. The library exports the functions of that header and nothing else, so no C++ type or exception reaches the caller.
-
-![The layers of biyos. Each arrow points from a part to one it uses. Only `biyos.h` crosses the library's boundary.](../figures/layers.svg){#fig-layers}
 
 ## A first program {#sec-start-program}
 
