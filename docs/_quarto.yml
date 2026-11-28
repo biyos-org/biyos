@@ -3,7 +3,7 @@ project:
   output-dir: _book
   pre-render:
     - ../tools/docs/capi/page.py --headers ../library/include/biyos --spec reference/capi.txt --out reference/_capi
-    - ../tools/docs/options/options_page.py --library ../library --out reference/_options
+    - ../tools/docs/options/page.py --library ../library --out reference/_options
     - quartodoc build
   post-render:
     - ../tools/docs/book/references.py --page references.html

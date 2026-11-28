@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-import option_table
+import table
 
 TABLE = """namespace
 {
@@ -99,7 +99,7 @@ class OptionTableTest(unittest.TestCase):
         for name, text in files.items():
             (library / name).parent.mkdir(parents=True, exist_ok=True)
             (library / name).write_text(text)
-        self.options = option_table.read(library)
+        self.options = table.read(library)
 
     def tearDown(self):
         self.tmp.cleanup()
