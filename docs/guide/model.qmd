@@ -1,14 +1,14 @@
 # Building a model {#sec-model}
 
-A model holds the data of one problem: its variables, the functions of those variables, the constraints that bound functions, the objectives to optimize, the indicators that switch constraints on, the complements that pair functions, the cones that functions lie in and the special ordered sets of variables. This chapter builds one small model in C, step by step, then the same model in Python. The C code is `examples/code/c/model.c`, the Python code `examples/code/python/model.py`.
+A model holds one problem. This chapter builds a small one in C, step by step, then the same one in Python.
 
-## Variables, functions and the records that use them {#sec-model-parts}
+## Records {#sec-model-parts}
 
-A model keeps its functions in one table. A function is a constant plus linear and quadratic terms in the variables, plus a nonlinear part given by an expression, by callbacks or by both. Constraints, objectives and the other records do not hold functions of their own: each refers to a function of the table by its index, so one function can serve several of them.
+A model is made of records: variables, functions, constraints, objectives, indicators, complements, cones and special ordered sets. Functions sit in one table. A constraint, an objective or another record built on functions names them by index instead of holding its own, so one function can serve several records.
 
 ![The model of this chapter. Each constraint and each objective names a function by its index, and $f_0$ serves both a constraint and an objective.](../figures/families.svg){#fig-families}
 
-The model of @fig-families has three variables of different kinds and three functions. It bounds $f_0$ between 1 and 5 and holds $f_1$ at zero. It minimizes $f_2$ first and then maximizes $f_0$, letting $f_2$ rise by at most 0.5 above its optimum while it does:
+The model of @fig-families has three variables and three functions. It bounds $f_0$ between 1 and 5 and holds $f_1$ at zero. It minimizes $f_2$, then maximizes $f_0$ while $f_2$ stays within 0.5 of its minimum:
 
 $$
 \begin{aligned}
@@ -20,89 +20,63 @@ $$
 \end{aligned}
 $$
 
-Items of each family are numbered from 0 in the order they are added, each family on its own: variable 0, function 0, constraint 0 and objective 0 are four different things. Every count and index is a `BIYOS_index`, a 32-bit integer, and an offset into the terms, a count of terms or a total of terms is a `BIYOS_offset`, a 64-bit integer, since a large model can hold more than $2^{31}$ terms. Kinds, senses and priorities are `BIYOS_int`, and bounds, constants and coefficients `BIYOS_real`, which is `double`.
+Records of one kind form a family, numbered from 0 in the order they are added, so variable 0, function 0, constraint 0 and objective 0 are four different things. An index or a count of items is a `BIYOS_index`, an offset or a count of terms a `BIYOS_offset`, and a bound or a coefficient a `BIYOS_real` ([Types](#sec-capi-types)).
 
 ## An environment and a model {#sec-model-handles}
 
-A model is made on an environment, which holds the options and the event stream ([Events and timing](#sec-events)) and keeps the last error of each thread ([Errors](#sec-errors)). A call on the model reports there. The environment cannot be freed while a model made on it is not, so free the models first.
+A model is made on an environment and reports its errors there ([Errors](#sec-errors)). Free the models before the environment.
 
 ```{.c file="examples/code/c/model.c" item="main"}
 ```
 
-Each step of `build` adds one family. The calls take many items at once: a count, then arrays of that many entries, which biyos reads during the call and does not keep. A call that fails changes nothing.
+Each step of `build` adds one family. A call takes many items at once, as a count and arrays of that many entries, and keeps none of the arrays. A call that fails changes nothing ([Model](#sec-capi-model)).
 
 ## Variables {#sec-model-variables}
 
-Each variable has a kind and a lower and an upper bound. The kind says which values it may take:
-
-| Kind | Takes |
-| --- | --- |
-| `BIYOS_VARKND_CONT` | any value between its bounds |
-| `BIYOS_VARKND_BIN` | 0 or 1, between its bounds |
-| `BIYOS_VARKND_INT` | any integer between its bounds |
-| `BIYOS_VARKND_SEMICONT` | 0, or any value between its bounds |
-| `BIYOS_VARKND_SEMIINT` | 0, or any integer between its bounds |
-
-Every kind but continuous is discrete. `BIYOS_addvar` adds variables after the last one:
+Each variable has a kind and two bounds. `BIYOS_addvar` adds variables after the last one:
 
 ```{.c file="examples/code/c/model.c" item="variables"}
 ```
 
-A bound may be `BIYOS_INF` or `-BIYOS_INF`, which leaves that side unbounded. No finite bound is read as infinite, however large. A lower bound of `BIYOS_INF`, an upper bound of `-BIYOS_INF` and NaN are refused, and so is a bound outside the widest bounds of the kind: 0 and 1 for a binary variable, infinite for every other kind. Any other pair is kept as given, a lower bound above the upper one included.
+A variable is continuous, binary, integer, semi-continuous or semi-integer, and `BIYOS_INF` or `-BIYOS_INF` leaves a side unbounded ([Variables](#sec-capi-variables)). The last argument, here `NULL`, receives the index of the first new variable. Every call that adds items ends with it.
 
-A null `knd` makes every new variable continuous, and a null `lb` or `ub` gives each the widest bound of its kind. The last argument, here `NULL`, can receive the index of the first new variable, which is the number of variables held before the call; the new variables follow it in order. Every call that adds items ends with this argument.
+A call on items already added comes in two forms. The `sp` form takes a list of indices, and the `rg` form the range from `beg` to `end - 1`. So `BIYOS_setvarbndsp` and `BIYOS_setvarbndrg` change bounds, and `BIYOS_getvarbndsp` and `BIYOS_getvarbndrg` read them with the same arguments. Set a variable's bounds inside $[0, 1]$ before making it binary.
 
-`BIYOS_setvarbndsp` and `BIYOS_setvarkndsp` change variables already added. They take a list of indices, in which a variable may appear more than once: its entries apply in order and the last one wins. Every call that acts on items already added has such a list form, ending in `sp`, and a range form, ending in `rg`, which takes the first index `beg` and the index `end` one past the last in place of the list: `BIYOS_setvarbndrg(mdl, beg, end, lb, ub)` does what `BIYOS_setvarbndsp` does for the indices `beg` to `end - 1`. A range that starts or ends past the last item is refused, even when it is empty, and so is one that ends before it starts. A variable that becomes binary must already have bounds inside $[0, 1]$, so set such bounds first. `BIYOS_getvarbndsp` and `BIYOS_getvarkndsp` read them back ([Reading a model back](#sec-model-reading)).
-
-A variable may also hold its own absolute and relative tolerance, which stand for the options `feastol_abs` and `feastol_rel` for that variable alone. `BIYOS_setvartolsp` sets them, each finite and at least 0, `BIYOS_getvartolsp` reads them, NaN where a variable holds none, and `BIYOS_delvartolsp` returns a variable to the options. Constraints, cones and complements take the same three calls, named after their short forms `con`, `cone` and `ccon`.
-
-`BIYOS_setvarnamesp` names variables, and `BIYOS_findvar` finds them by name ([Names](#sec-model-names)).
+`BIYOS_setvartolsp` gives variables their own feasibility tolerances, in place of the options.
 
 ## Functions {#sec-model-functions}
 
-A function of the variables $x$ is
+A function is
 
 $$
 f_k(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij}\, x_i x_j + \varphi(x) ,
 $$
 
-a constant $c$, linear terms $a_j x_j$, quadratic terms $q_{ij} x_i x_j$ and a nonlinear part $\varphi(x)$. The nonlinear part is an expression ([Expressions](#sec-model-expressions)) plus the part of every callback that covers the function ([Callbacks](#sec-capi-callbacks)), and is zero for a function with neither, as in this chapter. `BIYOS_addfun` adds functions with the constant 0 and no terms, and later calls give them their constants and terms. `BIYOS_setcstrg` sets the constants of a range of functions, and `BIYOS_addrlintermrg` adds their linear terms. The terms of many functions travel in compressed form, as three arrays: `cnt` holds the number of terms of each function, and `var` and `coef` the index of a variable and its coefficient, the terms of function `beg + k` following those of function `beg + k - 1`, `cnt[k]` of them. So `cnt` holds one entry per function, none negative, and their sum is the number of terms.
+a constant, linear terms, quadratic terms and a nonlinear part ([Expressions](#sec-model-expressions)). `BIYOS_addfun` adds empty functions, and later calls fill them. Here `BIYOS_setcstrg` sets the constants and `BIYOS_addrlintermrg` adds the linear terms:
 
 ```{.c file="examples/code/c/model.c" item="functions"}
 ```
 
-Here `cnt` is `{3, 2, 1}`: function 0 owns terms 0 to 2, $x_0 + x_1 + x_2$; function 1 owns terms 3 and 4, $x_0 - 2x_1$; function 2 owns term 5, $-2x_0$, and its constant 1.
+The terms of many functions travel in compressed form. `cnt` holds the number of terms of each function, and `var` and `coef` hold the terms, one function after another. Here `cnt` is `{3, 2, 1}`: function 0 takes terms 0 to 2, $x_0 + x_1 + x_2$, function 1 terms 3 and 4, $x_0 - 2x_1$, and function 2 term 5, $-2x_0$.
 
-The terms of a function may come in any order, and biyos keeps them sorted by variable. Each must name a variable of the model, appear once in its function and have a finite coefficient. A term whose coefficient is 0 is kept, so a model reads back as it was given.
-
-`BIYOS_setcstsp` sets the constants of a list of functions, and `BIYOS_addcstsp` adds to them: a function listed twice in one call gains both entries, in order. Each constant stays finite, and a sum that would leave the finite range refuses the call, which then changes nothing. `BIYOS_getcstsp` reads the constants back, and each of the three has its range form, ending in `rg`.
-
-A variable the function already holds adds its coefficient to the one held, so a function can be built in several calls. `BIYOS_addlinterm` takes terms as coordinates, the function, the variable and the coefficient of each, in any order. `BIYOS_addclintermrg` takes the terms of a range of variables, each variable with the functions it enters, so a variable added late joins the functions of existing constraints in one call. `BIYOS_addrlintermsp` and `BIYOS_addclintermsp` take the same compressed form for a list of functions or of variables, in any order, a record listed twice gaining the terms of both entries. Every adder follows the same rules, and a refused call changes nothing. `BIYOS_getrlintermsp` and `BIYOS_getrlintermrg` read the linear terms of a list or a range of functions in compressed form: one count per function, then the variable and the coefficient of each term. `BIYOS_getclintermsp` and `BIYOS_getclintermrg` read them the other way round: for each variable, the functions that hold it, sorted by function, with their coefficients ([Reading a model back](#sec-model-reading)).
-
-`BIYOS_setfunnamesp` names functions, and `BIYOS_findfun` finds them by name ([Names](#sec-model-names)).
+A term the function already holds adds to its coefficient, so a function can be built in several calls. `BIYOS_addlinterm` takes terms as coordinates, a function, a variable and a coefficient for each, and `BIYOS_addclintermrg` by variable, which adds a new variable to existing constraints in one call ([Linear terms](#sec-capi-linear)).
 
 ## Quadratic terms {#sec-model-quadratic}
 
-Functions are added with no quadratic terms. `BIYOS_addquadterm` adds them as coordinates, the function, the two variables and the coefficient of each, in any order:
+`BIYOS_addquadterm` adds quadratic terms as coordinates, a function, two variables and a coefficient for each:
 
 ```{.c file="examples/code/c/model.c" item="squares"}
 ```
 
-A coefficient is taken as written, with no factor $\tfrac12$: $x_0^2$ is the pair $(0, 0)$ with the coefficient 1, and $x_0 x_1$ the pair $(0, 1)$ with the coefficient 1. A pair may be given in either order and is kept as $(i, j)$ with $i \le j$. A pair the function already holds adds its coefficient to the one held, so every call adds $q_{ij} x_i x_j$ to its functions and never replaces a term. `BIYOS_addquadtermsp` and `BIYOS_addquadtermrg` take the terms of a list or a range of functions in compressed form, with two arrays for the two variables of each pair, and follow the same rules. A refused call changes nothing. `BIYOS_getquadtermsp` and `BIYOS_getquadtermrg` read the quadratic terms of a list or a range of functions in the same compressed form.
+A coefficient is taken as written, with no factor $\tfrac12$: $x_0^2$ is the pair $(0, 0)$ with the coefficient 1. A pair may come in either order ([Quadratic terms](#sec-capi-quadratic)).
 
-A call that adds new pairs moves the terms of every function from the lowest one it touches, so add the quadratic terms of many functions in one call, or those of a function right after the function itself.
+A call that adds terms moves those of every function after the first it touches. Add the terms of many functions in one call, or those of a function right after the function.
 
 ## Expressions {#sec-model-expressions}
 
-A function may also hold an expression $e(x)$ of the model's graph ([The expression graph](#sec-graph)), its nonlinear part when no callback covers it:
+A function's nonlinear part may be an expression of the model's graph ([The expression graph](#sec-graph)). An expression is a node, an operator applied to child nodes. A node used twice is stored once.
 
-$$
-f_k(x) = c + \sum_j a_j x_j + \sum_{i \le j} q_{ij}\, x_i x_j + e(x) .
-$$
-
-An expression is a node, an operator applied to its children, which are nodes in turn, and the `BIYOS_OP_` constants number the operators ([Expressions](#sec-capi-expressions) in the C API). `BIYOS_addvarnode` gives the node of a variable, and `BIYOS_addnode` adds a node over nodes the model holds, so a program builds an expression from the bottom up, one call per node. Each call gives the id of its node, a `BIYOS_offset` counted from 0. Passing an id again shares the node, which is stored once however many parents use it.
-
-`BIYOS_addexpr` takes many expressions in one call, in postfix, where each operand comes before the operator that takes it: the form a binding or a file reader writes. Each entry is a code and an argument, the variable for `BIYOS_OP_VAR`, the id of a node the model already holds for `BIYOS_OP_NODE`, and the number of operands for an operator. The values the operators take, a constant's value, a product's coefficient, an exponent, or a sum's constant followed by its weights, follow one another in `val`. The expression $3 + 2 x_0 + x_0 x_1 + \exp(x_1)$ reads:
+`BIYOS_addexpr` takes many expressions in one call, in postfix: each operand comes before the operator that takes it. An entry is a code and an argument, the variable for `BIYOS_OP_VAR` and the number of operands for an operator. The values the operators take, such as a constant or a sum's constant and weights, follow one another in `val`. The expression $3 + 2 x_0 + x_0 x_1 + \exp(x_1)$ reads:
 
 | Entry | `code` | `arg` | Values |
 | --- | --- | --- | --- |
@@ -115,11 +89,9 @@ An expression is a node, an operator applied to its children, which are nodes in
 | 6 | `BIYOS_OP_EXP` | 1 | |
 | 7 | `BIYOS_OP_SUM` | 4 | 0, 1, 2, 1, 1 |
 
-The product takes $x_0$ and $x_1$ with the coefficient 1, and the sum takes four operands, with the constant 0 and the weights 1, 2, 1 and 1. A malformed expression, such as one whose operator lacks operands or one that leaves more than one, is refused with a message that names the expression and the entry, and the call then adds no node.
+The product has the coefficient 1. The sum takes four operands, with the constant 0 and the weights 1, 2, 1 and 1. `BIYOS_addvarnode` and `BIYOS_addnode` build the same graph one node at a time ([Expressions](#sec-capi-expressions)).
 
-A sum that is an operand of a sum is merged into it, and so is a product that is an operand of a product. `BIYOS_OP_KEEP`, with the argument 1, makes the operand before it a node of its own, which stays a child. `BIYOS_OP_REF` names that node again, its argument being the position of the `BIYOS_OP_KEEP` entry, so the expressions of one call share the nodes they build.
-
-A piecewise linear function, a pwl, is data the model holds apart from the graph ([Piecewise linear functions](#sec-capi-pwls)). `BIYOS_addpwl` adds pwls, each given by its points $(x_0, y_0), \dots, (x_n, y_n)$ with $n \ge 1$, the $x_i$ strictly increasing and every coordinate finite. A pwl $p$ is linear between consecutive points, extends its end segments past $x_0$ and $x_n$, and takes the value $y_i$ at $x_i$ exactly. `BIYOS_addpwlnode` applies a pwl to a node, and a `BIYOS_OP_PWL` entry of `BIYOS_addexpr` applies one to the operand before it, its argument being the pwl. With pwl 0 through the points $(0, 0)$, $(1, 1)$ and $(2, 3)$, added with `cnt` `{3}`, `x` `{0, 1, 2}` and `y` `{0, 1, 3}`, the expression $p(x_0) + x_1$ reads:
+A piecewise linear function, a pwl, is given by its points and applied to the operand before a `BIYOS_OP_PWL` entry ([Piecewise linear functions](#sec-capi-pwls)). With pwl 0 through the points $(0, 0)$, $(1, 1)$ and $(2, 3)$, the expression $p(x_0) + x_1$ reads:
 
 | Entry | `code` | `arg` | Values |
 | --- | --- | --- | --- |
@@ -128,64 +100,37 @@ A piecewise linear function, a pwl, is data the model holds apart from the graph
 | 2 | `BIYOS_OP_VAR` | 1 | |
 | 3 | `BIYOS_OP_SUM` | 2 | 0, 1, 1 |
 
-Any number of nodes may apply one pwl, and a pwl stays in the model once added.
+`BIYOS_attachexprsp` adds an expression to functions, so that $f_k$ becomes $f_k + e$. The constant, linear and quadratic terms of the expression join the function's, and the rest stays in the graph ([Splitting an expression](#sec-graph-split)). The first expression above adds 3 to the constant, $2 x_0$ and $x_0 x_1$ to the terms, and keeps $\exp(x_1)$ as the expression.
 
-`BIYOS_attachexprsp` adds an expression to each function of a list, and `BIYOS_attachexprrg` to each function of a range, so that $f_k$ becomes $f_k + e$. The expression is split as it enters ([Splitting an expression](#sec-graph-split)): the constant, linear and quadratic terms of its top sum join the function's, and only the rest stays in the graph. Attached to a function, the expression above adds 3 to its constant, $2 x_0$ to its linear terms and $x_0 x_1$ to its quadratic terms, and $\exp(x_1)$ becomes its expression. A function that has an expression already gains the sum of the two. As with the terms added by `BIYOS_addlinterm`, attach the expressions of many functions in one call, or a function's right after the function itself. A copy of the model holds the same expressions, and `BIYOS_getexprsp` reads them back ([Reading a model back](#sec-model-reading)).
-
-Once attached, the linear and quadratic parts of an expression are the function's own, and nothing tells them apart, so no call takes an expression back. `BIYOS_clrfunsp` and `BIYOS_clrfunrg` empty functions instead, their constant, terms and expression, and a function is then built again.
+No call takes an expression back, since its terms become the function's own. `BIYOS_clrfunsp` empties functions instead, to build them again.
 
 ## Constraints {#sec-model-constraints}
 
-A constraint $l \le f_k(x) \le u$ bounds one function of the table. `BIYOS_addcon` takes the index of each constraint's function and its two bounds:
+`BIYOS_addcon` takes the function and the two bounds of each constraint:
 
 ```{.c file="examples/code/c/model.c" item="constraints"}
 ```
 
-Constraint 1 has equal bounds, which makes it the equality $f_1(x) = 0$. A constraint whose bounds are both infinite is free. The bounds follow the rule of a continuous variable's: an infinite bound leaves its side open, and a lower bound of `BIYOS_INF`, an upper bound of `-BIYOS_INF` and NaN are refused. A null `lb` or `ub` leaves that side of every new constraint unbounded. `BIYOS_setconbndsp` changes the bounds and keeps the function, and `BIYOS_getconbndsp` reads the bounds of a list of constraints.
+Constraint 1 has equal bounds, so it is the equality $f_1(x) = 0$. The bounds follow the rules of a continuous variable's ([Constraints](#sec-capi-constraints)).
 
-A condition (a comparison or a `BIYOS_OP_AND`, `BIYOS_OP_OR` or `BIYOS_OP_NOT` node) is 1 where it holds and 0 elsewhere. A function whose expression is a condition, with no constant and no terms, makes a logical constraint with bounds 1 and 1: the condition holds.
-
-`BIYOS_OP_IF` takes a condition and two nodes, and is the second where the condition holds and the third elsewhere. Both branches are evaluated, and the one not taken never reaches the value or its derivatives.
-
-`BIYOS_setconnamesp` names constraints, and `BIYOS_findcon` finds them by name ([Names](#sec-model-names)).
+A function whose expression is a condition, such as a comparison, and which has no constant and no terms, makes a logical constraint with the bounds 1 and 1.
 
 ## Objectives {#sec-model-objectives}
 
-An objective names a function to minimize or maximize, with a priority, a weight and two tolerances. `BIYOS_addobj` takes what defines it, the function, sense, priority and weight, as `BIYOS_addcon` takes a function and its bounds. Its tolerances are 0 until `BIYOS_setobjtolsp` sets them, as here for objective 0:
+An objective names a function to minimize or maximize, with a priority, a weight and two tolerances. `BIYOS_addobj` takes the function, sense, priority and weight, and `BIYOS_setobjtolsp` sets the tolerances, here for objective 0:
 
 ```{.c file="examples/code/c/model.c" item="objectives"}
 ```
 
-The objectives are optimized in stages, one for each priority they hold, the lowest first. A stage minimizes the weighted sum of the objectives of its priority,
-
-$$
-\sum_{(k, s, w) \in P} w\, s\, f_k(x), \qquad s = \begin{cases} 1 & \text{to minimize} \\ -1 & \text{to maximize,} \end{cases}
-$$
-
-where $P$ holds the objectives of that priority, each with its function $f_k$, sense $s$ and weight $w$. Each later stage keeps every objective of an earlier stage within its tolerances of the optimum found for it: the absolute tolerance in the units of its function, the relative one as a fraction of the size of that optimum. Objectives of different priorities are therefore optimized in sequence, and objectives of one priority are blended.
-
-A weight is finite and positive, so the sense alone gives the direction. A tolerance is 0 or more, and `BIYOS_INF` sets no limit. A null `sense` minimizes every new objective, a null `coef` gives each the weight 1, and a null `prio` gives each objective its index at the time it is added as its priority. So by default the objectives are optimized one after another in the order they are added, which is what this model asks for explicitly. Once an objective is deleted, a default priority can repeat one an earlier objective holds, and the two are blended.
-
-`BIYOS_setobjsensesp`, `BIYOS_setobjpriosp`, `BIYOS_setobjcoefsp` and `BIYOS_setobjtolsp` change one attribute of a list of objectives each, and `BIYOS_getobjsensesp`, `BIYOS_getobjpriosp`, `BIYOS_getobjcoefsp` and `BIYOS_getobjtolsp` read it back with the same arguments. `BIYOS_getobjrg` reads back what `BIYOS_addobj` takes, so a model is read whole with it and `BIYOS_getobjtolsp`.
-
-`BIYOS_setobjnamesp` names objectives, and `BIYOS_findobj` finds them by name ([Names](#sec-model-names)).
-
-::: {.callout-note}
-## Stored, not yet solved
-biyos stores and checks the objectives but solves nothing yet. The stages above are what the model means, and what the solvers will do with it.
-:::
+The objectives are optimized in stages, one for each priority, the lowest first. A stage optimizes the weighted sum of its objectives, and keeps each objective of an earlier stage within its tolerances of the optimum found for it. Here objective 0 is minimized first, then objective 1 is maximized while objective 0 stays within 0.5 of its minimum. By default an objective's priority is its index, so the objectives are optimized in the order they are added ([Objectives](#sec-capi-objectives)).
 
 ## Indicators {#sec-model-indicators}
 
-An indicator $x_j = \beta \Rightarrow l \le f_k(x) \le u$ switches a constraint on: when the binary variable $x_j$ takes the value $\beta$, 0 or 1, the function must lie within its bounds, and otherwise it is free. `BIYOS_addind` takes the variable, the value, the function and the two bounds of each indicator, and indicators are numbered from 0 in a table of their own. The model keeps the implication as given and adds no constraint in its place.
-
-The bounds follow the rule of a constraint's, and the function stays shared, so one function may carry several indicators beside its constraints. The variable must be binary when the indicator is added or changed, and while an indicator uses a variable, changing its kind to another fails with `BIYOS_ERR_INUSE`. `BIYOS_setindbndsp` changes the bounds and `BIYOS_setindvarsp` the variable and the value, each keeping the rest, and `BIYOS_getindrg` reads back what `BIYOS_addind` takes.
-
-`BIYOS_setindnamesp` names indicators, and `BIYOS_findind` finds them by name ([Names](#sec-model-names)).
+An indicator $x_j = \beta \Rightarrow l \le f_k(x) \le u$ holds a function within its bounds when the binary variable $x_j$ takes the value $\beta$, and leaves it free otherwise. `BIYOS_addind` takes the variable, the value, the function and the bounds of each. The variable stays binary while an indicator uses it ([Indicators](#sec-capi-indicators)).
 
 ## Complements {#sec-model-complements}
 
-A complement $l \le f_k(x) \le u \perp f_{k'}(x)$ pairs two functions of the table: the first is held within its bounds, and the sign of the second follows where the first lies. One of three cases holds:
+A complement $l \le f_k(x) \le u \perp f_{k'}(x)$ pairs two functions: the first stays within its bounds, and the sign of the second follows where the first lies. One of three cases holds:
 
 $$
 \begin{aligned}
@@ -195,66 +140,42 @@ l < f_k(x) < u &\quad\text{and}\quad f_{k'}(x) = 0.
 \end{aligned}
 $$
 
-`BIYOS_addccon` takes the two functions and the two bounds of each complement, and complements are numbered from 0 in a table of their own. A null `lb` gives the lower bound 0 and a null `ub` leaves the upper side open, so with both null a complement is the classical $0 \le f_k(x) \perp f_{k'}(x) \ge 0$. When $f_k$ is one variable, the complements state the mixed complementarity of GAMS and PATH. Bounds that are both infinite state $f_{k'}(x) = 0$.
-
-The bounds follow the rule of a constraint's. The functions stay shared, so a function may appear in any number of complements, even as both functions of one, beside its constraints and objectives, and the bounds of a variable inside $f_k$ hold beside the complement. `BIYOS_setcconbndsp` changes the bounds and keeps the functions, and `BIYOS_getcconrg` reads back what `BIYOS_addccon` takes.
-
-A complement may also hold its own absolute and relative tolerance, which stand for the options `feastol_abs` and `feastol_rel` for that complement alone. `BIYOS_setccontolsp` sets them, each finite and at least 0, `BIYOS_getccontolsp` reads them, NaN where a complement holds none, and `BIYOS_delccontolsp` returns a complement to the options.
-
-`BIYOS_setcconnamesp` names complements, and `BIYOS_findccon` finds them by name ([Names](#sec-model-names)).
+`BIYOS_addccon` takes the two functions and the bounds of each. With null bounds, a complement is the classical $0 \le f_k(x) \perp f_{k'}(x) \ge 0$ ([Complements](#sec-capi-complements)).
 
 ## Reading a model back {#sec-model-reading}
 
-Every family has a count and a reader: `BIYOS_getnvar` and `BIYOS_getvarrg`, `BIYOS_getncon` and `BIYOS_getconrg`, and so on. Functions have a count, `BIYOS_getnfun`, and are read through their constants, terms and expressions. A reader never changes the model, and its error, if any, goes to the environment like every other call's. A reader takes the items to read and fills the arrays it is given; a null array is skipped. Since the caller cannot know the number of terms in advance, each reader of terms has a count reader: `BIYOS_getnquadtermrg` gives the number of terms `BIYOS_getquadtermrg` writes for the same range, `BIYOS_getnrlintermsp` the number `BIYOS_getrlintermsp` writes for the same list, and so on. A reader of terms refuses arrays that hold fewer and then writes nothing, so a caller counts, allocates, and reads:
+Every family has a count, such as `BIYOS_getnvar`, and readers. A reader fills the arrays it is given and skips a null one. A reader of terms writes nothing into arrays too small, so a program counts the terms, allocates and reads:
 
 ```{.c file="examples/code/c/model.c" item="read_squares"}
 ```
 
-A family reader reads a list or a range: `BIYOS_getvarsp` reads the variables a list names, in its order and as often as it names them, and `BIYOS_getvarrg` a range of them. Every setter of an attribute has a reader that takes the same arguments, its outputs where the setter's inputs are, so the attribute of any list of items, such as `{0, 4, 10, 12}`, is read in one call: `BIYOS_getvarbndsp` reads what `BIYOS_setvarbndsp` sets, and `BIYOS_getvarbndrg` what `BIYOS_setvarbndrg` sets. An item may appear in the list more than once, and a null output is skipped.
-
-`BIYOS_getexprsp` and `BIYOS_getexprrg` read the expressions of functions in the postfix `BIYOS_addexpr` takes, the part of each that stayed in the graph once its terms were split off. A node the expressions use more than once is written once and kept, then named again by `BIYOS_OP_REF`, and a function with no expression reads as the constant 0. `BIYOS_getnexprsp` and `BIYOS_getnexprrg` give the number of entries and of values. Added and attached to the functions read, the expressions split as they did, provided the model read added every expression before attaching any, attached each one and cleared no function. Otherwise a node shared with an expression no function holds may split differently ([Splitting an expression](#sec-graph-split)).
+`BIYOS_getexprsp` reads expressions back in the postfix `BIYOS_addexpr` takes, the part that stayed in the graph ([Expressions](#sec-capi-expressions)).
 
 ## Names {#sec-model-names}
 
-The model and each variable, function, constraint, objective, indicator, special ordered set and complement may have a name, which a message or a file can show in place of an index. A name is not empty, is well-formed UTF-8 and holds no NUL character. A C string ends at its first NUL, so a name passed in C never holds one, and Python refuses a `str` that holds one with `ValueError`.
+The model and its items may have names, which messages and files show in place of indices. `BIYOS_setvarnamesp` names variables and `BIYOS_findvar` finds them. Every family has the same calls under its short form, `fun`, `con`, `obj`, `ind`, `sos`, `cone` or `ccon` ([Model](#sec-capi-model)).
 
-Names match byte for byte, so two names that differ only in case or in Unicode normalization are different names. An item has no name until one is set, and while it has none it reads as an empty string in C and as `None` in Python. A copy of the model holds the same names.
+Names may repeat. A lookup never picks one item among several: `BIYOS_findvar` refuses a name several variables hold, with a message such as `invalid argument: variable 'x': names 3 variables`.
 
-`BIYOS_setmdlname`, `BIYOS_getmdlname` and `BIYOS_delmdlname` set, read and remove the name of the model. Each family takes four calls, named after its short form, `var`, `fun`, `con`, `obj`, `ind`, `sos` or `ccon`: `BIYOS_setvarnamesp` names a list of variables, `BIYOS_getvarnamesp` reads the names of a list, `BIYOS_findvar` looks up a list of names, and `BIYOS_delvarnamesp` leaves the variables of a list without a name. The setter and the reader take the same arguments, so any list of items is named or read in one call. Each of `BIYOS_setvarnamesp`, `BIYOS_getvarnamesp` and `BIYOS_delvarnamesp` has its range form, ending in `rg`. As in the other setters, an item listed more than once takes its last entry.
-
-Names may repeat. Setting a name checks no uniqueness, so several items of a family may hold the same name, while each family keeps its names apart from the others. A lookup never chooses among the holders of a name: `BIYOS_findvar` gives the index of the variable that alone holds a name, and refuses a name that no variable holds or that several hold, counting them, as in `invalid argument: variable 'x': names 3 variables`. So a lookup never returns an item the caller did not mean, and it succeeds again once the other holders are renamed or lose their names.
-
-A name read in C belongs to the model. The pointer stays valid until a call that sets or removes the name of that item, or deletes items of its family, succeeds, or the model is freed; adding items, naming other items, a call that fails and a copy of the model leave it valid.
+A name read in C belongs to the model. It stays valid until the item's name is set or removed, an item of its family is deleted, or the model is freed.
 
 ## Deleting records {#sec-model-deleting}
 
-Variables, functions, constraints, objectives, indicators, special ordered sets, cones, complements and callbacks can be deleted. Each family takes two calls, named after its short form, `var`, `fun`, `con`, `obj`, `ind`, `sos`, `cone`, `ccon` or `cb`: `BIYOS_delconsp` deletes the constraints a list names, in any order, and `BIYOS_delconrg` a range of them. The items left keep their order and their data and are numbered from 0 again, so each family stays dense. An optional array, one entry for each item the family held before the call, receives the new index of each, or -1 for one deleted: deleting constraints 2 and 0 of four gives `{-1, 0, -1, 1}`.
+`BIYOS_delconsp` deletes constraints, and every family has the same calls. The items left keep their order and are numbered from 0 again. An optional array receives the new index of each item, or -1 for a deleted one: deleting constraints 2 and 0 of four gives `{-1, 0, -1, 1}`.
 
-A deleted item takes its name with it, and a deleted variable, constraint, cone or complement its tolerances. What it used stays in the model: deleting a constraint leaves its function, and deleting a set leaves its variables. An index listed twice, or one the family does not hold, refuses the call, which then deletes nothing.
-
-A function can be deleted only once nothing uses it. One that a constraint, an objective, an indicator, a cone, a complement or a callback uses refuses the call with `BIYOS_ERR_INUSE` and a message naming the use, such as `in use: function 4: used by constraint 2`, so whatever uses it is deleted first. A function a callback covers cannot be deleted until `BIYOS_delcbsp` deletes every callback that covers it. A deleted function takes its constant, its terms and its expression with it, while the nodes of the expression stay in the model with their ids. Each record and callback then refers to the functions left by their new indices.
-
-A variable can be deleted while functions use it: its linear and quadratic terms leave every function, and a function left with no term keeps its constant. A variable used elsewhere refuses the call with `BIYOS_ERR_INUSE`, since deleting it there would change what the caller wrote: one that has a node, one that is a member of a set or one that is the binary of an indicator, with a message such as `in use: variable 3: used by set 1`. A variable keeps its node once it has one, so a variable that has appeared in an expression stays. A variable a callback lists cannot be deleted, while one outside every list can: the lists and patterns of the callbacks are renumbered, so each callback still reads the variables it was written for. No variable can be deleted while the model has a callback that reads every variable, since that callback reads `x` in the numbering it was written for; deleting it lifts this. A deleted variable takes its kind and bounds with it, and each term, set, indicator, node and callback then refers to the variables left by their new indices.
+Deleting an item leaves what it used, so deleting a constraint keeps its function. A function that something still uses cannot be deleted: the call fails with `BIYOS_ERR_INUSE` and names the use. A variable can be deleted while functions hold it, and its terms leave them, but not while a node, a set, an indicator or a callback uses it ([Variables](#sec-capi-variables)).
 
 ## Evaluating a model {#sec-model-evaluating}
 
-A model can be evaluated at a point $x$ as a solver will evaluate it. `BIYOS_evalf` writes the value $f_k(x)$ of each function, `BIYOS_evalg` the entries of the Jacobian, `BIYOS_evalh` those of the Hessian of the Lagrangian
+`BIYOS_evalf` evaluates every function at a point, `BIYOS_evalg` the whole Jacobian, `BIYOS_evalh` the Hessian of the Lagrangian $\sum_k w_k \nabla^2 f_k(x)$ and `BIYOS_evalhv` its product with a vector. The derivatives come as values in the order of their pattern, so a program counts the pattern, reads it with `BIYOS_getgpatrg` or `BIYOS_gethpatrg`, then evaluates. The Hessian pattern holds the lower triangle. The first evaluation after a change of the model prepares what the next ones reuse ([Evaluation](#sec-capi-evaluation)).
 
-$$
-\nabla^2 L(x) = \sum_k w_k \nabla^2 f_k(x)
-$$
-
-for a weight $w_k$ of each function, and `BIYOS_evalhv` its product $\nabla^2 L(x)\,v$ with a vector. The Jacobian and the Hessian are written as values alone, one for each entry of their pattern. `BIYOS_getgpatrg` from 0 to the number of functions gives the variables of each function's row, and `BIYOS_gethpatrg` from 0 to the number of variables the rows of each column of the lower triangle, at or below the column. The values follow these orders. As with the readers of terms, `BIYOS_getngpatrg` and `BIYOS_getnhpatrg` give the number of entries first, so a caller counts, allocates, reads the pattern and then evaluates. The `sp` forms read the patterns of a list of functions or columns.
-
-The first of these calls after a change of the model builds what they need and the model keeps it until its next change, so later calls skip the build. A copy of the model builds its own.
-
-The calls run the callbacks that cover the functions ([Callbacks](#sec-capi-callbacks)). A callback that returns a positive value leaves NaN in what it computes and the call still succeeds, so a solver can step back. A negative value stops the call with `BIYOS_ERR_CALLBACK` and a message such as `callback: callback 0: function returned -3`. A call that needs a function a callback lacks fails with `BIYOS_ERR_UNSUPPORTED`, except `BIYOS_evalhv`, which forms a callback's part of the product from its Hessian when the callback has no product of its own. While a callback runs, the model is read-only: a call from the callback that would change the model, evaluate it or read a pattern fails with `BIYOS_ERR_BUSY` and the message `busy: model: is running a callback`, while the readers of [Reading a model back](#sec-model-reading) run.
+A callback that returns a positive value leaves NaN in its results and the call succeeds, so a solver can step back. A negative value fails the call with `BIYOS_ERR_CALLBACK` ([Callbacks](#sec-capi-callbacks)).
 
 ## The same model in Python {#sec-model-python}
 
-The Python package wraps the same calls under the same names, without the prefix. Each method that adds variables, functions, constraints, objectives or complements returns a block, a light object holding the first index and the count of the new items, and indexing a block gives a view of one item. A block or a view passes wherever the model takes indices, so the code reads as the mathematics does:
+The Python package has the same calls without the prefix. Each method that adds items returns a block, which holds the first index and the count of the new items, and indexing a block gives a view of one item. A block or a view passes wherever the model takes indices, so the code reads as the mathematics does:
 
 ```{.python file="examples/code/python/model.py" item="build"}
 ```
 
-A block costs the same at any size, and the model refuses a block or a view of another model. [The Python package](#sec-python) describes the package as a whole.
+A block costs the same at any size. [The Python package](#sec-python) covers the rest.
