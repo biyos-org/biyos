@@ -110,7 +110,7 @@ jobs:
           --headers library/include/biyos
           --doc docs/reference/capi.txt
       - run: >-
-          python3 tools/ci/check_copies.py
+          python3 tools/ci/copies.py
           --licence LICENSE
           --copies $(git ls-files '*LICENSE')
           --format library/.clang-format

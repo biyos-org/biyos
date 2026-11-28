@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from check_copies import check
+from copies import check
 
 LICENCE = "Apache License\nVersion 2.0\n"
 LIBRARY = "project(biyos VERSION 0.1.0 LANGUAGES C CXX)\n"
