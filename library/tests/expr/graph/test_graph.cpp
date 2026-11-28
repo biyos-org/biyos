@@ -19,6 +19,7 @@ namespace
 
 using biyos::Graph;
 using biyos::Index;
+using biyos::is_condition;
 using biyos::Offset;
 using biyos::Operator;
 using biyos::operator_of;
@@ -40,6 +41,18 @@ constexpr std::array kUnary{
 };
 
 constexpr std::array kExponents{Operator::ConstantPower, Operator::SignPower};
+
+constexpr std::array kConditions{
+    Operator::LessEqual,
+    Operator::GreaterEqual,
+    Operator::Equal,
+    Operator::Less,
+    Operator::Greater,
+    Operator::NotEqual,
+    Operator::And,
+    Operator::Or,
+    Operator::Not,
+};
 
 std::vector<Offset> ids(std::span<const Offset> nodes)
 {
@@ -441,6 +454,23 @@ TEST(GraphTest, PayloadKind)
     }
     EXPECT_EQ(refusal([] { payload_of(static_cast<Operator>(99)); }),
               "invalid argument: expression: operator 99 is unknown");
+}
+
+TEST(GraphTest, ConditionKind)
+{
+    for (const Operator op : kConditions)
+    {
+        EXPECT_TRUE(is_condition(op));
+    }
+    for (const Operator op : kUnary)
+    {
+        EXPECT_FALSE(is_condition(op));
+    }
+    EXPECT_FALSE(is_condition(Operator::Constant));
+    EXPECT_FALSE(is_condition(Operator::Variable));
+    EXPECT_FALSE(is_condition(Operator::Sum));
+    EXPECT_FALSE(is_condition(Operator::Max));
+    EXPECT_FALSE(is_condition(Operator::If));
 }
 
 TEST(GraphTest, Truncated)

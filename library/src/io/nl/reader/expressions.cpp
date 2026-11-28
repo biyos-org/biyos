@@ -76,6 +76,17 @@ Operand Expressions::read()
     return result;
 }
 
+Operand Expressions::read_condition()
+{
+    const Operand operand = read();
+    if (!operand.value && is_condition(model_.graph().op(operand.node)))
+    {
+        return operand;
+    }
+    const std::array children{node_of(operand), node(Operator::Constant, {}, kZero)};
+    return {.node = node(Operator::NotEqual, children, {}), .value = std::nullopt};
+}
+
 Offset Expressions::node_of(const Operand &operand)
 {
     if (!operand.value)

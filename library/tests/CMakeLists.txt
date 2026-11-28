@@ -175,6 +175,7 @@ biyos_add_test(test_io
     io/nl/test_binary.cpp
     io/nl/test_faults.cpp
     io/nl/test_limits.cpp
+    io/nl/test_logical.cpp
     io/nl/test_nl.cpp
     io/nl/test_refusals.cpp
     io/nl/test_structure.cpp

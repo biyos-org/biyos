@@ -170,7 +170,7 @@ The first field of a line is a letter, often followed by a number in the same fi
 
 ### Header
 
-The file starts with ten lines. The first starts with `g` for text or `b` for binary. The other forms AMPL writes, `h` and `z` for large files and `B`, `G`, `H` and `Z` for debugging, are refused with `BIYOS_ERR_UNSUPPORTED`. The next nine hold counts in the order Gay gives, the second line starting with the numbers of variables, constraints and objectives. The counts fix the kind of each variable from its place in the order of variables in Gay's tables [@gay2017], and every variable they do not mark integer or binary is continuous.
+The file starts with ten lines. The first starts with `g` for text or `b` for binary. The other forms AMPL writes, `h` and `z` for large files and `B`, `G`, `H` and `Z` for debugging, are refused with `BIYOS_ERR_UNSUPPORTED`. The next nine hold counts in the order Gay gives, the second line starting with the numbers of variables, constraints and objectives. Its sixth value, which a file may leave out, is the number of logical constraints. The counts fix the kind of each variable from its place in the order of variables in Gay's tables [@gay2017], and every variable they do not mark integer or binary is continuous.
 
 ### Binary
 
@@ -180,13 +180,14 @@ After the header, the file holds the same items as text with no white space and 
 
 ### Segments
 
-After the header, each segment starts with a letter. They may come in any order, but a segment for one record, or a `b`, `r`, `k`, `x` or `d` segment, appears once. Every constraint needs its `C` segment and every objective its `O` segment, and a file with constraints needs `r`, one with variables `b`.
+After the header, each segment starts with a letter. They may come in any order, but a segment for one record, or a `b`, `r`, `k`, `x` or `d` segment, appears once. Every constraint needs its `C` segment, every objective its `O` segment and every logical constraint its `L` segment, and a file with constraints needs `r`, one with variables `b`.
 
 | Segment | Holds |
 |---|---|
 | `V` | A defined variable: its index, a count of linear terms, the terms, then its expression. |
 | `C` | The expression of a constraint. |
 | `O` | The expression of an objective and its sense, `0` to minimize and `1` to maximize. |
+| `L` | The expression of a logical constraint, a condition that must hold. It is read as a constraint with bounds 1 and 1, after the constraints of `C`. An expression that is not a condition, such as a sum $e$, is read as `ne` of $e$ and 0. |
 | `r` | The bounds of each constraint. |
 | `b` | The bounds of each variable. |
 | `k` | The column lengths of the Jacobian, which are checked for their count alone. |
@@ -196,7 +197,7 @@ After the header, each segment starts with a letter. They may come in any order,
 | `d` | Dual guesses, skipped with an info event. |
 | `S` | A suffix, skipped with an info event naming it, but for the integer suffix `sosno` and the suffix `ref` on variables, which give special ordered sets [@gay2017]. Each nonzero value of `sosno` is a set, of type 1 when it is positive and 2 when negative, and `ref` gives the weight of each member. A real `sosno` is refused with `BIYOS_ERR_UNSUPPORTED`. |
 
-A bound line starts with a code: `0` gives a lower and an upper bound, `1` an upper bound, `2` a lower bound, `3` neither and `4` one value for both. In `r`, code `5` with two integers $k$ and $i$ pairs the constraint with variable $i$, from 1, as a complement: its function becomes the second function of the complement, the first is the variable alone, and the bounds are those of the variable, which keeps them. $k$ is 1 when the lower bound is finite, 2 when the upper one is, 3 when both are and 0 when neither is. Code `5` in `b` is refused with `BIYOS_ERR_BADFILE`, and the segments `F` (imported functions) and `L` (logical constraints) with `BIYOS_ERR_UNSUPPORTED`.
+A bound line starts with a code: `0` gives a lower and an upper bound, `1` an upper bound, `2` a lower bound, `3` neither and `4` one value for both. In `r`, code `5` with two integers $k$ and $i$ pairs the constraint with variable $i$, from 1, as a complement: its function becomes the second function of the complement, the first is the variable alone, and the bounds are those of the variable, which keeps them. $k$ is 1 when the lower bound is finite, 2 when the upper one is, 3 when both are and 0 when neither is. Code `5` in `b` is refused with `BIYOS_ERR_BADFILE`, and the segment `F` (imported functions) with `BIYOS_ERR_UNSUPPORTED`.
 
 ### Expressions
 
@@ -225,7 +226,7 @@ Every other operator, among them `implies`, `iff`, `floor`, `ceil` and `round`, 
 
 | Case | biyos's rule |
 |---|---|
-| Header counts | A file must hold at least two bytes for each variable, constraint, objective and defined variable the header counts, one byte in binary, so a short file cannot make the reader allocate for a large model. |
+| Header counts | A file must hold at least two bytes for each variable, constraint, objective, logical constraint and defined variable the header counts, one byte in binary, so a short file cannot make the reader allocate for a large model. |
 | Several objectives | Each is read, with its sense, and its priority is its place in the file. |
 | Names | NL holds none; names in separate files are not read. |
 | A linear term with coefficient 0 | Kept as a term of the function. |

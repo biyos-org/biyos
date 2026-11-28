@@ -60,6 +60,7 @@ class NlReader
     void read_defined();
     void read_constraint();
     void read_objective();
+    void read_logical();
     void read_ranges();
     void read_bounds();
     void read_columns();
@@ -68,6 +69,7 @@ class NlReader
     std::vector<LinearTerm> read_terms(Index n);
     Bounds read_bound();
     void finish();
+    std::vector<Constraint> constraints_of(Index first) const;
     void check_bodies(Index first, Index n, std::string_view noun);
 
     Stream stream_;
@@ -89,7 +91,8 @@ NlReader::NlReader(Stream stream, std::istream &input, const std::string &file, 
     : stream_(stream), lines_(input, file), header_(read_header(lines_, bytes)),
       owned_(source_of(lines_, input, header_.encoding, bytes)), source_(*owned_),
       expressions_(source_, model_, header_.variables, header_.defined),
-      bodies_(header_.constraints + header_.objectives), suffixes_(stream, source_, header_),
+      bodies_(header_.constraints + header_.objectives + header_.logical),
+      suffixes_(stream, source_, header_),
       senses_(to_size(header_.objectives), ObjectiveSense::Minimize)
 {
 }
@@ -120,7 +123,8 @@ void NlReader::segment()
         suffixes_.read();
         return;
     case 'L':
-        source_.refuse("logical constraints");
+        read_logical();
+        return;
     case 'V':
         read_defined();
         return;
@@ -215,6 +219,18 @@ void NlReader::read_objective()
     }
     senses_[to_size(objective)] = sense_of(source_);
     bodies_.set_body(function, expressions_.read());
+}
+
+void NlReader::read_logical()
+{
+    source_.expect(1);
+    const Index logical = source_.index(header_.logical, "logical constraint");
+    const Index function = header_.constraints + header_.objectives + logical;
+    if (bodies_.has_body(function))
+    {
+        source_.bad("logical constraint " + text_of(logical) + " is repeated");
+    }
+    bodies_.set_body(function, expressions_.read_condition());
 }
 
 void NlReader::read_ranges()
@@ -338,17 +354,9 @@ void NlReader::finish()
     }
     check_bodies(0, header_.constraints, "constraint");
     check_bodies(header_.constraints, header_.objectives, "objective");
+    check_bodies(header_.constraints + header_.objectives, header_.logical, "logical constraint");
     const Index first = bodies_.add_to(source_, model_);
-    std::vector<Constraint> constraints;
-    for (Index k = 0; k < header_.constraints; ++k)
-    {
-        const std::optional<Bounds> &bounds = ranges_[to_size(k)];
-        if (bounds)
-        {
-            constraints.push_back(
-                {.function = first + k, .lower = bounds->lower, .upper = bounds->upper});
-        }
-    }
+    const std::vector<Constraint> constraints = constraints_of(first);
     checked(source_, [&] { model_.add_constraints(constraints); });
     std::vector<Objective> objectives;
     for (Index k = 0; k < header_.objectives; ++k)
@@ -359,6 +367,26 @@ void NlReader::finish()
     checked(source_, [&] { model_.add_objectives(objectives); });
     add_complements(source_, model_, first, pairings_);
     suffixes_.add_to(model_);
+}
+
+std::vector<Constraint> NlReader::constraints_of(Index first) const
+{
+    std::vector<Constraint> constraints;
+    for (Index k = 0; k < header_.constraints; ++k)
+    {
+        const std::optional<Bounds> &bounds = ranges_[to_size(k)];
+        if (bounds)
+        {
+            constraints.push_back(
+                {.function = first + k, .lower = bounds->lower, .upper = bounds->upper});
+        }
+    }
+    const Index logical = first + header_.constraints + header_.objectives;
+    for (Index k = 0; k < header_.logical; ++k)
+    {
+        constraints.push_back({.function = logical + k, .lower = 1.0, .upper = 1.0});
+    }
+    return constraints;
 }
 
 void NlReader::check_bodies(Index first, Index n, std::string_view noun)

@@ -27,6 +27,7 @@ class Expressions
     Expressions(Source &source, Model &model, Index variables, Index defined);
 
     Operand read();
+    Operand read_condition();
     Offset node_of(const Operand &operand);
     bool has(Index variable) const noexcept;
     void define(Index variable, std::span<const LinearTerm> terms, const Operand &body);
